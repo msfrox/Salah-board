@@ -1,0 +1,10 @@
+node_modules/
+dist/
+*.apk
+*.keystore
+local.properties
+.gradle/
+android/build/
+android/app/build/
+.DS_Store
+Thumbs.db

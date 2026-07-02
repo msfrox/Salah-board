@@ -1,0 +1,57 @@
+{
+  "meta": { "language": "English", "code": "en", "direction": "ltr", "reviewed": false },
+  "labels": {
+    "fajr": "Fajr", "sunrise": "Sunrise", "luhr": "Zuhr", "asr": "Asr",
+    "magrib": "Maghrib", "isha": "Isha", "jumuah": "Jumu'ah",
+    "azan": "Azan", "iqamah": "Iqamah", "imsak": "Imsak", "iftar": "Iftar",
+    "luha": "Luha (Duha)", "nextPrayer": "Next prayer", "timeTo": "Time remaining"
+  },
+  "azanReply": {
+    "text": "Repeat after the muadhin; for 'Hayya alas-Salah' and 'Hayya alal-Falah' say:",
+    "arabic": "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ",
+    "translation": "There is no power nor might except with Allah",
+    "source": "Bukhari 613, Muslim 385"
+  },
+  "azanDua": {
+    "title": "Dua after the Azan",
+    "arabic": "اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلَاةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ",
+    "translation": "O Allah, Lord of this perfect call and established prayer, grant Muhammad the Wasilah and honour, and raise him to the praised station You have promised him.",
+    "source": "Bukhari 614"
+  },
+  "betweenReminder": {
+    "text": "Dua made between the Azan and Iqamah is not rejected — ask Allah for afiyah in this world and the Hereafter.",
+    "source": "Tirmidhi 212, Abu Dawud 521"
+  },
+  "betweenDuas": [
+    {
+      "arabic": "اللَّهُمَّ إِنِّي أَسْأَلُكَ الْعَفْوَ وَالْعَافِيَةَ فِي الدُّنْيَا وَالْآخِرَةِ",
+      "translation": "O Allah, I ask You for pardon and well-being in this world and the Hereafter.",
+      "source": "Abu Dawud 5074, Ibn Majah 3871"
+    }
+  ],
+  "sunnahReminder": {
+    "text": "Between every Azan and Iqamah there is a (voluntary) prayer for whoever wishes.",
+    "source": "Bukhari 627"
+  },
+  "iqamahScreen": {
+    "title": "Straighten the rows",
+    "lines": [
+      "Stand shoulder to shoulder and fill the gaps",
+      "Straightening the rows is part of perfecting the prayer (Bukhari 723)",
+      "Switch off your mobile phones"
+    ]
+  },
+  "salahScreen": { "line": "Salah in progress — please remain silent" },
+  "jumuahEtiquette": [
+    { "text": "Perform ghusl and wear your best clothes", "source": "Bukhari 877" },
+    { "text": "Recite Surah al-Kahf on Friday", "source": "al-Hakim; Bayhaqi — sahih (al-Albani)" },
+    { "text": "Send abundant salawat upon the Prophet ﷺ", "source": "Abu Dawud 1047" },
+    { "text": "When the Imam delivers the khutbah, remain completely silent", "source": "Bukhari 934" }
+  ],
+  "khutbahScreen": { "line": "Khutbah in progress — remain silent" },
+  "afterSalahAdhkar": [
+    { "arabic": "أَسْتَغْفِرُ اللَّهَ (×3)", "translation": "I seek Allah's forgiveness (3 times)", "source": "Muslim 591" },
+    { "text": "SubhanAllah ×33 · Alhamdulillah ×33 · Allahu Akbar ×34", "source": "Muslim 596-597" },
+    { "text": "Recite Ayat al-Kursi after every obligatory prayer", "source": "an-Nasa'i (al-Kubra) 9928 — sahih" }
+  ]
+}

@@ -1,0 +1,123 @@
+# Salah Board — Feature Specification
+
+Everything the display must do. The state machine is the heart; read it first.
+All times below are display-time (see Time Correction in ARCHITECTURE.md).
+
+## Terminology
+
+| Term | Meaning |
+|---|---|
+| Azan | Call to prayer, at the timetable time, called live by the muezzin |
+| Iqamah | Second call, immediately before congregation starts |
+| Jumu'ah | Friday congregational prayer (replaces Luhr on Fridays) |
+| Bayan | Pre-khutbah talk on Fridays (Sri Lanka convention) |
+| Ishraq / Luha | Sunrise; Luha (Duha) prayer becomes valid ~20 min after sunrise |
+| Imsak | End of suhoor in Ramadan (ACJU: 2 min before Fajr) |
+
+## Display state machine
+
+States, in the order they occur around each of the 5 daily prayers:
+
+| # | State | Enter | Exit | Screen shows |
+|---|---|---|---|---|
+| 1 | NORMAL | default | next event | Clock (large), masjid name, today's full timetable strip, next prayer name + countdown to azan, Hijri + Gregorian date, rotating notice cards |
+| 2 | AZAN | at azan time | +`azanScreen.minutes` (default 5) | "Azan — [prayer]" banner, reply-to-muadhin reminder, dua after azan (Arabic + translit + translation), phones-silent icon |
+| 3 | BETWEEN | after AZAN | at iqamah time | **Iqamah countdown (dominant)**, rotating duas — "dua between azan & iqamah is not rejected" (Tirmidhi 212), ask-for-afiyah, sunnah prayer reminder |
+| 4 | IQAMAH | at iqamah time | +`iqamahScreen.minutes` (default 2) | "Straighten the rows" screen — saff-straightening reminder, fill gaps, phones OFF |
+| 5 | SALAH | after IQAMAH | +`salahDuration[prayer]` | Near-black screen, tiny clock, "Salah in progress — phones off". Minimum light spill in the hall |
+| 6 | AFTER | after SALAH | +`afterScreen.minutes` (default 10) | Post-salah adhkar rotation (Astaghfirullah ×3, Ayat al-Kursi reminder, tasbih 33/33/34) |
+
+Then back to NORMAL. Special overlay states:
+
+| State | When | Screen shows |
+|---|---|---|
+| SUNRISE_WAIT | Fajr AFTER ends → sunrise | Countdown to sunrise (ishraq). Note: no salah at the moment of sunrise |
+| LUHA_WAIT | sunrise → +`luha.waitAfterSunrise` (default 20 min) | "Luha prayer in MM:SS" countdown |
+| LUHA_OPEN | wait ends | Brief "Luha (Duha) prayer time has begun" card, then NORMAL |
+| NIGHT | Isha AFTER + `night.afterIshaMinutes` → Fajr − `night.beforeFajrMinutes` | Dimmed (config `night.brightness`), small clock + tomorrow's Fajr time |
+| JUMUAH | Fridays, from `jumuah.bayan` time | See Jumu'ah mode below |
+
+Rules:
+- State is a **pure function of (config, timetable, now)** — after reboot or
+  power cut the display recomputes the correct state. No stored state.
+- Transitions re-evaluate every second; all countdowns tick per second.
+- If iqamah time has passed but SALAH duration hasn't (e.g. boot mid-salah),
+  resolve into SALAH, not BETWEEN.
+
+## Iqamah rules (per prayer, via config)
+
+- `mode: "offset"` → iqamah = azan + `minutes`, optionally rounded UP to the
+  next `round` minutes (0 = no rounding). Rounding keeps wall-clock iqamah
+  times stable as azan drifts by a minute across days.
+- `mode: "fixed"` → iqamah at a fixed wall-clock time (e.g. Fajr 5:03 AM
+  daily, adjusted seasonally by the masjid).
+- Friday: `luhr` entry is ignored — Jumu'ah config governs.
+- Ramadan overrides (see below) take precedence when enabled.
+- Sanity: if computed iqamah ≤ azan, fall back to azan + 10 min and show a
+  warning badge in the admin panel (never on the main display).
+
+## Jumu'ah mode (Fridays)
+
+Timeline driven by `config.jumuah`:
+
+1. From morning, NORMAL shows "Jumu'ah today" with bayan + azan times and
+   rotating Jumu'ah etiquette cards (ghusl, early arrival, Surah al-Kahf,
+   salawat, listen silently during khutbah).
+2. `bayan` time → card "Bayan in progress".
+3. `azan` time → AZAN state as usual.
+4. After azan → KHUTBAH state (not BETWEEN): screen shows ONLY "Khutbah in
+   progress — remain silent" (talking during khutbah forfeits the reward —
+   Bukhari 934). No countdowns, no rotation. Duration `khutbahDuration`.
+5. Then IQAMAH → SALAH → AFTER as normal.
+6. Women's/second Jumu'ah variations are out of scope for v1.
+
+## Ramadan mode (`config.ramadan.enabled`)
+
+- NORMAL additionally shows **Imsak** (Fajr − 2 min, ACJU convention) and
+  **Iftar** (= Maghrib) prominently.
+- Maghrib timing changes: masjids delay iqamah for iftar — use
+  `ramadan.iqamahOverrides` (same shape as `iqamah`, sparse — only the
+  prayers that change, typically magrib and isha/taraweeh).
+- Optional `ramadan.taraweeh` note line after Isha (free text per language).
+- Countdown to iftar during the last hour before Maghrib.
+- Enabling/disabling is manual via admin (moon-sighting dependent — never
+  auto-derive from Hijri date).
+
+## Notices & announcements
+
+- `config.notices[]`: text per language, optional `from`/`to` dates,
+  `priority` (`high` pins it as a banner in NORMAL; `normal` joins the
+  rotation). Use cases: Eid salah time, janazah announcement, events.
+- Notices never interrupt AZAN → AFTER sequence states.
+
+## Content packs & languages
+
+- `display/content/<code>.json` — `en`, `ta`, `si`. Arabic text is embedded
+  inside each pack (duas are always shown in Arabic + local translation).
+- `config.masjid.languages` — ordered list; UI labels use the first,
+  rotating content alternates through the list.
+- Every dua/text carries a `source` field (e.g. "Bukhari 614"). Unsourced
+  content must not ship.
+
+## Hijri date
+
+- Computed via `Intl.DateTimeFormat('en-u-ca-islamic-umalqura')` (as in
+  pt-core.js) **plus `config.hijri.offsetDays` (−2…+2)** — ACJU follows local
+  moon sighting which can differ from Umm al-Qura by a day.
+- Hijri day flips at Maghrib, not midnight (flag `hijri.flipAtMaghrib`,
+  default true).
+
+## Settings surface (admin panel, M2)
+
+Masjid name & languages · zone (13 ACJU zones) · iqamah rules per prayer ·
+Jumu'ah times · Ramadan mode + overrides · Luha wait · night dim window &
+brightness · azan/iqamah/after screen durations · salah durations · Hijri
+offset · theme · notices CRUD · time set/sync (M4) · export/import config
+as JSON file (backup / copy to another masjid).
+
+## Non-goals for v1
+
+No azan audio playback. No cloud sync or remote fleet management. No
+accounts. No Play Store (sideloaded APK + GitHub Releases). No calculated
+prayer times — ACJU tables only. No madhab options yet (Shafi'i only;
+structure must not block adding Hanafi tables later).

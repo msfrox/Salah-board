@@ -1,0 +1,317 @@
+{
+  "zone": "01",
+  "monthName": "March",
+  "monthNum": 3,
+  "year": 2026,
+  "districts": [
+    "Colombo",
+    "Gampaha",
+    "Kalutara"
+  ],
+  "zoneName": "Zone 01",
+  "days": [
+    {
+      "date": "1-Mar",
+      "fajr": "5:07 AM",
+      "sunrise": "6:24 AM",
+      "luhr": "12:24 PM",
+      "asr": "3:43 PM",
+      "magrib": "6:24 PM",
+      "isha": "7:33 PM"
+    },
+    {
+      "date": "2-Mar",
+      "fajr": "5:06 AM",
+      "sunrise": "6:23 AM",
+      "luhr": "12:24 PM",
+      "asr": "3:42 PM",
+      "magrib": "6:24 PM",
+      "isha": "7:33 PM"
+    },
+    {
+      "date": "3-Mar",
+      "fajr": "5:06 AM",
+      "sunrise": "6:23 AM",
+      "luhr": "12:24 PM",
+      "asr": "3:42 PM",
+      "magrib": "6:24 PM",
+      "isha": "7:33 PM"
+    },
+    {
+      "date": "4-Mar",
+      "fajr": "5:06 AM",
+      "sunrise": "6:23 AM",
+      "luhr": "12:24 PM",
+      "asr": "3:41 PM",
+      "magrib": "6:24 PM",
+      "isha": "7:33 PM"
+    },
+    {
+      "date": "5-Mar",
+      "fajr": "5:05 AM",
+      "sunrise": "6:22 AM",
+      "luhr": "12:23 PM",
+      "asr": "3:41 PM",
+      "magrib": "6:24 PM",
+      "isha": "7:33 PM"
+    },
+    {
+      "date": "6-Mar",
+      "fajr": "5:05 AM",
+      "sunrise": "6:22 AM",
+      "luhr": "12:23 PM",
+      "asr": "3:40 PM",
+      "magrib": "6:24 PM",
+      "isha": "7:33 PM"
+    },
+    {
+      "date": "7-Mar",
+      "fajr": "5:05 AM",
+      "sunrise": "6:21 AM",
+      "luhr": "12:23 PM",
+      "asr": "3:40 PM",
+      "magrib": "6:24 PM",
+      "isha": "7:32 PM"
+    },
+    {
+      "date": "8-Mar",
+      "fajr": "5:04 AM",
+      "sunrise": "6:21 AM",
+      "luhr": "12:23 PM",
+      "asr": "3:39 PM",
+      "magrib": "6:24 PM",
+      "isha": "7:32 PM"
+    },
+    {
+      "date": "9-Mar",
+      "fajr": "5:04 AM",
+      "sunrise": "6:20 AM",
+      "luhr": "12:23 PM",
+      "asr": "3:39 PM",
+      "magrib": "6:24 PM",
+      "isha": "7:32 PM"
+    },
+    {
+      "date": "10-Mar",
+      "fajr": "5:03 AM",
+      "sunrise": "6:20 AM",
+      "luhr": "12:22 PM",
+      "asr": "3:38 PM",
+      "magrib": "6:24 PM",
+      "isha": "7:32 PM"
+    },
+    {
+      "date": "11-Mar",
+      "fajr": "5:03 AM",
+      "sunrise": "6:20 AM",
+      "luhr": "12:22 PM",
+      "asr": "3:37 PM",
+      "magrib": "6:23 PM",
+      "isha": "7:32 PM"
+    },
+    {
+      "date": "12-Mar",
+      "fajr": "5:02 AM",
+      "sunrise": "6:19 AM",
+      "luhr": "12:22 PM",
+      "asr": "3:37 PM",
+      "magrib": "6:23 PM",
+      "isha": "7:32 PM"
+    },
+    {
+      "date": "13-Mar",
+      "fajr": "5:02 AM",
+      "sunrise": "6:19 AM",
+      "luhr": "12:21 PM",
+      "asr": "3:36 PM",
+      "magrib": "6:23 PM",
+      "isha": "7:32 PM"
+    },
+    {
+      "date": "14-Mar",
+      "fajr": "5:02 AM",
+      "sunrise": "6:18 AM",
+      "luhr": "12:21 PM",
+      "asr": "3:36 PM",
+      "magrib": "6:23 PM",
+      "isha": "7:32 PM"
+    },
+    {
+      "date": "15-Mar",
+      "fajr": "5:01 AM",
+      "sunrise": "6:18 AM",
+      "luhr": "12:21 PM",
+      "asr": "3:35 PM",
+      "magrib": "6:23 PM",
+      "isha": "7:32 PM"
+    },
+    {
+      "date": "16-Mar",
+      "fajr": "5:01 AM",
+      "sunrise": "6:17 AM",
+      "luhr": "12:21 PM",
+      "asr": "3:34 PM",
+      "magrib": "6:23 PM",
+      "isha": "7:32 PM"
+    },
+    {
+      "date": "17-Mar",
+      "fajr": "5:00 AM",
+      "sunrise": "6:17 AM",
+      "luhr": "12:20 PM",
+      "asr": "3:34 PM",
+      "magrib": "6:23 PM",
+      "isha": "7:31 PM"
+    },
+    {
+      "date": "18-Mar",
+      "fajr": "5:00 AM",
+      "sunrise": "6:16 AM",
+      "luhr": "12:20 PM",
+      "asr": "3:33 PM",
+      "magrib": "6:23 PM",
+      "isha": "7:31 PM"
+    },
+    {
+      "date": "19-Mar",
+      "fajr": "4:59 AM",
+      "sunrise": "6:16 AM",
+      "luhr": "12:20 PM",
+      "asr": "3:32 PM",
+      "magrib": "6:23 PM",
+      "isha": "7:31 PM"
+    },
+    {
+      "date": "20-Mar",
+      "fajr": "4:59 AM",
+      "sunrise": "6:15 AM",
+      "luhr": "12:19 PM",
+      "asr": "3:31 PM",
+      "magrib": "6:23 PM",
+      "isha": "7:31 PM"
+    },
+    {
+      "date": "21-Mar",
+      "fajr": "4:58 AM",
+      "sunrise": "6:15 AM",
+      "luhr": "12:19 PM",
+      "asr": "3:31 PM",
+      "magrib": "6:23 PM",
+      "isha": "7:31 PM"
+    },
+    {
+      "date": "22-Mar",
+      "fajr": "4:58 AM",
+      "sunrise": "6:14 AM",
+      "luhr": "12:19 PM",
+      "asr": "3:30 PM",
+      "magrib": "6:22 PM",
+      "isha": "7:31 PM"
+    },
+    {
+      "date": "23-Mar",
+      "fajr": "4:57 AM",
+      "sunrise": "6:14 AM",
+      "luhr": "12:19 PM",
+      "asr": "3:29 PM",
+      "magrib": "6:22 PM",
+      "isha": "7:31 PM"
+    },
+    {
+      "date": "24-Mar",
+      "fajr": "4:57 AM",
+      "sunrise": "6:13 AM",
+      "luhr": "12:18 PM",
+      "asr": "3:28 PM",
+      "magrib": "6:22 PM",
+      "isha": "7:31 PM"
+    },
+    {
+      "date": "25-Mar",
+      "fajr": "4:56 AM",
+      "sunrise": "6:13 AM",
+      "luhr": "12:18 PM",
+      "asr": "3:28 PM",
+      "magrib": "6:22 PM",
+      "isha": "7:31 PM"
+    },
+    {
+      "date": "26-Mar",
+      "fajr": "4:56 AM",
+      "sunrise": "6:12 AM",
+      "luhr": "12:18 PM",
+      "asr": "3:27 PM",
+      "magrib": "6:22 PM",
+      "isha": "7:31 PM"
+    },
+    {
+      "date": "27-Mar",
+      "fajr": "4:55 AM",
+      "sunrise": "6:12 AM",
+      "luhr": "12:17 PM",
+      "asr": "3:26 PM",
+      "magrib": "6:22 PM",
+      "isha": "7:31 PM"
+    },
+    {
+      "date": "28-Mar",
+      "fajr": "4:55 AM",
+      "sunrise": "6:11 AM",
+      "luhr": "12:17 PM",
+      "asr": "3:25 PM",
+      "magrib": "6:22 PM",
+      "isha": "7:30 PM"
+    },
+    {
+      "date": "29-Mar",
+      "fajr": "4:54 AM",
+      "sunrise": "6:11 AM",
+      "luhr": "12:17 PM",
+      "asr": "3:24 PM",
+      "magrib": "6:22 PM",
+      "isha": "7:30 PM"
+    },
+    {
+      "date": "30-Mar",
+      "fajr": "4:53 AM",
+      "sunrise": "6:10 AM",
+      "luhr": "12:16 PM",
+      "asr": "3:23 PM",
+      "magrib": "6:22 PM",
+      "isha": "7:30 PM"
+    },
+    {
+      "date": "31-Mar",
+      "fajr": "4:53 AM",
+      "sunrise": "6:10 AM",
+      "luhr": "12:16 PM",
+      "asr": "3:22 PM",
+      "magrib": "6:21 PM",
+      "isha": "7:30 PM"
+    }
+  ],
+  "apartmentDiff": {
+    "lowRise": {
+      "stories": "06-35",
+      "heightM": "24-140",
+      "fajr": -1,
+      "sunrise": -1,
+      "magrib": 1,
+      "isha": 1
+    },
+    "highRise": {
+      "stories": "35-87",
+      "heightM": "140-350",
+      "fajr": -2,
+      "sunrise": -2,
+      "magrib": 2,
+      "isha": 2
+    }
+  },
+  "note": "Kindly requested to set the end of Sahr two minutes before Fajr time.",
+  "attribution": "Prepared based on calculations by Al-'Alim M.I. Abdus Samad Makdoomi (Rahmatullahi Alayhi), former president of All Ceylon Jamiyyathul Ulama (ACJU) and founder of Hassaniyya Arabic College.",
+  "source": "All Ceylon Jamiyyathul Ulama (ACJU)",
+  "sourceUrl": "https://www.acju.lk",
+  "sourcePhone": "+94 117 490 490",
+  "sourceEmail": "info@acju.lk"
+}
