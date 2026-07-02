@@ -64,15 +64,19 @@ Acceptance:
 **Read:** ARCHITECTURE.md D4, D5.
 
 SNTP client → `time.offsetMs`; periodic re-sync; boot sanity screen with
-"set time" QR when clock is implausible and no NTP; manual time set via
-admin (`POST /api/time`); LocalOnlyHotspot toggle from settings overlay
-with SSID/password QR on the display.
+"set time" QR when clock is implausible and no NTP; manual **date + time**
+set via admin (`POST /api/time`) AND via the TV-remote settings overlay
+(D-pad steps: ±1 min / ±10 min / ±1 hour / ±1 day); LocalOnlyHotspot
+toggle from settings overlay with SSID/password QR on the display.
+See SPEC.md § Offline guarantee — M4 closes it out.
 
 Acceptance:
 - [ ] Box with wrong system clock + internet → correct within 30 s of boot
 - [ ] No internet: set time from phone → correct times; survives app restart
 - [ ] Implausible clock + no NTP → sanity screen, never wrong prayer times
 - [ ] Hotspot flow: no-WiFi masjid can reach admin panel via QR
+- [ ] Airplane test passes: WiFi off + wrong clock → fully configurable
+      and correct using ONLY the TV remote (SPEC.md § Offline guarantee)
 
 ## M5 — Polish & release  `[ ] not started`
 Second + third theme (one close to the classic LED-board look, one minimal

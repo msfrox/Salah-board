@@ -121,3 +121,28 @@ No azan audio playback. No cloud sync or remote fleet management. No
 accounts. No Play Store (sideloaded APK + GitHub Releases). No calculated
 prayer times — ACJU tables only. No madhab options yet (Shafi'i only;
 structure must not block adding Hanafi tables later).
+
+## Offline guarantee (hard requirement)
+
+The app must run **forever with zero network access**. Specifically:
+
+1. All 13 zones × 12 months of ACJU tables are bundled in the APK (and in
+   the repo at `display/data/`). No runtime fetch of timetable data, ever.
+   Times are solar-based and valid every year — bundled data never expires.
+2. Content packs, themes, fonts, QR generation — all bundled. No CDN, no
+   web fonts, no external requests from the display or admin panel.
+3. **Manual date & time adjustment** must be possible two ways:
+   - Admin panel (phone via WiFi or the box's own hotspot): set current
+     date + time → shell stores `offsetMs` vs. system clock.
+   - **TV remote fallback** (no phone at all): settings overlay includes a
+     D-pad-operable date/time adjust (±1 min / ±10 min / ±1 hour / ±1 day
+     steps). Same offset mechanism underneath.
+4. Hijri date is bundled math (Intl calendar) + manual `offsetDays` — no
+   lookup service.
+5. Network, when present, only ever *improves* things: NTP refines the
+   offset; a data-refresh check picks up ACJU revisions. Both are optional
+   and fail silently into offline behaviour.
+6. Acceptance test ("airplane test"): a box with WiFi hardware-disabled and
+   a deliberately wrong system clock must be fully configurable and show
+   correct times using only the TV remote, and keep them across a power cut
+   (re-verify via the boot sanity screen flow, ARCHITECTURE.md D5).
