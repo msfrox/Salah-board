@@ -1,0 +1,270 @@
+/* ============================================================
+   Salah Board — theme: highcontrast
+   Pure black ground, bright white type, a single "go"-green accent.
+   Ported from the README-designs.md mockups (source/Salah Board.dc.html):
+   azan/iqamah times are the hero (biggest text on the board), the
+   clock is secondary (small, corner), the countdown is tertiary
+   (small, by the next-prayer label), the full-day timetable stays a
+   full-width strip. Red is avoided entirely — Iqamah/Khutbah use warm
+   gold (via --sb-danger) instead of alarm-red. Same class hierarchy
+   and layout rules as classic — this file re-skins colours/weights
+   and re-weights the NORMAL hero; it does not add markup.
+
+   Background motif: the masjid's own girih rosette (assets/rosette.png,
+   white-on-transparent, from assets/rosette-source.svg), rendered as a
+   faint oversized watermark. assets/crescent-star.svg is unused by
+   this stylesheet (no markup hook renders it yet) but is bundled here
+   for a future Jumu'ah icon.
+
+   Font: bundled 'Salah Sans' (Noto Sans) — the mockups spec Manrope,
+   but golden rule #2 (offline-first) rules out a Google Fonts fetch,
+   and README-designs.md explicitly allows swapping to the bundled
+   Noto Sans for zero new fonts. 'Salah Arabic' (Noto Naskh Arabic)
+   matches the mockups' du'ā/adhkar face already.
+   ============================================================ */
+
+:root {
+  --sb-scale: 1;
+  --sb-bg: #000000;
+  --sb-bg-elevated: #000000;
+  --sb-fg: #ffffff;
+  --sb-fg-dim: #6f7986;
+  --sb-fg-dimmer: #4b5563;
+  --sb-accent: #22c55e;      /* go-green — next prayer, countdowns, current-prayer highlight */
+  --sb-warn: #f5b301;        /* azan / sunrise attention */
+  --sb-danger: #e6b455;      /* gold, standing in for classic's red — Iqamah/Khutbah, never actual red */
+  --sb-gold-2: #e8c86a;      /* Jumu'ah / Ramadan accents */
+  --sb-border: rgba(255, 255, 255, .12);
+  --sb-radius: 16px;
+  --sb-font: 'Salah Sans', 'Segoe UI', Tahoma, Arial, sans-serif;
+  --sb-font-arabic: 'Salah Arabic', 'Traditional Arabic', 'Scheherazade New', serif;
+}
+
+* { box-sizing: border-box; }
+
+html   { font-size: calc(1vmin * var(--sb-scale)); }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--sb-bg);
+  color: var(--sb-fg);
+  font-family: var(--sb-font);
+  overflow: hidden;
+}
+
+#screen-root {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  padding: 4vh 4vw;      /* TV-safe margins — describes the viewport, stays vh/vw */
+  display: flex;
+  flex-direction: column;
+  background: #000;
+}
+
+/* Rosette watermark — faint, oversized, never competes with the numbers. */
+#screen-root::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: url('./assets/rosette.png');
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 62vmin 62vmin;
+  opacity: .05;
+}
+/* NORMAL/JUMUAH/etc data screens push the medallion off to the side so it
+   never sits under the timetable strip or the hero numbers. */
+#screen-root.state-normal::before {
+  background-position: 115% center;
+  background-size: 78vmin 78vmin;
+}
+#screen-root.state-salah::before { opacity: 0; } /* near-black, minimal light spill */
+#screen-root.state-night::before { opacity: .025; background-size: 50vmin 50vmin; }
+
+#night-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.screen { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%; gap: 2rem; }
+
+/* ── Shared bits ─────────────────────────────────────────── */
+.topbar { display: flex; justify-content: space-between; align-items: flex-start; }
+.masjid-name { font-size: 3rem; font-weight: 800; letter-spacing: .18em; }
+.dates { text-align: right; font-size: 1.6rem; font-weight: 600; letter-spacing: .06em; color: var(--sb-fg-dim); display: flex; flex-direction: row; align-items: baseline; gap: .5em; white-space: nowrap; }
+.date-sep { opacity: .6; }
+
+.card { background: transparent; border: none; border-radius: 0; padding: 0; }
+
+/* ── Hero: azan/iqamah times are the largest text on the board; the
+   clock shrinks into the corner and the countdown stays small. The
+   clock is pulled out of the hero-row's flex flow and anchored to the
+   top-right of the whole screen, level with the masjid name/date, via
+   position:absolute — no markup change needed. ──────────────────── */
+.screen--normal { justify-content: space-between; }
+.hero-row { position: relative; flex: 1; display: flex; flex-direction: column; gap: 1rem; align-items: stretch; min-height: 0; }
+
+.hero-clock {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex; flex-direction: row; align-items: baseline; justify-content: flex-end;
+  gap: .4rem;
+}
+.clock-big { font-size: 4.4rem; font-weight: 700; line-height: .82; letter-spacing: -.01em; color: var(--sb-fg); font-variant-numeric: tabular-nums; }
+
+.hero-next {
+  flex: 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; gap: .3rem; min-height: 0;
+}
+.np-label { font-size: 1.3rem; font-weight: 700; color: var(--sb-fg-dim); text-transform: uppercase; letter-spacing: .2em; }
+.np-name { font-size: 1.8rem; font-weight: 800; color: var(--sb-accent); letter-spacing: .08em; text-transform: uppercase; }
+.np-times { display: flex; align-items: center; justify-content: center; gap: 3rem; width: 100%; margin: .6rem 0; }
+.np-time-col { display: flex; flex-direction: column; align-items: center; gap: .5rem; }
+.np-divider { width: 1px; align-self: stretch; background: var(--sb-border); }
+.np-time-label { font-size: 1.3rem; font-weight: 700; color: var(--sb-fg-dim); text-transform: uppercase; letter-spacing: .3em; }
+.np-time { font-size: 13rem; font-weight: 700; line-height: .8; font-variant-numeric: tabular-nums; }
+.np-countdown { font-size: 1.8rem; font-weight: 600; color: var(--sb-fg-dim); font-variant-numeric: tabular-nums; }
+
+.timetable-strip { display: flex; justify-content: space-between; gap: 1.5rem; border-top: 1px solid var(--sb-border); padding-top: 1.5rem; }
+.tt-cell { flex: 1; text-align: center; display: flex; flex-direction: column; gap: .3em; }
+.tt-label { font-size: 1.1rem; font-weight: 700; color: var(--sb-fg-dim); text-transform: uppercase; letter-spacing: .1em; }
+.tt-time { font-size: 3.4rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+/* Current/next prayer — the one accent colour on an otherwise mono board. */
+.tt-cell--next .tt-label, .tt-cell--next .tt-time { color: var(--sb-accent); font-weight: 800; }
+
+.pinned-banner {
+  background: var(--sb-warn); color: #1a1300; font-weight: 700; font-size: 2rem;
+  border-radius: var(--sb-radius); padding: 1rem 2rem; text-align: center;
+}
+
+.jumuah-day-banner {
+  display: flex; align-items: center; justify-content: center; gap: .8rem;
+  background: rgba(232, 200, 106, .05); border: 1px solid rgba(232, 200, 106, .4); color: var(--sb-gold-2);
+  border-radius: var(--sb-radius); padding: .9rem 1.4rem; text-align: center; font-size: 1.7rem; font-weight: 700; letter-spacing: .04em;
+}
+
+.ramadan-block {
+  display: flex; justify-content: center; gap: 2.4rem; font-size: 2rem; font-weight: 800;
+  background: rgba(232, 200, 106, .05); border: 1px solid rgba(232, 200, 106, .4); color: var(--sb-gold-2);
+  border-radius: var(--sb-radius); padding: .8rem 1.4rem;
+}
+.ramadan-imsak, .ramadan-iftar { display: inline-flex; gap: .4em; }
+
+.card--notice .notice-text,
+.card--etiquette .etiquette-text { font-size: 1.9rem; color: var(--sb-fg-dim); text-align: center; margin: 0; }
+
+/* ── AZAN ─────────────────────────────────────────────────── */
+.screen--azan { justify-content: center; align-items: center; text-align: center; gap: 1.2rem; }
+.azan-banner { font-size: 6rem; font-weight: 800; color: var(--sb-warn); margin: 0; line-height: 1.05; letter-spacing: .02em; }
+.azan-reminder { max-width: 80vw; display: flex; flex-direction: column; gap: .4rem; }
+.azan-dua {
+  max-width: 80vw; display: flex; flex-direction: column; gap: .6rem;
+  border: 1px solid rgba(245, 179, 1, .28); background: rgba(245, 179, 1, .04);
+  border-radius: var(--sb-radius); padding: 1.4rem 2rem;
+}
+.reminder-text, .translation, .dua-text { font-size: 1.9rem; color: var(--sb-fg-dim); margin: 0; line-height: 1.3; }
+.arabic { font-size: 3.4rem; direction: rtl; font-family: var(--sb-font-arabic); color: #fbf6e7; margin: 0; line-height: 1.4; }
+.azan-dua h3 { font-size: 1.4rem; color: var(--sb-fg-dim); font-weight: 600; text-transform: uppercase; letter-spacing: .1em; margin: 0; }
+.phones-silent-icon {
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 3.2rem; line-height: 1; color: var(--sb-fg-dim);
+  border: 2px solid #2a2a2a; border-radius: 999px; padding: .5rem 1.6rem;
+}
+
+/* ── BETWEEN ──────────────────────────────────────────────── */
+.screen--between { justify-content: center; align-items: center; text-align: center; gap: 1.2rem; }
+.iqamah-countdown-dominant { display: flex; flex-direction: column; gap: .4rem; }
+.icd-label { font-size: 1.8rem; color: var(--sb-fg-dim); text-transform: uppercase; letter-spacing: .24em; margin: 0; font-weight: 700; }
+.icd-countdown { font-size: 17rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--sb-accent); line-height: .9; }
+.between-reminder { font-size: 1.7rem; max-width: 70vw; color: var(--sb-fg-dim); }
+.between-reminder p { margin: 0; }
+.dua-card { max-width: 70vw; display: flex; flex-direction: column; gap: .6rem; border-top: 1px solid var(--sb-border); padding-top: 1.6rem; }
+.sunnah-reminder { font-size: 1.5rem; color: var(--sb-fg-dim); }
+
+/* ── IQAMAH — "straighten the rows", gold, never red ─────────── */
+.screen--iqamah {
+  justify-content: center; align-items: center; text-align: center; gap: 2rem;
+  background: radial-gradient(ellipse at center, #191408 0%, var(--sb-bg) 74%);
+}
+.iqamah-title { font-size: 7rem; font-weight: 800; color: var(--sb-danger); margin: 0; letter-spacing: .02em; }
+.iqamah-lines { list-style: none; padding: 0; margin: 0; font-size: 2rem; font-weight: 600; color: #c9ced6; display: flex; flex-direction: column; gap: .8rem; }
+
+/* ── SALAH ────────────────────────────────────────────────── */
+#screen-root.state-salah { background: #000; } /* fills the padding gap too — true near-black, minimal light spill */
+.screen--salah { justify-content: center; align-items: center; text-align: center; gap: 1.2rem; background: #000; }
+.salah-clock { font-size: 2.8rem; font-weight: 600; color: #333; font-variant-numeric: tabular-nums; }
+.salah-line { font-size: 2rem; font-weight: 500; letter-spacing: .06em; color: #2b2b2b; }
+
+/* ── AFTER — adhkar rotation ──────────────────────────────── */
+.screen--after { justify-content: center; align-items: center; text-align: center; }
+.screen--after .arabic { color: var(--sb-accent); font-weight: 700; font-size: 4.4rem; }
+
+/* ── SUNRISE_WAIT / LUHA_WAIT / LUHA_OPEN ───────────────────── */
+.screen--sunrise-wait, .screen--luha-wait { justify-content: center; align-items: center; text-align: center; gap: 1.4rem; }
+.countdown-label { font-size: 1.8rem; font-weight: 700; color: var(--sb-fg-dim); text-transform: uppercase; letter-spacing: .24em; }
+.countdown { font-size: 15rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.screen--sunrise-wait .countdown-label { color: #b07d1f; }
+.screen--sunrise-wait .countdown { color: var(--sb-warn); }
+.screen--luha-wait .countdown { color: var(--sb-accent); }
+.screen--luha-open { justify-content: center; align-items: center; text-align: center; }
+.luha-open-card { font-size: 4rem; font-weight: 800; color: var(--sb-accent); line-height: 1.15; }
+
+/* ── NIGHT ────────────────────────────────────────────────── */
+.screen--night { justify-content: center; align-items: center; text-align: center; gap: 1.2rem; }
+.night-clock { font-size: 5.5rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--sb-fg-dimmer); }
+.night-next-fajr { font-size: 1.8rem; font-weight: 600; color: #3a444f; letter-spacing: .04em; }
+
+/* ── JUMUAH (bayan) / KHUTBAH — gold, never red ─────────────── */
+.screen--jumuah { justify-content: center; align-items: center; text-align: center; gap: 2rem; }
+.jumuah-banner { font-size: 4.5rem; font-weight: 700; color: var(--sb-accent); }
+.screen--khutbah {
+  justify-content: center; align-items: center; text-align: center;
+  background: radial-gradient(ellipse at center, #231a05 0%, var(--sb-bg) 74%);
+}
+.khutbah-line { font-size: 5rem; font-weight: 800; color: var(--sb-danger); }
+
+/* ── Short landscape panels (e.g. 768p): shrink the clock (already
+   small here) and trim chrome spacing so a pinned banner + Ramadan
+   block still fit up to ?scale=1.5 — no hero text shrinks ────────── */
+@media (max-height: 800px) and (orientation: landscape) {
+  .clock-big { font-size: 3.4rem; }
+  .np-time { font-size: 10rem; }
+  .screen { gap: 1rem; }
+  .hero-row { gap: .5rem; }
+}
+
+/* ── Portrait 9:16 — hero stacks vertically (clock above the split,
+   per README-designs.md), timetable becomes a 2-col grid ─────────── */
+@media (orientation: portrait) {
+  .screen { gap: 1rem; }
+
+  .topbar { flex-direction: column; align-items: center; text-align: center; gap: .4rem; }
+  .dates { text-align: center; }
+
+  .hero-row { gap: 1.2rem; }
+  .hero-clock { position: static; justify-content: center; margin-bottom: .4rem; }
+  .clock-big { font-size: 6rem; }
+  .np-times { gap: 2rem; }
+  .np-time { font-size: 7.6rem; }
+
+  .timetable-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-top: none; padding-top: 0; }
+  .tt-cell { padding: 1rem 0; border-top: 1px solid var(--sb-border); }
+  .tt-cell:nth-child(-n+2) { border-top: none; }
+  .tt-time { font-size: 2.8rem; }
+
+  .azan-reminder, .azan-dua, .between-reminder, .dua-card { max-width: 88vw; }
+  .iqamah-lines { font-size: 1.7rem; }
+}

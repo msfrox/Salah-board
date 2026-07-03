@@ -82,6 +82,7 @@
   function timetableCells(content, config, result) {
     const row = result.rows.today;
     if (!row) return [];
+    const nextKey = result.nextAzan && result.nextAzan.prayer;
     const cells = [
       { key: 'fajr', label: label(content, 'fajr'), time: fmtRowTime(row.fajr, config, result) },
       { key: 'sunrise', label: label(content, 'sunrise'), time: fmtRowTime(row.sunrise, config, result) },
@@ -90,13 +91,13 @@
     cells.push({ key: 'asr', label: label(content, 'asr'), time: fmtRowTime(row.asr, config, result) });
     cells.push({ key: 'magrib', label: label(content, 'magrib'), time: fmtRowTime(row.magrib, config, result) });
     cells.push({ key: 'isha', label: label(content, 'isha'), time: fmtRowTime(row.isha, config, result) });
-    return cells;
+    return cells.map(c => Object.assign(c, { isNext: c.key === nextKey }));
   }
 
   function timetableCardHtml(content, config, result) {
     const cells = timetableCells(content, config, result);
     return `<div class="card card--timetable"><div class="timetable-strip">${
-      cells.map(c => `<div class="tt-cell"><span class="tt-label">${escapeHtml(c.label)}</span><span class="tt-time">${escapeHtml(c.time)}</span></div>`).join('')
+      cells.map(c => `<div class="tt-cell${c.isNext ? ' tt-cell--next' : ''}"><span class="tt-label">${escapeHtml(c.label)}</span><span class="tt-time">${escapeHtml(c.time)}</span></div>`).join('')
     }</div></div>`;
   }
 
