@@ -31,7 +31,16 @@ class WatchdogService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        startForeground(NOTIFICATION_ID, buildNotification())
+        // The watchdog is a resilience feature — it must never be the thing
+        // that kills the app. If foregrounding fails (OEM notification
+        // quirks, FGS policy changes), log it and bow out; the display
+        // keeps running without a watchdog rather than crash-looping.
+        try {
+            startForeground(NOTIFICATION_ID, buildNotification())
+        } catch (e: Exception) {
+            CrashLog.write(this, e)
+            stopSelf()
+        }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -63,7 +72,7 @@ class WatchdogService : Service() {
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Salah Board")
             .setContentText("Keeping the prayer-time display on screen")
-            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+            .setSmallIcon(R.drawable.ic_launcher_foreground) // app-local: system drawables as FGS icons crash some OEM ROMs ("Bad notification for startForeground")
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_MIN)
             .build()

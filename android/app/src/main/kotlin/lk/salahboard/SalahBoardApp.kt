@@ -13,6 +13,7 @@ class SalahBoardApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        CrashLog.install(this) // first, so even init failures below get recorded
         configStore = ConfigStore(this)
         timeSync = TimeSync(configStore)
         timeSync.start()

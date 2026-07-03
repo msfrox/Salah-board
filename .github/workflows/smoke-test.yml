@@ -1,0 +1,68 @@
+name: Emulator smoke test
+
+# Boots a headless Android emulator in CI, installs the debug APK,
+# launches the app, and fails loudly with the logcat crash trace if the
+# process dies. This exists because the dev machine has no Android SDK —
+# runtime crashes are diagnosed from this job's log instead of local adb.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "android/**"
+      - ".github/workflows/smoke-test.yml"
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable KVM for the emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Build debug APK
+        working-directory: android
+        run: ./gradlew :app:assembleDebug
+
+      - name: Launch app on emulator and check it stays alive
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          script: |
+            adb install android/app/build/outputs/apk/debug/app-debug.apk
+            adb logcat -c
+            adb shell am start -n lk.salahboard/.MainActivity
+            sleep 30
+            adb logcat -d > logcat.txt
+            adb shell screencap -p /sdcard/screen.png && adb pull /sdcard/screen.png screen.png || true
+            if adb shell pidof lk.salahboard > /dev/null; then
+              echo "PROCESS ALIVE after 30s"
+              grep -B 2 -A 40 "FATAL EXCEPTION" logcat.txt && exit 1 || echo "no fatal exceptions in logcat"
+            else
+              echo "PROCESS DEAD — crash trace:"
+              grep -B 2 -A 60 "FATAL EXCEPTION" logcat.txt || tail -n 200 logcat.txt
+              exit 1
+            fi
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: smoke-logcat
+          path: |
+            logcat.txt
+            screen.png

@@ -39,6 +39,7 @@ class SalahHttpServer(
                 uri == "/api/status" && session.method == Method.GET -> getStatus()
                 uri == "/api/time" && session.method == Method.POST -> postTime(session)
                 uri == "/api/data-refresh" && session.method == Method.POST -> postDataRefresh()
+                uri == "/api/crash" && session.method == Method.GET -> getCrashLog()
                 uri == "/api/preview" && session.method == Method.POST -> postPreview()
                 else -> serveStatic(uri)
             }
@@ -106,6 +107,13 @@ class SalahHttpServer(
         return jsonResponse(Response.Status.OK, json)
     }
 
+    // ── /api/crash — last uncaught-exception trace (CrashLog) ─
+    private fun getCrashLog(): Response {
+        val log = lk.salahboard.CrashLog.read(context)
+            ?: return newFixedLengthResponse(Response.Status.NOT_FOUND, "text/plain", "no crash recorded")
+        return newFixedLengthResponse(Response.Status.OK, "text/plain", log)
+    }
+
     // ── /api/preview — QA helper mirroring ?state= debug param ─
     private fun postPreview(): Response = jsonResponse(Response.Status.OK, JSONObject().put("ok", true))
 
@@ -113,10 +121,13 @@ class SalahHttpServer(
     private fun serveStatic(rawUri: String): Response {
         if (rawUri == "/admin") return redirect("/admin/")
 
-        val (base, path) = if (rawUri.startsWith("/admin/")) {
-            "www/admin" to rawUri.removePrefix("/admin/")
-        } else {
-            "www/display" to rawUri.removePrefix("/")
+        val (base, path) = when {
+            rawUri.startsWith("/admin/") -> "www/admin" to rawUri.removePrefix("/admin/")
+            // The admin panel references shared code as ../display/... —
+            // fine on a repo-root dev server, but here display already IS
+            // the root, so map the /display/ prefix back onto it.
+            rawUri.startsWith("/display/") -> "www/display" to rawUri.removePrefix("/display/")
+            else -> "www/display" to rawUri.removePrefix("/")
         }
         val relPath = path.ifEmpty { "index.html" }
 

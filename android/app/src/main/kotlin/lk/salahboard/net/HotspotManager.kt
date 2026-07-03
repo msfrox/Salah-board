@@ -2,6 +2,7 @@ package lk.salahboard.net
 
 import android.content.Context
 import android.net.wifi.WifiManager
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 
@@ -21,18 +22,29 @@ class HotspotManager(context: Context) {
 
     data class Credentials(val ssid: String, val passphrase: String)
 
+    // softApConfiguration is API 30+; minSdk-26 boxes (Android 8–10) only
+    // have the deprecated wifiConfiguration on the reservation.
+    private fun credentialsOf(res: WifiManager.LocalOnlyHotspotReservation): Credentials =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val c = res.softApConfiguration
+            Credentials(c.ssid ?: "", c.passphrase ?: "")
+        } else {
+            @Suppress("DEPRECATION")
+            val c = res.wifiConfiguration
+            Credentials(c?.SSID ?: "", c?.preSharedKey ?: "")
+        }
+
     fun start(onReady: (Credentials?) -> Unit) {
-        if (reservation != null) {
-            val r = reservation!!.softApConfiguration
-            onReady(Credentials(r.ssid ?: "", r.passphrase ?: ""))
+        reservation?.let {
+            onReady(credentialsOf(it))
             return
         }
         try {
             wifiManager.startLocalOnlyHotspot(object : WifiManager.LocalOnlyHotspotCallback() {
                 override fun onStarted(res: WifiManager.LocalOnlyHotspotReservation) {
                     reservation = res
-                    val conf = res.softApConfiguration
-                    mainHandler.post { onReady(Credentials(conf.ssid ?: "", conf.passphrase ?: "")) }
+                    val creds = credentialsOf(res)
+                    mainHandler.post { onReady(creds) }
                 }
 
                 override fun onStopped() {

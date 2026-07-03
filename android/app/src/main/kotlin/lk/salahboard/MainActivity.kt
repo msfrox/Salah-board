@@ -1,9 +1,12 @@
 package lk.salahboard
 
 import android.annotation.SuppressLint
+import android.graphics.Color
+import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
+import android.util.Log
 import android.view.GestureDetector
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -12,6 +15,8 @@ import android.view.WindowManager
 import android.webkit.WebSettings
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.ScrollView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import lk.salahboard.data.DataRefresh
 import lk.salahboard.server.SalahHttpServer
@@ -34,6 +39,19 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // A kiosk that silently crash-loops is undebuggable in the field
+        // (no adb on a wall-mounted box). If startup fails, persist the
+        // trace (also served at /api/crash) and show it full-screen so a
+        // photo of the TV is a complete bug report.
+        try {
+            startKiosk()
+        } catch (t: Throwable) {
+            CrashLog.write(this, t)
+            showStartupFailure(t)
+        }
+    }
+
+    private fun startKiosk() {
         val app = SalahBoardApp.from(application)
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
@@ -55,8 +73,27 @@ class MainActivity : AppCompatActivity() {
         webView.loadUrl("http://localhost:$port/")
         installTapToOpenSettings()
 
-        startForegroundService(android.content.Intent(this, WatchdogService::class.java))
+        try {
+            startForegroundService(android.content.Intent(this, WatchdogService::class.java))
+        } catch (e: Exception) {
+            CrashLog.write(this, e) // display runs without a watchdog rather than not at all
+        }
         checkBootSanity(app)
+    }
+
+    private fun showStartupFailure(t: Throwable) {
+        val text = TextView(this).apply {
+            text = "Salah Board failed to start\n\n${Log.getStackTraceString(t)}"
+            setTextColor(Color.WHITE)
+            setBackgroundColor(Color.BLACK)
+            typeface = Typeface.MONOSPACE
+            textSize = 12f
+            setPadding(48, 48, 48, 48)
+        }
+        setContentView(ScrollView(this).apply {
+            setBackgroundColor(Color.BLACK)
+            addView(text)
+        })
     }
 
     override fun onResume() {
@@ -71,7 +108,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        server.stop()
+        if (::server.isInitialized) server.stop() // never initialized if startKiosk() failed early
         super.onDestroy()
     }
 
@@ -144,23 +181,29 @@ class MainActivity : AppCompatActivity() {
     override fun onKeyLongPress(keyCode: Int, event: KeyEvent?): Boolean {
         if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_MENU) {
             longPressHandled = true
-            settingsOverlay.show()
+            if (::settingsOverlay.isInitialized) settingsOverlay.show()
             return true
         }
         return super.onKeyLongPress(keyCode, event)
     }
 
     override fun onKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        if (keyCode == KeyEvent.KEYCODE_MENU && !longPressHandled) {
-            settingsOverlay.show()
-            return true
+        // Only the tracked keys consume/clear the long-press flag — an
+        // unrelated key-up (volume, D-pad move) must not reset it between
+        // MENU's long-press callback and MENU's own key-up.
+        if (keyCode == KeyEvent.KEYCODE_DPAD_CENTER || keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_MENU) {
+            val wasLongPress = longPressHandled
+            longPressHandled = false
+            if (keyCode == KeyEvent.KEYCODE_MENU && !wasLongPress) {
+                if (::settingsOverlay.isInitialized) settingsOverlay.show()
+                return true
+            }
         }
-        longPressHandled = false
         return super.onKeyUp(keyCode, event)
     }
 
     override fun onBackPressed() {
-        if (settingsOverlay.isShowing()) {
+        if (::settingsOverlay.isInitialized && settingsOverlay.isShowing()) {
             settingsOverlay.dismiss()
         } else {
             // HOME-launcher app (D3): back should never exit to a launcher
