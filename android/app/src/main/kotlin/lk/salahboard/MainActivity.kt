@@ -55,7 +55,6 @@ class MainActivity : AppCompatActivity() {
         val app = SalahBoardApp.from(application)
 
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        applyImmersive()
 
         val dataRefresh = DataRefresh(this)
         server = SalahHttpServer(this, port, app.configStore, dataRefresh, onConfigChanged = ::reloadWebView)
@@ -65,6 +64,7 @@ class MainActivity : AppCompatActivity() {
 
         webView = WebView(this)
         setContentView(webView)
+        applyImmersive() // AFTER setContentView — the decor view doesn't exist before it, and window.insetsController NPEs on a null decor (seen on a real phone)
         webView.settings.javaScriptEnabled = true
         webView.settings.domStorageEnabled = true // localStorage fallback path in config.js
         webView.settings.cacheMode = WebSettings.LOAD_NO_CACHE // config/content changes must show immediately
@@ -115,7 +115,10 @@ class MainActivity : AppCompatActivity() {
     private fun applyImmersive() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.setDecorFitsSystemWindows(false)
-            window.insetsController?.let {
+            // decorView's controller, not window.insetsController — the
+            // latter NPEs if the decor hasn't been created yet, the former
+            // forces creation and is safe at any point in the lifecycle.
+            window.decorView.windowInsetsController?.let {
                 it.hide(android.view.WindowInsets.Type.systemBars())
                 it.systemBarsBehavior = android.view.WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
             }
