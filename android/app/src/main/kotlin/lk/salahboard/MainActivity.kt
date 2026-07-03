@@ -1,9 +1,12 @@
 package lk.salahboard
 
+import android.annotation.SuppressLint
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
+import android.view.GestureDetector
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.webkit.WebSettings
@@ -50,6 +53,7 @@ class MainActivity : AppCompatActivity() {
         webView.webViewClient = WebViewClient()
         JsBridge.install(webView, this, app.configStore)
         webView.loadUrl("http://localhost:$port/")
+        installTapToOpenSettings()
 
         startForegroundService(android.content.Intent(this, WatchdogService::class.java))
         checkBootSanity(app)
@@ -93,6 +97,23 @@ class MainActivity : AppCompatActivity() {
 
     private fun reloadWebView() {
         runOnUiThread { webView.reload() }
+    }
+
+    /** Touch-screen equivalent of the remote long-press (D-pad boxes have
+     * no touch, phones/tablets running the display have no remote): a
+     * single tap anywhere on the display opens the same settings overlay.
+     * The display itself has no interactive elements, so it's safe to
+     * swallow every tap here rather than let it fall through to the
+     * WebView. */
+    @SuppressLint("ClickableViewAccessibility")
+    private fun installTapToOpenSettings() {
+        val detector = GestureDetector(this, object : GestureDetector.SimpleOnGestureListener() {
+            override fun onSingleTapConfirmed(e: MotionEvent): Boolean {
+                if (!settingsOverlay.isShowing()) settingsOverlay.show()
+                return true
+            }
+        })
+        webView.setOnTouchListener { _, event -> detector.onTouchEvent(event) }
     }
 
     /** D5: implausible clock + no NTP fix -> open the settings overlay
