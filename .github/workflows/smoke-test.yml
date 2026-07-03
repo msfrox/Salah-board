@@ -43,30 +43,9 @@ jobs:
           arch: x86_64
           profile: pixel_6
           disable-animations: true
-          script: |
-            adb install android/app/build/outputs/apk/debug/app-debug.apk
-            adb logcat -c
-            adb shell am start -n lk.salahboard/.MainActivity
-            sleep 30
-            adb logcat -d > logcat.txt
-            adb shell screencap -p /sdcard/screen.png && adb pull /sdcard/screen.png screen.png || true
-            if adb shell pidof lk.salahboard > /dev/null; then
-              echo "PROCESS ALIVE after 30s"
-              grep -B 2 -A 40 "FATAL EXCEPTION" logcat.txt && exit 1 || echo "no fatal exceptions in logcat"
-              # The app catches startup failures and shows them on screen
-              # instead of dying — so "alive" isn't enough. A crash.log
-              # means startup failed even though the process survived.
-              if adb shell run-as lk.salahboard cat files/crash.log 2>/dev/null | grep -q .; then
-                echo "STARTUP FAILED — crash.log contents:"
-                adb shell run-as lk.salahboard cat files/crash.log
-                exit 1
-              fi
-              echo "no crash.log — startup genuinely clean"
-            else
-              echo "PROCESS DEAD — crash trace:"
-              grep -B 2 -A 60 "FATAL EXCEPTION" logcat.txt || tail -n 200 logcat.txt
-              exit 1
-            fi
+          # The runner executes each script line as a separate command —
+          # anything multi-line lives in smoke.sh.
+          script: bash .github/scripts/smoke.sh
 
       - uses: actions/upload-artifact@v4
         if: always()
