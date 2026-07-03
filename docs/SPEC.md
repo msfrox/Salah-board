@@ -20,7 +20,7 @@ States, in the order they occur around each of the 5 daily prayers:
 
 | # | State | Enter | Exit | Screen shows |
 |---|---|---|---|---|
-| 1 | NORMAL | default | next event | Clock (large), masjid name, today's full timetable strip, next prayer name + countdown to azan, Hijri + Gregorian date, rotating notice cards |
+| 1 | NORMAL | default | next event | Hero row: clock + next-prayer block (name, **azan time and iqamah time equally large**, countdown to azan) — the two most-read values on a masjid board. Plus masjid name, today's full timetable strip, Hijri + Gregorian date, rotating notice cards. Layout per M1.5-SPEC.md |
 | 2 | AZAN | at azan time | +`azanScreen.minutes` (default 5) | "Azan — [prayer]" banner, reply-to-muadhin reminder, dua after azan (Arabic + translit + translation), phones-silent icon |
 | 3 | BETWEEN | after AZAN | at iqamah time | **Iqamah countdown (dominant)**, rotating duas — "dua between azan & iqamah is not rejected" (Tirmidhi 212), ask-for-afiyah, sunnah prayer reminder |
 | 4 | IQAMAH | at iqamah time | +`iqamahScreen.minutes` (default 2) | "Straighten the rows" screen — saff-straightening reminder, fill gaps, phones OFF |
@@ -58,17 +58,24 @@ Rules:
 
 ## Jumu'ah mode (Fridays)
 
-Timeline driven by `config.jumuah`:
+Timeline driven by `config.jumuah`. Jumu'ah azan is **not** separately
+configured — it's that Friday's own `luhr` azan time from the zone data
+(masjids don't ring a distinct Jumu'ah clock). `bayan` and `iqamah` are both
+fixed wall-clock times (e.g. "12:30 PM" / "1:15 PM") set by the masjid,
+editable in the admin panel:
 
 1. From morning, NORMAL shows "Jumu'ah today" with bayan + azan times and
    rotating Jumu'ah etiquette cards (ghusl, early arrival, Surah al-Kahf,
    salawat, listen silently during khutbah).
 2. `bayan` time → card "Bayan in progress".
-3. `azan` time → AZAN state as usual.
+3. Azan (today's `luhr` time) → AZAN state as usual.
 4. After azan → KHUTBAH state (not BETWEEN): screen shows ONLY "Khutbah in
    progress — remain silent" (talking during khutbah forfeits the reward —
-   Bukhari 934). No countdowns, no rotation. Duration `khutbahDuration`.
-5. Then IQAMAH → SALAH → AFTER as normal.
+   Bukhari 934). No countdowns, no rotation. Runs until the fixed `iqamah`
+   time (however long the khutbah actually takes).
+5. `iqamah` time → IQAMAH → SALAH → AFTER as normal. Sanity: if `iqamah` ≤
+   azan + `screens.azan`, fall back to azan + 10 min (same rule as regular
+   iqamah).
 6. Women's/second Jumu'ah variations are out of scope for v1.
 
 ## Ramadan mode (`config.ramadan.enabled`)
@@ -98,6 +105,10 @@ Timeline driven by `config.jumuah`:
   rotating content alternates through the list.
 - Every dua/text carries a `source` field (e.g. "Bukhari 614"). Unsourced
   content must not ship.
+- No hardcoded English in js: Gregorian date via `Intl` locale (`en-GB`/
+  `ta-LK`/`si-LK`), Hijri month names + era label from the pack
+  (`hijriMonths[12]`, `labels.hijriEra`). Missing key → `en` pack value.
+- Numerals stay Western (0-9) in all languages (Sri Lankan convention).
 
 ## Hijri date
 

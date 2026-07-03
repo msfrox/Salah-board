@@ -1,0 +1,9 @@
+.gradle/
+build/
+app/build/
+local.properties
+*.iml
+.idea/
+# Generated at build time by :app:copyWebAssets — display/ and admin/ are
+# the source of truth, never edit the copy under assets/www.
+app/src/main/assets/www/

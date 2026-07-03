@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Salah Board — Admin</title>
+<link rel="stylesheet" href="./css/admin.css">
+</head>
+<body>
+  <header class="admin-header">
+    <h1>Salah Board — Admin</h1>
+    <p class="admin-sub">Changes save to this device/browser and reach the display within a couple of seconds.</p>
+  </header>
+
+  <div id="toast" class="toast" hidden></div>
+  <div id="error-summary" class="error-summary" hidden></div>
+
+  <main id="admin-form">
+
+    <section class="card">
+      <h2>Masjid</h2>
+      <label class="field">
+        <span>Masjid name</span>
+        <input type="text" data-path="masjid.name" placeholder="e.g. Kollupitiya Jumma Masjid">
+      </label>
+      <div class="field">
+        <span>Languages shown on the display</span>
+        <div class="checkbox-row">
+          <label><input type="checkbox" data-lang="ta"> Tamil</label>
+          <label><input type="checkbox" data-lang="si"> Sinhala</label>
+          <label><input type="checkbox" data-lang="en"> English</label>
+        </div>
+      </div>
+      <label class="field">
+        <span>Primary language (used for main labels)</span>
+        <select id="primary-lang"></select>
+      </label>
+    </section>
+
+    <section class="card">
+      <h2>Zone &amp; theme</h2>
+      <label class="field">
+        <span>ACJU zone</span>
+        <select id="zone-select" data-path="zone"></select>
+      </label>
+      <label class="field">
+        <span>Theme</span>
+        <select data-path="theme">
+          <option value="classic">Classic (dark, modern)</option>
+          <option value="led">LED Board (retro green digits)</option>
+          <option value="mono">Mono (minimal white-on-black)</option>
+        </select>
+      </label>
+      <label class="field">
+        <span>Display scale (<span id="scale-value">1.0</span>×)</span>
+        <input type="range" min="0.5" max="2" step="0.1" data-path="display.scale" data-number id="scale-range">
+      </label>
+    </section>
+
+    <section class="card">
+      <h2>Clock &amp; Hijri date</h2>
+      <div class="field">
+        <span>Clock format</span>
+        <div class="radio-row">
+          <label><input type="radio" name="clock-format" value="12h" data-path="clock.format"> 12-hour</label>
+          <label><input type="radio" name="clock-format" value="24h" data-path="clock.format"> 24-hour</label>
+        </div>
+        <p class="hint">AM/PM is never shown on the display either way — the caretaker just picks how hours are numbered.</p>
+      </div>
+      <label class="field checkbox-field">
+        <input type="checkbox" data-path="clock.showSeconds">
+        <span>Show seconds on the clock</span>
+      </label>
+      <label class="field">
+        <span>Hijri date offset (days)</span>
+        <select data-path="hijri.offsetDays" data-number>
+          <option value="-2">-2</option><option value="-1">-1</option>
+          <option value="0">0 (no offset)</option>
+          <option value="1">+1</option><option value="2">+2</option>
+        </select>
+      </label>
+      <label class="field checkbox-field">
+        <input type="checkbox" data-path="hijri.flipAtMaghrib">
+        <span>Hijri day flips at Maghrib (not midnight)</span>
+      </label>
+    </section>
+
+    <section class="card">
+      <h2>Iqamah times</h2>
+      <p class="hint">For each prayer: either an offset after azan (optionally rounded up), or a fixed daily clock time.</p>
+      <div id="iqamah-rows"></div>
+    </section>
+
+    <section class="card">
+      <h2>Screen durations (minutes)</h2>
+      <label class="field">
+        <span>Azan screen</span>
+        <input type="number" min="0" step="1" data-path="screens.azan" data-number>
+      </label>
+      <label class="field">
+        <span>Iqamah warning ("straighten the rows")</span>
+        <input type="number" min="0" step="1" data-path="screens.iqamahWarning" data-number>
+      </label>
+      <label class="field">
+        <span>After-salah adhkar screen</span>
+        <input type="number" min="0" step="1" data-path="screens.after" data-number>
+      </label>
+      <h3>Salah duration per prayer</h3>
+      <div id="salah-duration-rows"></div>
+    </section>
+
+    <section class="card">
+      <h2>Jumu'ah (Friday)</h2>
+      <label class="field checkbox-field">
+        <input type="checkbox" data-path="jumuah.enabled">
+        <span>Enable Jumu'ah mode on Fridays</span>
+      </label>
+      <p class="hint">Jumu'ah azan is always that Friday's Zuhr azan time from the timetable — it isn't set separately here.</p>
+      <label class="field checkbox-field">
+        <input type="checkbox" id="bayan-enabled">
+        <span>Show a bayan (pre-khutbah talk)</span>
+      </label>
+      <label class="field">
+        <span>Bayan start time</span>
+        <input type="time" id="bayan-time" data-path="jumuah.bayan" data-time="ampm">
+      </label>
+      <label class="field">
+        <span>Iqamah time (fixed, e.g. 1:15 PM)</span>
+        <input type="time" data-path="jumuah.iqamah" data-time="ampm">
+      </label>
+      <label class="field">
+        <span>Jumu'ah salah duration (minutes)</span>
+        <input type="number" min="1" step="1" data-path="jumuah.salahDuration" data-number>
+      </label>
+    </section>
+
+    <section class="card">
+      <h2>Luha (Duha)</h2>
+      <label class="field checkbox-field">
+        <input type="checkbox" data-path="luha.enabled">
+        <span>Show Luha countdown after sunrise</span>
+      </label>
+      <label class="field">
+        <span>Wait after sunrise (minutes)</span>
+        <input type="number" min="0" step="1" data-path="luha.waitAfterSunrise" data-number>
+      </label>
+    </section>
+
+    <section class="card">
+      <h2>Ramadan mode</h2>
+      <label class="field checkbox-field">
+        <input type="checkbox" data-path="ramadan.enabled">
+        <span>Ramadan mode is active</span>
+      </label>
+      <p class="hint">Manual switch only — moon sighting dependent, never auto-derived from the Hijri date.</p>
+      <label class="field checkbox-field">
+        <input type="checkbox" data-path="ramadan.showImsak">
+        <span>Show Imsak / Iftar on the main screen</span>
+      </label>
+      <h3>Iqamah overrides during Ramadan</h3>
+      <div id="ramadan-override-rows"></div>
+      <h3>Taraweeh note (optional, per language)</h3>
+      <div id="taraweeh-note-rows"></div>
+    </section>
+
+    <section class="card">
+      <h2>Night dim</h2>
+      <label class="field checkbox-field">
+        <input type="checkbox" data-path="night.dim">
+        <span>Dim the screen at night</span>
+      </label>
+      <label class="field">
+        <span>Start dimming after Isha (minutes)</span>
+        <input type="number" min="0" step="1" data-path="night.afterIshaMinutes" data-number>
+      </label>
+      <label class="field">
+        <span>Stop dimming before Fajr (minutes)</span>
+        <input type="number" min="0" step="1" data-path="night.beforeFajrMinutes" data-number>
+      </label>
+      <label class="field">
+        <span>Brightness (<span id="brightness-value">10</span>%)</span>
+        <input type="range" min="0" max="100" step="5" data-path="night.brightness" data-number id="brightness-range">
+      </label>
+    </section>
+
+    <section class="card">
+      <h2>Notices</h2>
+      <div id="notices-list"></div>
+      <button type="button" id="add-notice" class="btn btn--secondary">+ Add notice</button>
+    </section>
+
+    <section class="card">
+      <h2>Rotation</h2>
+      <label class="field">
+        <span>Seconds per card</span>
+        <input type="number" min="3" step="1" data-path="rotation.seconds" data-number>
+      </label>
+      <div class="field">
+        <span>Include in rotation</span>
+        <div class="checkbox-row">
+          <label><input type="checkbox" data-rotation-card="notices"> Notices</label>
+          <label><input type="checkbox" data-rotation-card="jumuah-etiquette"> Jumu'ah etiquette (Fridays)</label>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Time sync</h2>
+      <p class="hint">Managed by the Android shell (M4) — SNTP sync and TV-remote date/time adjustment. Not editable from the browser-dev admin panel.</p>
+      <p class="readonly-status" id="time-status"></p>
+    </section>
+
+  </main>
+
+  <footer class="admin-footer">
+    <button type="button" id="export-btn" class="btn btn--secondary">Export JSON</button>
+    <label class="btn btn--secondary btn--file">
+      Import JSON
+      <input type="file" id="import-file" accept="application/json,.json" hidden>
+    </label>
+    <button type="button" id="save-btn" class="btn btn--primary">Save</button>
+  </footer>
+
+  <script src="../display/js/engine.js"></script>
+  <script src="../display/js/config.js"></script>
+  <script src="./js/admin.js"></script>
+</body>
+</html>

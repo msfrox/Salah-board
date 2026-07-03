@@ -13,7 +13,10 @@ breaking change via `configVersion`.
   },
   "zone": "01",                       // ACJU zone "01".."13"
   "theme": "classic",                 // folder name under display/themes/
-  "clock": { "format": "12h", "showSeconds": true },
+  "display": { "scale": 1.0 },        // UI size multiplier 0.5–2.0 (clamped);
+                                      // tunes text size for panel size/viewing
+                                      // distance. Debug override: ?scale=
+  "clock": { "format": "12h", "showSeconds": true },  // no AM/PM shown in either mode
   "hijri": { "offsetDays": 0, "flipAtMaghrib": true },
 
   "iqamah": {                         // per prayer; Friday luhr ignored (jumuah wins)
@@ -31,10 +34,11 @@ breaking change via `configVersion`.
 
   "jumuah": {
     "enabled": true,
-    "bayan": "12:30 PM",              // null = no bayan card
-    "azan": "1:00 PM",
-    "khutbahDuration": 30,            // minutes; then IQAMAH → SALAH
+    "bayan": "12:30 PM",               // fixed set time; null = no bayan card
+    "iqamah": "1:15 PM",               // fixed set time (khutbah runs until this)
     "salahDuration": 15
+    // Jumu'ah azan is NOT separately configured — it's that Friday's own
+    // luhr azan time from the zone data (there's no distinct Jumu'ah clock).
   },
 
   "luha": { "enabled": true, "waitAfterSunrise": 20 },   // minutes

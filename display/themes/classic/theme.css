@@ -1,0 +1,204 @@
+/* ============================================================
+   Salah Board — theme: classic
+   Dark, high-contrast, big-type — inspired by classic green/
+   yellow/red LED masjid boards, tastefully modernised. Designed
+   to read clearly at 1920x1080 / 1280x720 from ~10 m away.
+
+   Sizing: 1rem = 1vmin * --sb-scale (see html{} below), so every
+   font-size/gap in rem is the same *physical* size in landscape and
+   portrait on a given panel — only the layout restacks (see the
+   @media (orientation: portrait) block at the end). --sb-scale is
+   set from config.display.scale / ?scale= by main.js.
+   ============================================================ */
+
+:root {
+  --sb-scale: 1;
+  --sb-bg: #05070a;
+  --sb-bg-elevated: #0e1420;
+  --sb-fg: #f4f7fb;
+  --sb-fg-dim: #9aa8bd;
+  --sb-accent: #2ecc71;   /* classic "go" green */
+  --sb-warn: #f1c40f;     /* amber — azan / attention */
+  --sb-danger: #e74c3c;   /* red — silence / khutbah / salah */
+  --sb-border: #1c2434;
+  --sb-radius: 14px;
+  --sb-font: 'Salah Sans', 'Segoe UI', Tahoma, Arial, sans-serif;
+  --sb-font-arabic: 'Salah Arabic', 'Traditional Arabic', 'Scheherazade New', serif;
+}
+
+* { box-sizing: border-box; }
+
+html   { font-size: calc(1vmin * var(--sb-scale)); }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--sb-bg);
+  color: var(--sb-fg);
+  font-family: var(--sb-font);
+  overflow: hidden;
+}
+
+#screen-root {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+  padding: 4vh 4vw;      /* TV-safe margins — describes the viewport, stays vh/vw */
+  display: flex;
+  flex-direction: column;
+}
+
+#night-overlay {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  transition: opacity 1.5s ease;
+  pointer-events: none;
+  z-index: 50;
+}
+
+.screen { display: flex; flex-direction: column; height: 100%; gap: 2rem; }
+
+/* ── Shared bits ─────────────────────────────────────────── */
+.topbar { display: flex; justify-content: space-between; align-items: baseline; }
+.masjid-name { font-size: 4rem; font-weight: 700; letter-spacing: .02em; }
+.dates { text-align: right; font-size: 2.6rem; color: var(--sb-fg-dim); display: flex; flex-direction: row; align-items: baseline; gap: .5em; white-space: nowrap; }
+.date-sep { opacity: .6; }
+
+.card { background: var(--sb-bg-elevated); border: 1px solid var(--sb-border); border-radius: var(--sb-radius); padding: 1.6rem 2rem; }
+
+/* ── Hero: clock on top, next azan/iqamah dominant below ───── */
+.hero-row { display: flex; flex-direction: column; gap: 1.2rem; align-items: stretch; }
+.hero-clock {
+  display: flex; flex-direction: row; align-items: baseline; justify-content: center;
+  text-align: center; gap: .8rem; flex: 0 0 auto;
+}
+.hero-next {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  text-align: center; gap: .6rem; flex: 1;
+}
+
+.clock-big { font-size: 8rem; font-weight: 800; line-height: 1; letter-spacing: .02em; font-variant-numeric: tabular-nums; }
+
+.np-label { font-size: 2.2rem; color: var(--sb-fg-dim); text-transform: uppercase; letter-spacing: .08em; }
+.np-name { font-size: 6.5rem; font-weight: 800; color: var(--sb-accent); }
+.np-times { display: flex; align-items: center; justify-content: center; gap: 4rem; width: 100%; }
+.np-time-col { display: flex; flex-direction: column; align-items: center; gap: .4rem; }
+.np-divider { width: 1px; align-self: stretch; background: var(--sb-border); }
+.np-time-label { font-size: 2.6rem; color: var(--sb-fg-dim); text-transform: uppercase; letter-spacing: .05em; }
+.np-time { font-size: 10rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.np-countdown { font-size: 4.4rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.timetable-strip { display: flex; justify-content: space-between; gap: 1.5rem; }
+.tt-cell { flex: 1; text-align: center; display: flex; flex-direction: column; gap: .4em; }
+.tt-label { font-size: 2.4rem; color: var(--sb-fg-dim); text-transform: uppercase; letter-spacing: .05em; }
+.tt-time { font-size: 3.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.pinned-banner {
+  background: var(--sb-warn); color: #1a1300; font-weight: 700; font-size: 3rem;
+  border-radius: var(--sb-radius); padding: 1.2rem 2rem; text-align: center;
+}
+
+.jumuah-day-banner {
+  background: var(--sb-bg-elevated); border: 1px solid var(--sb-accent); color: var(--sb-accent);
+  border-radius: var(--sb-radius); padding: 1rem 2rem; text-align: center; font-size: 2.8rem; font-weight: 600;
+}
+
+.ramadan-block { display: flex; justify-content: center; gap: 3rem; font-size: 3.2rem; font-weight: 600; color: var(--sb-warn); }
+
+.card--notice .notice-text,
+.card--etiquette .etiquette-text { font-size: 2.8rem; text-align: center; margin: 0; }
+
+.screen--normal { justify-content: space-between; }
+
+/* ── AZAN ─────────────────────────────────────────────────── */
+.screen--azan { justify-content: center; align-items: center; text-align: center; gap: .2rem; }
+.azan-banner { font-size: 9rem; font-weight: 800; color: var(--sb-warn); margin: 0; line-height: 1.05; }
+.azan-reminder, .azan-dua { max-width: 94vw; display: flex; flex-direction: column; gap: .1rem; }
+.reminder-text, .translation, .dua-text { font-size: 3.2rem; color: var(--sb-fg-dim); margin: 0; line-height: 1.08; }
+.arabic { font-size: 5.5rem; direction: rtl; font-family: var(--sb-font-arabic); margin: 0; line-height: 1.08; }
+.azan-dua h3 { font-size: 2.8rem; color: var(--sb-fg-dim); font-weight: 500; margin: 0; line-height: 1.05; }
+.phones-silent-icon { font-size: 7rem; line-height: 1; }
+
+/* ── BETWEEN ──────────────────────────────────────────────── */
+.screen--between { justify-content: center; align-items: center; text-align: center; gap: 1.5rem; }
+.iqamah-countdown-dominant { display: flex; flex-direction: column; gap: .5rem; }
+.icd-label { font-size: 4rem; color: var(--sb-fg-dim); text-transform: uppercase; letter-spacing: .08em; margin: 0; }
+.icd-countdown { font-size: 18rem; font-weight: 800; font-variant-numeric: tabular-nums; color: var(--sb-accent); line-height: 1; }
+.between-reminder { font-size: 3rem; max-width: 70vw; color: var(--sb-fg-dim); }
+.between-reminder p { margin: 0; }
+.dua-card { max-width: 70vw; display: flex; flex-direction: column; gap: .5rem; }
+.sunnah-reminder { font-size: 2.6rem; color: var(--sb-fg-dim); }
+
+/* ── IQAMAH ───────────────────────────────────────────────── */
+.screen--iqamah { justify-content: center; align-items: center; text-align: center; gap: 3rem; background: radial-gradient(ellipse at center, #2a0f0f 0%, var(--sb-bg) 70%); }
+.iqamah-title { font-size: 11rem; font-weight: 800; color: var(--sb-danger); margin: 0; }
+.iqamah-lines { list-style: none; padding: 0; margin: 0; font-size: 3.6rem; display: flex; flex-direction: column; gap: 1rem; }
+
+/* ── SALAH ────────────────────────────────────────────────── */
+#screen-root.state-salah { background: #000; } /* fills the padding gap too — true near-black, minimal light spill */
+.screen--salah { justify-content: center; align-items: center; text-align: center; gap: 2rem; background: #000; }
+.salah-clock { font-size: 5.5rem; color: #333; font-variant-numeric: tabular-nums; }
+.salah-line { font-size: 3.6rem; color: #555; }
+
+/* ── AFTER ────────────────────────────────────────────────── */
+.screen--after { justify-content: center; align-items: center; text-align: center; }
+
+/* ── SUNRISE_WAIT / LUHA_WAIT / LUHA_OPEN ───────────────────── */
+.screen--sunrise-wait, .screen--luha-wait { justify-content: center; align-items: center; text-align: center; gap: 2rem; }
+.countdown-label { font-size: 4rem; color: var(--sb-fg-dim); text-transform: uppercase; letter-spacing: .08em; }
+.countdown { font-size: 16rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.screen--luha-open { justify-content: center; align-items: center; text-align: center; }
+.luha-open-card { font-size: 5.5rem; font-weight: 700; color: var(--sb-accent); }
+
+/* ── NIGHT ────────────────────────────────────────────────── */
+.screen--night { justify-content: center; align-items: center; text-align: center; gap: 2rem; }
+.night-clock { font-size: 7rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--sb-fg-dim); }
+.night-next-fajr { font-size: 2.8rem; color: var(--sb-fg-dim); }
+
+/* ── JUMUAH / KHUTBAH ─────────────────────────────────────── */
+.screen--jumuah { justify-content: center; align-items: center; text-align: center; gap: 3rem; }
+.jumuah-banner { font-size: 6.5rem; font-weight: 700; color: var(--sb-accent); }
+.screen--khutbah { justify-content: center; align-items: center; text-align: center; background: radial-gradient(ellipse at center, #2a0f0f 0%, var(--sb-bg) 70%); }
+.khutbah-line { font-size: 7.5rem; font-weight: 800; color: var(--sb-danger); }
+
+/* ── Short landscape panels (e.g. 768p) with banners stacked on
+   NORMAL: shrink the clock (the one font-size exception) and trim
+   chrome spacing (gaps/padding — not part of the authoritative size
+   table) so a pinned banner + Ramadan block still fits up to
+   ?scale=1.5; no other text shrinks ──────────────────────────── */
+@media (max-height: 800px) and (orientation: landscape) {
+  .clock-big { font-size: 6rem; }
+  .np-time { font-size: 8rem; }
+  .screen { gap: .5rem; }
+  .card { padding: .5rem 1.5rem; }
+  .hero-row { gap: .4rem; }
+  .hero-clock, .hero-next { gap: .2rem; }
+}
+
+/* ── Portrait: layout restacks only — text sizes are unchanged
+   because the rem base is vmin-derived (same physical size).
+   Stacking the hero cards costs a lot more vertical room than the
+   landscape row does, so chrome spacing (gaps/padding — not
+   authoritative like the font table) is tightened here to keep
+   NORMAL clear of the viewport up to ?scale=1.5. ────────────── */
+@media (orientation: portrait) {
+  .screen { gap: 1rem; }
+  .card { padding: 1rem 1.5rem; }
+
+  .topbar { flex-direction: column; align-items: center; text-align: center; }
+  .dates { text-align: center; }
+
+  .hero-row { flex-direction: column; gap: 1rem; }
+  .hero-clock, .hero-next { width: 100%; gap: .4rem; }
+
+  .timetable-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+  .tt-cell { padding: .8rem 0; }
+  .tt-cell:nth-child(n+3) { border-top: 1px solid var(--sb-border); }
+  .tt-time { font-size: 4.2rem; }
+
+  .azan-reminder, .azan-dua, .between-reminder, .dua-card { max-width: 88vw; }
+}

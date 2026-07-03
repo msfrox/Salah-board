@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.SalahBoard" parent="Theme.AppCompat.NoActionBar" />
+
+    <!-- Immersive fullscreen kiosk theme (D3) — no status/nav bar chrome
+         on a masjid wall display. -->
+    <style name="Theme.SalahBoard.Kiosk" parent="Theme.SalahBoard">
+        <item name="android:windowFullscreen">true</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowBackground">@android:color/black</item>
+        <item name="android:windowContentTransitions">false</item>
+        <item name="android:windowActionBar">false</item>
+    </style>
+</resources>

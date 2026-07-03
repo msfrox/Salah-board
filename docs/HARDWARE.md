@@ -1,4 +1,4 @@
-# Hardware guide (skeleton — completed at M5)
+# Hardware guide
 
 ## What to buy
 
@@ -18,15 +18,30 @@ Notes:
   the display page — you lose the built-in admin server and auto-boot
   conveniences, and manage config in that browser instead.
 
-## Setup overview (full illustrated guide at M5)
+## Setup overview
 
-1. Flash/clean the box (remove bloat apps if any), connect WiFi if available.
-2. Sideload `salah-board.apk` (USB stick or `adb install`).
-3. Press Home → choose Salah Board → "Always". Done — it now owns the screen.
-4. Long-press menu/settings on the remote → scan the QR with your phone →
-   set masjid name, zone, iqamah times.
-5. If the time is wrong (no internet): the screen shows a QR — scan, set time.
-6. Test a full day with the preview mode before relying on it.
+Full step-by-step is in `docs/CARETAKER-GUIDE.md` (printable, one page).
+Short version: sideload the APK, press Home → "Always", long-press the
+remote to open settings, configure via the QR-linked admin page (or the
+D-pad if there's no phone/WiFi at all).
 
 ## Wall mounting & cabling
-(TBD at M5 — photos from a real installation.)
+
+General guidance until photos from a real installation are added here:
+
+- Mount the screen where it's readable from the back rows without glare
+  from doorways/windows — test at the time of day the hall is brightest.
+- Keep the box itself accessible (behind/below the screen, not sealed
+  into a wall cavity) — the power cable and, if used, a USB stick for
+  APK updates both need reaching without a ladder each time.
+- Route HDMI and power along the same path and secure with cable clips;
+  avoid running either across a walkway.
+- Put the box and screen on the same switched outlet/breaker so a power
+  cut and restore always bring both back together — the app is designed
+  to recover from that unattended (D3/D5), but only if the screen itself
+  also powers back on.
+- A cheap surge protector is worth it for a device left permanently on.
+
+**Photos from a real installation are still needed** — this section will
+get them once a first physical deployment exists; text guidance above is
+deliberately generic until then rather than inventing specifics.

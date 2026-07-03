@@ -6,7 +6,7 @@ the docs each milestone lists — keep sessions token-light.
 
 ---
 
-## M1 — Web display, complete state machine  `[ ] not started`
+## M1 — Web display, complete state machine  `[x] done`
 **Read:** SPEC.md (all), CONFIG-SCHEMA.md, CLAUDE.md. Adapt
 `E:\GitHub\Prayer Time Site\assets\js\pt-core.js` for the engine.
 
@@ -19,18 +19,35 @@ LED boards, but tasteful; TV-safe margins), `content/en.json` (done),
 marked `"reviewed": false`).
 
 Acceptance:
-- [ ] Serving `display/` statically shows correct times for any `?zone=`
-- [ ] `?t=` fake clock drives ALL states correctly (walk one full day:
+- [x] Serving `display/` statically shows correct times for any `?zone=`
+- [x] `?t=` fake clock drives ALL states correctly (walk one full day:
       fajr sequence → sunrise/luha → luhr → ... → night dim)
-- [ ] Friday `?t=` shows Jumu'ah flow incl. khutbah silence screen
-- [ ] Ramadan toggle shows imsak/iftar + overridden iqamah
-- [ ] After-Isha rollover shows tomorrow's Fajr (incl. month boundary)
-- [ ] Hijri date with offset; flips at Maghrib
-- [ ] Notices: pinned banner + rotation both work
-- [ ] Runs 24h+ without memory growth (no interval leaks)
-- [ ] Looks correct at 1920×1080 and 1280×720 from 10 m away
+- [x] Friday `?t=` shows Jumu'ah flow incl. khutbah silence screen
+- [x] Ramadan toggle shows imsak/iftar + overridden iqamah
+- [x] After-Isha rollover shows tomorrow's Fajr (incl. month boundary)
+- [x] Hijri date with offset; flips at Maghrib
+- [x] Notices: pinned banner + rotation both work
+- [x] Runs 24h+ without memory growth (no interval leaks)
+- [x] Looks correct at 1920×1080 and 1280×720 from 10 m away
 
-## M2 — Admin panel (browser-dev mode)  `[ ] not started`
+## M1.5 — Display refinements: hero next-salah, scale, responsive, i18n  `[x] done`
+**Read:** M1.5-SPEC.md (all). Design + translations are already done there
+and in `display/content/*.json` — pure implementation, no invention.
+
+Rework `display/` only: hero row (clock + next azan/iqamah equally large),
+rem/`--sb-scale` sizing with `display.scale` config + `?scale=`, portrait
+layouts for 1366×768 / 1920×1080 both orientations, remove all hardcoded
+English (`?lang=` debug param, Intl Gregorian, pack-driven Hijri months).
+
+Acceptance (full list with test steps in M1.5-SPEC.md §6):
+- [x] Next azan + iqamah times dominant on NORMAL; iqamah matches BETWEEN
+- [x] No text below 2.2rem on any state screen
+- [x] `?scale=` / `display.scale` scales uniformly, no clipping
+- [x] All 4 resolutions (both orientations) pass a full `?t=` day walk
+- [x] `?lang=ta|si|en` renders the entire UI in that language
+- [x] Still leak-free over 24h (cache Intl formatters)
+
+## M2 — Admin panel (browser-dev mode)  `[x] done`
 **Read:** CONFIG-SCHEMA.md, SPEC.md § Settings surface.
 
 Build `admin/` (same no-framework rules): mobile-first form UI covering the
@@ -39,10 +56,10 @@ same localStorage; on Android it will PUT `/api/config`. Write
 `admin/api.md` documenting the endpoints (D4 in ARCHITECTURE.md).
 
 Acceptance:
-- [ ] Every config field editable + validated on a phone-sized screen
-- [ ] Save → display (open in second tab) reflects changes ≤ 2 s
-- [ ] Export/import round-trips; garbage import rejected with clear error
-- [ ] Notices CRUD with date ranges
+- [x] Every config field editable + validated on a phone-sized screen
+- [x] Save → display (open in second tab) reflects changes ≤ 2 s
+- [x] Export/import round-trips; garbage import rejected with clear error
+- [x] Notices CRUD with date ranges
 
 ## M3 — Android shell APK  `[ ] not started`
 **Read:** ARCHITECTURE.md (D2–D8, shell responsibilities), android/README.md.

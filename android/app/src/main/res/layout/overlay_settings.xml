@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- TV-remote settings overlay (M4). Every control here must be reachable
+     and usable with only D-pad up/down/left/right/OK/back — this is the
+     "airplane test" fallback path when there's no phone at all
+     (SPEC.md § Offline guarantee, ARCHITECTURE.md D5). -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#EE05070A"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="32dp">
+
+        <TextView
+            android:id="@+id/overlayTitle"
+            android:text="Salah Board — settings"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Admin URL -->
+        <TextView
+            android:text="Admin panel (scan with your phone)"
+            android:textColor="#9AA8BD"
+            android:textSize="16sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <ImageView
+            android:id="@+id/adminQr"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="8dp" />
+        <TextView
+            android:id="@+id/adminUrlText"
+            android:textColor="#F4F7FB"
+            android:textSize="18sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Hotspot -->
+        <TextView
+            android:text="No WiFi at the masjid?"
+            android:textColor="#9AA8BD"
+            android:textSize="16sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <Button
+            android:id="@+id/hotspotToggleButton"
+            android:text="Start hotspot"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" />
+        <ImageView
+            android:id="@+id/hotspotQr"
+            android:layout_width="200dp"
+            android:layout_height="200dp"
+            android:layout_marginTop="8dp"
+            android:visibility="gone" />
+        <TextView
+            android:id="@+id/hotspotStatusText"
+            android:textColor="#F4F7FB"
+            android:textSize="18sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="24dp" />
+
+        <!-- Date/time adjust (D-pad steps: ±1m / ±10m / ±1h / ±1d) -->
+        <TextView
+            android:text="Date &amp; time (no internet needed)"
+            android:textColor="#9AA8BD"
+            android:textSize="16sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+        <TextView
+            android:id="@+id/currentTimeText"
+            android:textColor="#F4F7FB"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:layout_marginBottom="12dp" />
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
+            <Button android:id="@+id/timeMinusDay" android:text="-1d" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            <Button android:id="@+id/timeMinusHour" android:text="-1h" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            <Button android:id="@+id/timeMinus10Min" android:text="-10m" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            <Button android:id="@+id/timeMinus1Min" android:text="-1m" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            <Button android:id="@+id/timePlus1Min" android:text="+1m" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            <Button android:id="@+id/timePlus10Min" android:text="+10m" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            <Button android:id="@+id/timePlusHour" android:text="+1h" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+            <Button android:id="@+id/timePlusDay" android:text="+1d" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/dataRefreshButton"
+            android:text="Check for ACJU data updates"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp" />
+
+        <Button
+            android:id="@+id/closeButton"
+            android:text="Close"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp" />
+
+    </LinearLayout>
+</ScrollView>
