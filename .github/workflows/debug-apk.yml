@@ -5,6 +5,11 @@ name: Debug APK (unsigned, for testing)
 # my phone" workflow — no keystore secrets needed (debug builds are
 # auto-signed with Android's shared debug key). For a real release build
 # use a `v*` tag, which runs .github/workflows/release.yml instead.
+#
+# Published to a single rolling pre-release tagged `debug-latest` (updated
+# in place on every run, not a new release each time) so there's always
+# one obvious place to grab the newest build from — the repo's Releases
+# page — instead of digging through Actions run artifacts.
 on:
   push:
     branches: ["**"]
@@ -12,6 +17,9 @@ on:
       - "android/**"
       - ".github/workflows/debug-apk.yml"
   workflow_dispatch: {}
+
+permissions:
+  contents: write
 
 jobs:
   build-debug:
@@ -35,3 +43,15 @@ jobs:
           name: salah-board-debug
           path: android/app/build/outputs/apk/debug/app-debug.apk
           retention-days: 30
+
+      - name: Publish to rolling "debug-latest" release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: debug-latest
+          name: "Debug build (latest main)"
+          body: |
+            Unsigned debug APK, auto-built from `${{ github.sha }}` on every push to `main`.
+            Not a real release — sideload for testing only. See android/README.md.
+          prerelease: true
+          files: android/app/build/outputs/apk/debug/app-debug.apk
