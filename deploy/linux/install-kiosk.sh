@@ -55,7 +55,8 @@ else
   echo ">> Installing online via apt"
   apt-get update
   apt-get install -y --no-install-recommends \
-    xserver-xorg xinit openbox chromium x11-xserver-utils unclutter python3
+    xserver-xorg xinit openbox chromium x11-xserver-utils unclutter python3 \
+    network-manager
 fi
 
 # Debian ships /usr/bin/chromium; some spins use chromium-browser.
@@ -83,7 +84,7 @@ if ! grep -q "SALAH_BOARD_KIOSK" "$BASH_PROFILE" 2>/dev/null; then
 
 # SALAH_BOARD_KIOSK — start the graphical session on the console
 if [ -z "${DISPLAY:-}" ] && [ "$(tty)" = "/dev/tty1" ]; then
-  exec startx -- -nocursor
+  exec startx
 fi
 EOF
 fi
@@ -162,6 +163,26 @@ PY
 
 chown -R "${KIOSK_USER}:${KIOSK_USER}" \
   "$BASH_PROFILE" "${USER_HOME}/.xinitrc" "${USER_HOME}/.config"
+
+echo ">> Allowing the admin panel to control the WiFi hotspot & clock..."
+# serve.py runs as the kiosk user (unprivileged). The hotspot (nmcli) and
+# clock (timedatectl) helpers need root, so grant this one user password-less
+# sudo for exactly those two scripts — nothing else. `sudo -n` in serve.py
+# then works without a prompt; without this drop-in those features just report
+# "unavailable" and everything else keeps working.
+HOTSPOT_SH="${REPO_DIR}/deploy/linux/hotspot.sh"
+SETTIME_SH="${REPO_DIR}/deploy/linux/settime.sh"
+chmod +x "$HOTSPOT_SH" "$SETTIME_SH" 2>/dev/null || true
+cat >/etc/sudoers.d/salahboard <<EOF
+# Salah Board — installed by install-kiosk.sh. Lets the board's admin panel
+# manage its WiFi hotspot and system clock. Scoped to two scripts only.
+${KIOSK_USER} ALL=(root) NOPASSWD: ${HOTSPOT_SH} *, ${SETTIME_SH} *
+EOF
+chmod 0440 /etc/sudoers.d/salahboard
+if ! visudo -cf /etc/sudoers.d/salahboard >/dev/null 2>&1; then
+  echo "!! sudoers drop-in failed validation — removing it (hotspot/clock control disabled)." >&2
+  rm -f /etc/sudoers.d/salahboard
+fi
 
 echo ">> Installing the static-server systemd service..."
 sed -e "s#@REPO@#${REPO_DIR}#g" -e "s#@USER@#${KIOSK_USER}#g" \

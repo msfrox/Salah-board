@@ -13,9 +13,10 @@ breaking change via `configVersion`.
   },
   "zone": "01",                       // ACJU zone "01".."13"
   "theme": "classic",                 // folder name under display/themes/
-  "display": { "scale": 1.0 },        // UI size multiplier 0.5–2.0 (clamped);
-                                      // tunes text size for panel size/viewing
-                                      // distance. Debug override: ?scale=
+  "display": { "scale": 1.0 },        // UI size multiplier 0.2–5.0 (clamped);
+                                      // the theme is already resolution-independent
+                                      // (vmin), so scale is a FINE preference on top
+                                      // for taste / viewing distance. Debug: ?scale=
   "clock": { "format": "12h", "showSeconds": true },  // no AM/PM shown in either mode
   "hijri": { "offsetDays": 0, "flipAtMaghrib": true },
 
@@ -74,8 +75,10 @@ breaking change via `configVersion`.
     "cards": ["timetable", "notices", "jumuah-etiquette"]
   },
 
-  "time": {                           // managed by shell (M4); display reads only
-    "offsetMs": 0,
+  "time": {                           // display renders now() + offsetMs
+    "offsetMs": 0,                    // manual second-level drift correction, set
+                                      // from the admin Time tab (privilege-free);
+                                      // the ?t= debug clock ignores it
     "ntpEnabled": true,
     "lastSyncISO": null,
     "lastSyncSource": null            // "ntp" | "manual" | null

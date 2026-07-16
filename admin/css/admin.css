@@ -175,3 +175,65 @@ html, body {
 @media (min-width: 700px) {
   #admin-form, .error-summary { padding-left: 0; padding-right: 0; }
 }
+
+/* ── Tabs ─────────────────────────────────────────────────── */
+.tabs {
+  display: flex;
+  gap: .35rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: .5rem 1rem 0;
+  max-width: 672px;
+  margin: 0 auto;
+  scrollbar-width: none;
+}
+.tabs::-webkit-scrollbar { display: none; }
+.tab {
+  flex: 0 0 auto;
+  padding: .55rem .9rem;
+  border: 1px solid var(--a-border);
+  border-bottom: none;
+  border-radius: 10px 10px 0 0;
+  background: transparent;
+  color: var(--a-fg-dim);
+  font-size: .92rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.tab.active {
+  background: var(--a-card);
+  color: var(--a-accent);
+  border-color: var(--a-border);
+  box-shadow: 0 -2px 0 var(--a-accent) inset;
+}
+.tab-panel[hidden] { display: none; }
+
+/* ── Time tab ─────────────────────────────────────────────── */
+.time-live {
+  text-align: center;
+  background: var(--a-accent-dim);
+  border: 1px solid var(--a-accent);
+  border-radius: var(--a-radius);
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+.time-live-label { font-size: .8rem; color: var(--a-fg-dim); text-transform: uppercase; letter-spacing: .08em; }
+.time-live-clock { font-size: 2.6rem; font-weight: 800; color: var(--a-accent); font-variant-numeric: tabular-nums; line-height: 1.1; }
+.time-live-sub { font-size: .85rem; color: var(--a-fg-dim); }
+.nudge-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: .5rem; }
+.nudge-grid .btn { padding: .7rem .3rem; }
+.time-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin: .5rem 0 .75rem; }
+.time-actions .btn { flex: 1; min-width: 46%; }
+.advanced { margin-top: 1rem; border-top: 1px solid var(--a-border); padding-top: .75rem; }
+.advanced summary { cursor: pointer; font-weight: 600; color: var(--a-fg-dim); font-size: .9rem; }
+.advanced[open] summary { margin-bottom: .75rem; }
+
+/* ── Network tab ──────────────────────────────────────────── */
+.hotspot-btns { display: flex; gap: .5rem; flex-wrap: wrap; }
+.hotspot-btns .btn { flex: 1; min-width: 30%; }
+
+/* ── Preview tab ──────────────────────────────────────────── */
+.preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin: .5rem 0 1rem; }
+.preview-grid .btn { justify-content: flex-start; text-align: left; font-size: .88rem; padding: .7rem .8rem; }
+@media (max-width: 460px) { .preview-grid { grid-template-columns: 1fr; } }

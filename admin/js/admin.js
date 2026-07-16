@@ -283,12 +283,7 @@
     // Sliders' live labels
     $('#scale-value').textContent = Number(config.display.scale).toFixed(1);
     $('#brightness-value').textContent = config.night.brightness;
-
-    // Time status (read-only info)
-    const t = config.time || {};
-    $('#time-status').textContent = t.lastSyncISO
-      ? `Last sync: ${t.lastSyncISO} (${t.lastSyncSource || 'unknown'}), offset ${t.offsetMs || 0} ms`
-      : 'Never synced (browser-dev mode has no real time offset).';
+    // (The Time tab manages #time-status itself — see time.js.)
 
     updateModeVisibility(document);
   }
@@ -386,8 +381,8 @@
       errors.push('Zone must be one of the 13 ACJU zones.');
     }
     const scale = Number(config.display && config.display.scale);
-    if (!Number.isFinite(scale) || scale < 0.5 || scale > 2.0) {
-      errors.push('Display scale must be between 0.5 and 2.0.');
+    if (!Number.isFinite(scale) || scale < 0.2 || scale > 5.0) {
+      errors.push('Display scale must be between 0.2 and 5.0.');
     }
     PRAYERS.forEach(p => {
       const rule = config.iqamah && config.iqamah[p.key];
@@ -555,6 +550,13 @@
     wireEvents();
     populateForm(await loadConfig());
   }
+
+  // Shared with the tab feature scripts (time.js, network.js) so they can read
+  // and persist the same config through the same /api/config-or-localStorage
+  // path, without duplicating that logic. loadConfig() returns the full merged
+  // config; persistConfig(config) saves it (board file on the kiosk, else
+  // localStorage). validate() lets a feature script reuse the form validator.
+  window.SBAdmin = { loadConfig, persistConfig, validate };
 
   boot();
 })();

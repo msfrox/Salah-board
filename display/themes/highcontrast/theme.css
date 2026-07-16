@@ -42,7 +42,15 @@
 
 * { box-sizing: border-box; }
 
-html   { font-size: calc(1vmin * var(--sb-scale)); }
+/* Everything below is sized in rem, and 1rem = this many vmin. So the whole
+   board scales with the SCREEN (vmin = 1% of the shorter side), not with the
+   pixel resolution — a 1280×720 hall TV and a 1024×600 tablet render the same
+   proportions, no per-resolution tuning. The 2.05 coefficient matches the
+   README-designs.md mockups (hero azan/iqamah ≈174px on the 1024×576 reference
+   = ~30vmin); the earlier 1× port rendered everything at roughly half size,
+   which is why the text looked tiny on a real display. --sb-scale (config
+   display.scale, 0.2–5×) is the caretaker's fine adjustment on top. */
+html   { font-size: calc(2.05vmin * var(--sb-scale)); }
 
 html, body {
   margin: 0;
@@ -236,14 +244,19 @@ html, body {
 }
 .khutbah-line { font-size: 5rem; font-weight: 800; color: var(--sb-danger); }
 
-/* ── Short landscape panels (e.g. 768p): shrink the clock (already
-   small here) and trim chrome spacing so a pinned banner + Ramadan
-   block still fit up to ?scale=1.5 — no hero text shrinks ────────── */
+/* ── Short landscape panels (720p and the ~600px tablet panels): the
+   proportions already fit by design, so only tighten chrome spacing. The
+   hero deliberately does NOT shrink here — that earlier shrink was what
+   made the numbers look small on a real 720p board. ─────────────────── */
 @media (max-height: 800px) and (orientation: landscape) {
-  .clock-big { font-size: 3.4rem; }
-  .np-time { font-size: 10rem; }
   .screen { gap: 1rem; }
   .hero-row { gap: .5rem; }
+}
+/* Only on genuinely tiny landscape panels, and only when banners can eat the
+   vertical budget, ease the hero down a little to avoid clipping. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .np-time { font-size: 11rem; }
+  .clock-big { font-size: 3.4rem; }
 }
 
 /* ── Portrait 9:16 — hero stacks vertically (clock above the split,

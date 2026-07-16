@@ -19,8 +19,13 @@
     const parsed = new Date(dbg.t);
     if (!isNaN(parsed.getTime())) { fakeBase = parsed; realBase = Date.now(); }
   }
+  // Real clock carries config.time.offsetMs (manual second-level correction for
+  // RTC drift when offline — see the admin Time tab). The ?t= fake clock is an
+  // explicit dev override and deliberately ignores the offset.
   function now() {
-    return fakeBase ? new Date(fakeBase.getTime() + (Date.now() - realBase)) : new Date();
+    if (fakeBase) return new Date(fakeBase.getTime() + (Date.now() - realBase));
+    const offset = (config.time && config.time.offsetMs) || 0;
+    return new Date(Date.now() + offset);
   }
 
   let config = SBConfig.getConfig(); // sync default so applyScale()/render() never see undefined before boot() resolves
@@ -82,6 +87,21 @@
     if (e.key === SBConfig.STORAGE_KEY) reloadConfig();
   });
 
+  // Server-backed config (Linux kiosk / Android shell): a save from a *phone*
+  // hits /api/config on the board, which the `storage` event above can't see
+  // (different browser). Poll the stored config and reload on any change, so
+  // phone edits show on the board within a few seconds. Falls back to the same
+  // localStorage read on a plain dev server, so this is harmless there too.
+  let lastConfigJson = null;
+  async function pollConfig() {
+    try {
+      const stored = await SBConfig.getStoredAsync();
+      const json = JSON.stringify(stored);
+      if (lastConfigJson === null) { lastConfigJson = json; return; }
+      if (json !== lastConfigJson) { lastConfigJson = json; await reloadConfig(); }
+    } catch (e) { /* transient fetch error — try again next tick */ }
+  }
+
   let ticking = false;
   async function tick() {
     if (ticking) return; // guard against overlapping async ticks at a date rollover
@@ -104,7 +124,9 @@
     applyTheme();
     await Promise.all([loadContent(), ensureTimeline(now())]);
     await tick();
+    lastConfigJson = JSON.stringify(await SBConfig.getStoredAsync());
     setInterval(tick, 1000); // single interval for the app's lifetime — no leaks
+    setInterval(pollConfig, 3000); // pick up phone/admin saves on the board
   }
 
   boot();

@@ -128,9 +128,12 @@
     };
   }
 
+  // Wide range (0.2–5×) so the same board suits a tiny tablet panel up to a
+  // large hall TV; the theme is already resolution-independent (vmin), so
+  // scale is a *fine* preference on top, not the thing that makes it readable.
   function clampScale(v) {
     const n = Number(v);
-    return Number.isFinite(n) ? Math.max(0.5, Math.min(2.0, n)) : 1.0;
+    return Number.isFinite(n) ? Math.max(0.2, Math.min(5.0, n)) : 1.0;
   }
 
   function applyOverrides(merged) {
