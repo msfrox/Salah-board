@@ -80,7 +80,35 @@
     });
   }
 
+  // ── Software update (git pull) + reboot ──────────────────
+  function wireUpdate() {
+    const upStatus = m => { const el = $('#update-status'); if (el) el.textContent = m; };
+    const upBtn = $('#update-btn');
+    if (upBtn) upBtn.addEventListener('click', async () => {
+      if (!confirm('Fetch and apply the latest code from GitHub?')) return;
+      upBtn.disabled = true;
+      upStatus('Updating from GitHub…');
+      const r = await post('/api/update');
+      upBtn.disabled = false;
+      if (r.ok) {
+        upStatus(r.output && /already up to date/i.test(r.output)
+          ? 'Already up to date.'
+          : 'Updated. Reboot the board to apply the new code.');
+      } else {
+        upStatus('Update failed — ' + (r.error || 'board device with internet only.'));
+      }
+    });
+    const rbBtn = $('#reboot-btn');
+    if (rbBtn) rbBtn.addEventListener('click', async () => {
+      if (!confirm('Reboot the board now?')) return;
+      upStatus('Rebooting…');
+      const r = await post('/api/reboot');
+      if (!r.ok) upStatus('Could not reboot — ' + (r.error || 'board device only.'));
+    });
+  }
+
   document.addEventListener('sb-tab-shown', e => { if (e.detail.tab === 'network') refresh(); });
 
   wire();
+  wireUpdate();
 })();

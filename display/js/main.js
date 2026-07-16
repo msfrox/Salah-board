@@ -19,13 +19,13 @@
     const parsed = new Date(dbg.t);
     if (!isNaN(parsed.getTime())) { fakeBase = parsed; realBase = Date.now(); }
   }
-  // Real clock carries config.time.offsetMs (manual second-level correction for
-  // RTC drift when offline — see the admin Time tab). The ?t= fake clock is an
-  // explicit dev override and deliberately ignores the offset.
+  // The board shows the real device clock — a single source of truth. The
+  // admin Time tab adjusts the actual OS clock (not a display-only offset), so
+  // there is never a second "board time" to reconcile. The ?t= fake clock is
+  // the only exception, and only for dev/QA.
   function now() {
     if (fakeBase) return new Date(fakeBase.getTime() + (Date.now() - realBase));
-    const offset = (config.time && config.time.offsetMs) || 0;
-    return new Date(Date.now() + offset);
+    return new Date();
   }
 
   let config = SBConfig.getConfig(); // sync default so applyScale()/render() never see undefined before boot() resolves

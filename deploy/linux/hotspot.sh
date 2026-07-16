@@ -51,17 +51,22 @@ emit_status() {
 }
 
 ensure_profile() {
-  # Create the profile if missing; caller sets ssid/psk via `config`.
+  # Create or repair the AP profile, ALWAYS bound to the real WiFi device.
+  # (Binding is why an earlier profile could fail with "device lo not
+  # available" — an unbound AP profile let NetworkManager try loopback.)
   local dev="$1"
   if ! nmcli -t -f NAME connection show 2>/dev/null | grep -qx "$CON"; then
     nmcli connection add type wifi ifname "$dev" con-name "$CON" \
       autoconnect no ssid "SalahBoard" >/dev/null
-    nmcli connection modify "$CON" \
-      802-11-wireless.mode ap 802-11-wireless.band bg \
-      ipv4.method shared \
-      802-11-wireless-security.key-mgmt wpa-psk \
-      802-11-wireless-security.psk "salahboard" >/dev/null
   fi
+  nmcli connection modify "$CON" \
+    connection.interface-name "$dev" \
+    802-11-wireless.mode ap 802-11-wireless.band bg \
+    ipv4.method shared \
+    802-11-wireless-security.key-mgmt wpa-psk >/dev/null
+  # Give it a default password if none is set yet, so `start` alone works.
+  local psk; psk="$(nmcli -s -g 802-11-wireless-security.psk connection show "$CON" 2>/dev/null || true)"
+  [ -n "$psk" ] || nmcli connection modify "$CON" 802-11-wireless-security.psk "salahboard" >/dev/null
 }
 
 cmd="${1:-status}"
@@ -71,10 +76,10 @@ case "$cmd" in
     ;;
   start)
     have_nmcli || { echo "nmcli not installed" >&2; exit 1; }
-    dev="$(wifi_dev)"; [ -n "$dev" ] || { echo "no WiFi adapter" >&2; exit 1; }
+    dev="$(wifi_dev)"; [ -n "$dev" ] || { echo "no WiFi adapter found on this device" >&2; exit 1; }
     ensure_profile "$dev"
-    nmcli connection up "$CON" >/dev/null
-    echo "hotspot up"
+    nmcli connection up "$CON" ifname "$dev" >/dev/null
+    echo "hotspot up on $dev"
     ;;
   stop)
     have_nmcli || { echo "nmcli not installed" >&2; exit 1; }
@@ -86,14 +91,14 @@ case "$cmd" in
     ssid="${2:-}"; psk="${3:-}"
     [ -n "$ssid" ] || { echo "ssid required" >&2; exit 1; }
     [ "${#psk}" -ge 8 ] || { echo "password must be at least 8 characters" >&2; exit 1; }
-    dev="$(wifi_dev)"; [ -n "$dev" ] || { echo "no WiFi adapter" >&2; exit 1; }
+    dev="$(wifi_dev)"; [ -n "$dev" ] || { echo "no WiFi adapter found on this device" >&2; exit 1; }
     ensure_profile "$dev"
     nmcli connection modify "$CON" \
       802-11-wireless.ssid "$ssid" \
       802-11-wireless-security.key-mgmt wpa-psk \
       802-11-wireless-security.psk "$psk" >/dev/null
-    nmcli connection up "$CON" >/dev/null
-    echo "hotspot configured and up"
+    nmcli connection up "$CON" ifname "$dev" >/dev/null
+    echo "hotspot configured and up on $dev"
     ;;
   *)
     echo "usage: hotspot.sh {status|start|stop|config <ssid> <psk>}" >&2

@@ -244,14 +244,14 @@
     <div class="tab-panel" data-panel="time" hidden>
       <section class="card">
         <h2>Time &amp; date</h2>
-        <p class="hint">Online, the board keeps accurate time automatically (internet time / NTP). Offline, the clock chip can drift — use these controls to correct it to the second. Adjustments apply to the board immediately.</p>
+        <p class="hint">This is the board's real clock. Every control here sets the device's actual system time, so the board and these settings never disagree. Accurate to the second. (Works on the board device.)</p>
         <div class="time-live">
-          <div class="time-live-label">Board time now</div>
+          <div class="time-live-label">Board clock</div>
           <div class="time-live-clock" id="board-clock">--:--:--</div>
-          <div class="time-live-sub" id="board-offset">offset 0 s</div>
+          <div class="time-live-sub" id="board-date"></div>
         </div>
         <div class="field">
-          <span>Nudge the clock</span>
+          <span>Nudge the clock (changes the device time)</span>
           <div class="nudge-grid">
             <button type="button" class="btn btn--secondary" data-nudge="-60">−1 min</button>
             <button type="button" class="btn btn--secondary" data-nudge="-10">−10 s</button>
@@ -263,20 +263,13 @@
         </div>
         <div class="time-actions">
           <button type="button" id="time-match-btn" class="btn btn--primary">Match this device's clock</button>
-          <button type="button" id="time-reset-btn" class="btn btn--secondary">Clear offset</button>
         </div>
+        <label class="field">
+          <span>Or set an exact date &amp; time</span>
+          <input type="datetime-local" step="1" id="settime-input">
+        </label>
+        <button type="button" id="settime-btn" class="btn btn--secondary">Set board clock</button>
         <p class="readonly-status" id="time-status"></p>
-
-        <details class="advanced">
-          <summary>Advanced: set the board's system clock</summary>
-          <p class="hint">Only for an offline board whose clock chip has drifted badly. This turns off automatic internet time. On a board with internet, leave this alone and use the nudge/match above.</p>
-          <label class="field">
-            <span>Set board clock to</span>
-            <input type="datetime-local" step="1" id="settime-input">
-          </label>
-          <button type="button" id="settime-btn" class="btn btn--secondary">Set system clock</button>
-          <p class="readonly-status" id="settime-status"></p>
-        </details>
       </section>
     </div>
 
@@ -320,6 +313,16 @@
           <button type="button" class="btn btn--secondary" data-display="tablet">Tablet screen only</button>
         </div>
         <p class="readonly-status" id="display-status"></p>
+      </section>
+
+      <section class="card">
+        <h2>Software update</h2>
+        <p class="hint">Fetch the latest Salah Board code from GitHub and apply it. The board must be connected to the internet. (Board device only.)</p>
+        <div class="hotspot-btns">
+          <button type="button" class="btn btn--primary" id="update-btn">Update from GitHub</button>
+          <button type="button" class="btn btn--secondary" id="reboot-btn">Reboot board</button>
+        </div>
+        <p class="readonly-status" id="update-status"></p>
       </section>
     </div>
 

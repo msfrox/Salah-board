@@ -1,142 +1,104 @@
 /* ============================================================
    Salah Board — time.js  (admin Time tab)
 
-   Corrects clock drift to the second. The display renders
-   now() + config.time.offsetMs (see display/js/main.js), so nudging
-   the offset moves the board immediately — no OS privileges needed.
-
-   To show an accurate LIVE board clock even from a phone (whose own
-   clock may differ from the board's), we fetch the board's wall time
-   once via GET /api/time and track the skew between board and this
-   device; the ticking clock is then deviceNow + skew + offset.
-     - "Match this device's clock" sets offset so the board shows THIS
-       device's time  ->  offset = -skew.
-     - Advanced "set system clock" POSTs to /api/time (sudoers helper).
-   On a plain dev server /api/time is absent: skew = 0 (admin and board
-   share a browser), so everything still behaves sensibly.
+   ONE clock: the board's real system time. The live display reads it from
+   GET /api/time (the board's own wall clock, ticked locally between fetches
+   so it's smooth and timezone-correct on any phone). Every control SETS the
+   device clock via POST /api/time -> settime.sh, so "what you set is the
+   actual device time" — no separate display offset to reconcile.
    ============================================================ */
 (function () {
   'use strict';
   const $ = s => document.querySelector(s);
   const pad2 = n => String(n).padStart(2, '0');
 
-  let offsetMs = 0;          // config.time.offsetMs (what we edit)
-  let skewMs = 0;            // boardNow - deviceNow, measured from /api/time
-  let loaded = false;
+  // The board's wall time captured at the last /api/time fetch, plus the local
+  // performance timestamp then, so we can tick it forward smoothly.
+  let boardWallAtFetch = null;   // Date carrying the board's H:M:S/Y-M-D
+  let fetchLocalMs = 0;
+  let available = false;
 
-  function fmtOffset(ms) {
-    if (!ms) return 'no correction (0 s)';
-    const sign = ms > 0 ? '+' : '−';
-    const s = Math.abs(ms) / 1000;
-    if (s < 60) return `${sign}${s.toFixed(s % 1 ? 1 : 0)} s`;
-    const m = Math.floor(s / 60), rem = Math.round(s % 60);
-    return `${sign}${m} min ${rem} s`;
+  function isoLocal(d) {
+    return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}` +
+           `T${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
   }
-
-  function fmtClock(d) {
-    return `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
-  }
-
   function boardNow() {
-    return new Date(Date.now() + skewMs + offsetMs);
+    if (!boardWallAtFetch) return new Date();
+    return new Date(boardWallAtFetch.getTime() + (Date.now() - fetchLocalMs));
   }
+  function status(msg) { const el = $('#time-status'); if (el) el.textContent = msg; }
 
   function renderLive() {
+    const d = boardNow();
     const clock = $('#board-clock');
-    if (clock) clock.textContent = fmtClock(boardNow());
-    const off = $('#board-offset');
-    if (off) off.textContent = 'offset ' + fmtOffset(offsetMs);
+    if (clock) clock.textContent = `${pad2(d.getHours())}:${pad2(d.getMinutes())}:${pad2(d.getSeconds())}`;
+    const dateEl = $('#board-date');
+    if (dateEl) dateEl.textContent = boardWallAtFetch
+      ? d.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+      : 'board clock unavailable here';
   }
 
-  async function measureSkew() {
+  async function fetchBoardTime() {
     try {
-      const t0 = Date.now();
       const res = await fetch('/api/time', { cache: 'no-store' });
       if (!res.ok) return;
-      const t1 = Date.now();
       const info = await res.json();
-      // Compensate for round-trip: assume the reading is from mid-flight.
-      skewMs = info.nowMs - (t0 + (t1 - t0) / 2);
-    } catch (e) { /* no board server (plain dev) — skew stays 0 */ }
+      // info.iso is the board's local wall time — parse its components only.
+      boardWallAtFetch = new Date(info.iso);
+      fetchLocalMs = Date.now();
+      available = true;
+      renderLive();
+    } catch (e) { available = false; }
   }
 
-  async function loadOffset() {
-    const cfg = await window.SBAdmin.loadConfig();
-    offsetMs = (cfg.time && cfg.time.offsetMs) || 0;
-    loaded = true;
-    renderLive();
-  }
-
-  // Persist a new offset, re-reading the latest config first so we never
-  // clobber a concurrent edit made elsewhere in the form.
-  async function saveOffset(newOffset) {
-    offsetMs = newOffset;
-    renderLive();
-    const cfg = await window.SBAdmin.loadConfig();
-    cfg.time = cfg.time || {};
-    cfg.time.offsetMs = Math.round(offsetMs);
-    cfg.time.lastSyncSource = 'manual';
-    cfg.time.lastSyncISO = new Date().toISOString();
-    await window.SBAdmin.persistConfig(cfg);
-    status('Board clock updated.');
-  }
-
-  function status(msg) {
-    const el = $('#time-status');
-    if (el) el.textContent = msg;
+  // Set the board's OS clock to a wall-clock target (a Date whose local
+  // components are the desired board time).
+  async function setBoardClock(target, label) {
+    status('Setting…');
+    try {
+      const res = await fetch('/api/time', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ iso: isoLocal(target) }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok && j.ok) {
+        status(label || 'Board clock updated.');
+        await fetchBoardTime();
+      } else {
+        status('Could not set the clock — ' + (j.error ||
+          'this works on the board device once the installer has set it up.'));
+      }
+    } catch (e) {
+      status('Could not set the clock — this only works on the board device.');
+    }
   }
 
   function wire() {
     document.querySelectorAll('[data-nudge]').forEach(btn => {
       btn.addEventListener('click', () => {
         const delta = Number(btn.getAttribute('data-nudge')) * 1000;
-        saveOffset(offsetMs + delta);
+        setBoardClock(new Date(boardNow().getTime() + delta), 'Board clock nudged.');
       });
     });
     const match = $('#time-match-btn');
-    if (match) match.addEventListener('click', async () => {
-      await measureSkew();               // refresh skew right before matching
-      saveOffset(-skewMs);               // board shows THIS device's time
-      status("Board clock matched to this device's time.");
-    });
-    const reset = $('#time-reset-btn');
-    if (reset) reset.addEventListener('click', () => { saveOffset(0); status('Offset cleared.'); });
-
+    if (match) match.addEventListener('click', () => setBoardClock(new Date(), "Board clock matched to this device."));
     const setBtn = $('#settime-btn');
-    if (setBtn) setBtn.addEventListener('click', async () => {
-      const v = $('#settime-input').value;   // "YYYY-MM-DDTHH:MM" or ":SS"
-      if (!v) { $('#settime-status').textContent = 'Pick a date & time first.'; return; }
-      const iso = v.length === 16 ? v + ':00' : v;
-      $('#settime-status').textContent = 'Setting…';
-      try {
-        const res = await fetch('/api/time', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ iso }),
-        });
-        const j = await res.json().catch(() => ({}));
-        $('#settime-status').textContent = (res.ok && j.ok)
-          ? 'System clock set. You may want to clear the offset above.'
-          : 'Could not set the clock — ' + (j.error || 'board device only, and only if the installer set it up.');
-        await measureSkew();
-      } catch (e) {
-        $('#settime-status').textContent = 'Could not set the clock — this only works on the board device.';
-      }
+    if (setBtn) setBtn.addEventListener('click', () => {
+      const v = $('#settime-input').value;      // "YYYY-MM-DDTHH:MM[:SS]"
+      if (!v) { status('Pick a date & time first.'); return; }
+      setBoardClock(new Date(v), 'Board clock set.');
     });
   }
 
   async function init() {
     wire();
-    await measureSkew();
-    await loadOffset();
+    await fetchBoardTime();
     setInterval(renderLive, 1000);
-    // Re-measure skew occasionally so a long-open panel stays accurate.
-    setInterval(measureSkew, 30000);
+    setInterval(fetchBoardTime, 30000);  // resync to the OS clock periodically
   }
 
-  document.addEventListener('sb-tab-shown', e => {
-    if (e.detail.tab === 'time') { measureSkew(); if (loaded) loadOffset(); }
-  });
+  document.addEventListener('sb-tab-shown', e => { if (e.detail.tab === 'time') fetchBoardTime(); });
 
   init();
 })();

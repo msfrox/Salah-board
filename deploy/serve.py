@@ -53,6 +53,7 @@ ROOT = os.path.abspath(
 DISPLAY_TOGGLE = os.path.join(ROOT, "deploy", "linux", "display-toggle.sh")
 HOTSPOT_SH = os.path.join(ROOT, "deploy", "linux", "hotspot.sh")
 SETTIME_SH = os.path.join(ROOT, "deploy", "linux", "settime.sh")
+REBOOT_SH = os.path.join(ROOT, "deploy", "linux", "reboot.sh")
 VALID_MODES = ("external", "tablet", "both", "toggle")
 
 CONFIG_PATH = os.environ.get("SALAHBOARD_CONFIG") or os.path.join(
@@ -207,7 +208,34 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if len(parts) == 3 and parts[0] == "api" and parts[1] == "hotspot":
             return self._hotspot(parts[2])
 
+        # /api/update  -> git pull the repo to the latest code
+        if parts == ["api", "update"]:
+            return self._update()
+
+        # /api/reboot  -> reboot the board (applies updated code)
+        if parts == ["api", "reboot"]:
+            ok, out, err = run_helper(REBOOT_SH, timeout=10)
+            return self._json(200 if ok else 500, {"ok": ok, "output": out,
+                              "error": None if ok else (err or "reboot helper unavailable")})
+
         return self._json(404, {"ok": False, "error": "not found"})
+
+    def _update(self):
+        """`git pull` the repo (owned by this unprivileged user) to latest."""
+        try:
+            before = subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD"],
+                                    capture_output=True, text=True, timeout=15).stdout.strip()
+            r = subprocess.run(["git", "-C", ROOT, "pull", "--ff-only"],
+                               capture_output=True, text=True, timeout=120)
+            after = subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD"],
+                                   capture_output=True, text=True, timeout=15).stdout.strip()
+            out = (r.stdout + r.stderr).strip()
+            if r.returncode != 0:
+                return self._json(500, {"ok": False, "output": out,
+                                        "error": "git pull failed (local changes, or no internet?)"})
+            return self._json(200, {"ok": True, "changed": before != after, "output": out})
+        except (OSError, subprocess.SubprocessError) as e:
+            return self._json(500, {"ok": False, "error": str(e)})
 
     def _display(self, mode):
         if mode not in VALID_MODES:

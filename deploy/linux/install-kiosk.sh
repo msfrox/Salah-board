@@ -172,11 +172,13 @@ echo ">> Allowing the admin panel to control the WiFi hotspot & clock..."
 # "unavailable" and everything else keeps working.
 HOTSPOT_SH="${REPO_DIR}/deploy/linux/hotspot.sh"
 SETTIME_SH="${REPO_DIR}/deploy/linux/settime.sh"
-chmod +x "$HOTSPOT_SH" "$SETTIME_SH" 2>/dev/null || true
+REBOOT_SH="${REPO_DIR}/deploy/linux/reboot.sh"
+chmod +x "$HOTSPOT_SH" "$SETTIME_SH" "$REBOOT_SH" 2>/dev/null || true
 cat >/etc/sudoers.d/salahboard <<EOF
 # Salah Board — installed by install-kiosk.sh. Lets the board's admin panel
-# manage its WiFi hotspot and system clock. Scoped to two scripts only.
-${KIOSK_USER} ALL=(root) NOPASSWD: ${HOTSPOT_SH} *, ${SETTIME_SH} *
+# manage its WiFi hotspot, system clock and reboot (after an update). Scoped
+# to these three scripts only.
+${KIOSK_USER} ALL=(root) NOPASSWD: ${HOTSPOT_SH} *, ${SETTIME_SH} *, ${REBOOT_SH}
 EOF
 chmod 0440 /etc/sudoers.d/salahboard
 if ! visudo -cf /etc/sudoers.d/salahboard >/dev/null 2>&1; then
