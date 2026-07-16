@@ -179,15 +179,13 @@ html, body {
 /* ── Tabs ─────────────────────────────────────────────────── */
 .tabs {
   display: flex;
+  flex-wrap: wrap;                 /* wrap to a second row instead of clipping —
+                                      every tab stays reachable with a mouse */
   gap: .35rem;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
   padding: .5rem 1rem 0;
   max-width: 672px;
   margin: 0 auto;
-  scrollbar-width: none;
 }
-.tabs::-webkit-scrollbar { display: none; }
 .tab {
   flex: 0 0 auto;
   padding: .55rem .9rem;

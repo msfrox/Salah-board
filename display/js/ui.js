@@ -10,6 +10,40 @@
 
   const pad2 = n => String(n).padStart(2, '0');
 
+  // Inline SVG icons — never rely on emoji, which render as tofu (□) on kiosk
+  // browsers with no emoji font. currentColor inherits the surrounding colour.
+  const ICON_NO_PHONE =
+    '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" ' +
+    'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+    '<rect x="7" y="3" width="10" height="18" rx="2"/><line x1="11" y1="18" x2="13" y2="18"/>' +
+    '<line x1="3" y1="3" x2="21" y2="21"/></svg>';
+
+  // Shrink the masjid name to fit its row on one line (long names like
+  // "Athurugiriya Jumma Masjidh" otherwise wrapped and broke the layout).
+  // Cheap: only measures/adjusts when the name or available width changed.
+  let _fitCache = { name: null, avail: 0 };
+  function fitMasjidName(root) {
+    const el = root.querySelector('.masjid-name');
+    if (!el) return;
+    const topbar = el.closest('.topbar') || el.parentElement;
+    const dates = topbar ? topbar.querySelector('.dates') : null;
+    const avail = topbar
+      ? topbar.clientWidth - (dates ? dates.getBoundingClientRect().width : 0) - 32
+      : el.clientWidth;
+    const name = el.textContent;
+    if (_fitCache.name === name && Math.abs(_fitCache.avail - avail) < 2) return;
+    _fitCache = { name, avail };
+    el.style.fontSize = '';                 // reset to the theme's default
+    if (avail <= 0) return;
+    const base = parseFloat(getComputedStyle(el).fontSize);
+    let size = base;
+    // Reduce until it fits, but never below 55% of the theme size.
+    for (let i = 0; i < 24 && el.scrollWidth > avail && size > base * 0.55; i++) {
+      size *= 0.96;
+      el.style.fontSize = size + 'px';
+    }
+  }
+
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -255,7 +289,7 @@
           <p class="arabic" dir="rtl">${escapeHtml(dua.arabic)}</p>
           <p class="translation">${escapeHtml(dua.translation)}</p>
         </div>
-        <div class="phones-silent-icon">📵</div>
+        <div class="phones-silent-icon">${ICON_NO_PHONE}</div>
       </div>`;
   }
 
@@ -382,6 +416,7 @@
     const fn = RENDERERS[result.state] || renderNormal;
     container.innerHTML = fn(config, result, contentByLang);
     container.className = `screen-root theme-${config.theme} state-${result.state.toLowerCase()}`;
+    if (result.state === 'NORMAL') fitMasjidName(container);
   }
 
   function applyNightDim(overlayEl, active, brightnessPercent) {

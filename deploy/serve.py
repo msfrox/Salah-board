@@ -257,8 +257,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return self._json(400, {"ok": False, "error": f"bad hotspot action: {action}"})
 
 
-# Correct MIME for the zone/content JSON the engine fetches.
+# Correct MIME for the assets the display fetches. Some minimal setups serve
+# .woff2 as octet-stream, which stricter browsers refuse — pin the real types
+# so the bundled fonts (and thus Arabic/Tamil/Sinhala glyphs) always load.
 Handler.extensions_map[".json"] = "application/json"
+Handler.extensions_map[".woff2"] = "font/woff2"
+Handler.extensions_map[".woff"] = "font/woff"
+Handler.extensions_map[".svg"] = "image/svg+xml"
 
 
 class Server(socketserver.ThreadingTCPServer):

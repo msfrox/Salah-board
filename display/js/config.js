@@ -18,8 +18,8 @@
         languages: ['en'],
       },
       zone: '01',            // ACJU Zone 01 = Colombo / Gampaha / Kalutara
-      theme: 'highcontrast',
-      display: { scale: 1.0 },
+      theme: 'default',
+      display: { scale: 1.0, font: 'google-sans-flex' },
       clock: { format: '12h', showSeconds: true },
       hijri: { offsetDays: 0, flipAtMaghrib: true },
 

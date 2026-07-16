@@ -60,11 +60,21 @@
         <label class="field">
           <span>Theme</span>
           <select data-path="theme">
+            <option value="default">Default (bold black &amp; green)</option>
             <option value="classic">Classic (dark, modern)</option>
             <option value="led">LED Board (retro green digits)</option>
             <option value="mono">Mono (minimal white-on-black)</option>
-            <option value="highcontrast">High-Contrast (bold black &amp; green)</option>
           </select>
+        </label>
+        <label class="field">
+          <span>Font</span>
+          <select data-path="display.font">
+            <option value="google-sans-flex">Google Sans (modern, fits long names)</option>
+            <option value="manrope">Manrope</option>
+            <option value="figtree">Figtree</option>
+            <option value="noto">Noto Sans (classic)</option>
+          </select>
+          <span class="hint">Latin text uses this font; Tamil/Sinhala/Arabic always use the bundled Noto faces.</span>
         </label>
         <label class="field">
           <span>Display scale (<span id="scale-value">1.0</span>×)</span>

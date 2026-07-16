@@ -1,5 +1,5 @@
 /* ============================================================
-   Salah Board — theme: highcontrast
+   Salah Board — theme: default (formerly "highcontrast")
    Pure black ground, bright white type, a single "go"-green accent.
    Ported from the README-designs.md mockups (source/Salah Board.dc.html):
    azan/iqamah times are the hero (biggest text on the board), the
@@ -36,7 +36,7 @@
   --sb-gold-2: #e8c86a;      /* Jumu'ah / Ramadan accents */
   --sb-border: rgba(255, 255, 255, .12);
   --sb-radius: 16px;
-  --sb-font: 'Salah Sans', 'Segoe UI', Tahoma, Arial, sans-serif;
+  --sb-font: var(--sb-font-ui, 'Salah Sans'), 'Salah Sans', 'Segoe UI', Tahoma, Arial, sans-serif;
   --sb-font-arabic: 'Salah Arabic', 'Traditional Arabic', 'Scheherazade New', serif;
 }
 
@@ -108,8 +108,11 @@ html, body {
 .screen { position: relative; z-index: 1; display: flex; flex-direction: column; height: 100%; gap: 2rem; }
 
 /* ── Shared bits ─────────────────────────────────────────── */
-.topbar { display: flex; justify-content: space-between; align-items: flex-start; }
-.masjid-name { font-size: 3rem; font-weight: 800; letter-spacing: .18em; }
+.topbar { display: flex; justify-content: space-between; align-items: flex-start; gap: 2rem; }
+/* Fits long masjid names on one line: modest letter-spacing (the old .18em
+   blew wide names onto two lines) + nowrap, and a JS auto-shrink in ui.js
+   (fitMasjidName) drops the size only if it still overflows. */
+.masjid-name { font-size: 2.8rem; font-weight: 700; letter-spacing: .02em; white-space: nowrap; min-width: 0; }
 .dates { text-align: right; font-size: 1.6rem; font-weight: 600; letter-spacing: .06em; color: var(--sb-fg-dim); display: flex; flex-direction: row; align-items: baseline; gap: .5em; white-space: nowrap; }
 .date-sep { opacity: .6; }
 

@@ -17,7 +17,7 @@
   --sb-danger: #ffffff;
   --sb-border: #2a2a2a;
   --sb-radius: 0px;
-  --sb-font: 'Salah Sans', 'Segoe UI', Tahoma, Arial, sans-serif;
+  --sb-font: var(--sb-font-ui, 'Salah Sans'), 'Salah Sans', 'Segoe UI', Tahoma, Arial, sans-serif;
   --sb-font-arabic: 'Salah Arabic', 'Traditional Arabic', 'Scheherazade New', serif;
 }
 

@@ -40,11 +40,27 @@
     document.documentElement.style.setProperty('--sb-scale', config.display.scale);
   }
 
+  // Selectable modern UI font (config.display.font) — becomes the first
+  // family in the theme's --sb-font stack, so Latin uses it and the bundled
+  // Noto faces still cover Sinhala/Tamil/Arabic. See display/fonts/fonts.css.
+  const UI_FONTS = {
+    'google-sans-flex': "'Google Sans Flex'",
+    'manrope': "'Manrope'",
+    'figtree': "'Figtree'",
+    'noto': "'Salah Sans'",
+  };
+  function applyFont() {
+    const f = UI_FONTS[(config.display && config.display.font)] || UI_FONTS['google-sans-flex'];
+    document.documentElement.style.setProperty('--sb-font-ui', f);
+  }
+
   // Themes are plain CSS folders (docs/MILESTONES.md M5) — swapping the
-  // stylesheet href is the entire mechanism, no JS per theme.
+  // stylesheet href is the entire mechanism, no JS per theme. 'highcontrast'
+  // was renamed to 'default'; keep old saved configs working transparently.
   let currentTheme = null;
   function applyTheme() {
-    const theme = config.theme || 'classic';
+    let theme = config.theme || 'default';
+    if (theme === 'highcontrast') theme = 'default';
     if (theme === currentTheme) return;
     currentTheme = theme;
     document.getElementById('theme-css').href = `./themes/${theme}/theme.css`;
@@ -75,6 +91,7 @@
   async function reloadConfig() {
     config = await SBConfig.getConfigAsync();
     applyScale();
+    applyFont();
     applyTheme();
     timeline = null;
     timelineDateKey = null;
@@ -121,6 +138,7 @@
   async function boot() {
     config = await SBConfig.getConfigAsync();
     applyScale();
+    applyFont();
     applyTheme();
     await Promise.all([loadContent(), ensureTimeline(now())]);
     await tick();

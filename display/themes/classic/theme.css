@@ -22,7 +22,7 @@
   --sb-danger: #e74c3c;   /* red — silence / khutbah / salah */
   --sb-border: #1c2434;
   --sb-radius: 14px;
-  --sb-font: 'Salah Sans', 'Segoe UI', Tahoma, Arial, sans-serif;
+  --sb-font: var(--sb-font-ui, 'Salah Sans'), 'Salah Sans', 'Segoe UI', Tahoma, Arial, sans-serif;
   --sb-font-arabic: 'Salah Arabic', 'Traditional Arabic', 'Scheherazade New', serif;
 }
 

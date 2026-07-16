@@ -61,7 +61,9 @@
   // ── Config load/save — /api/config on Android, localStorage in
   //    browser-dev, same shape either way (see admin/api.md) ──
   async function loadConfig() {
-    return SBConfig.deepMerge(SBConfig.defaults(), await SBConfig.getStoredAsync());
+    const cfg = SBConfig.deepMerge(SBConfig.defaults(), await SBConfig.getStoredAsync());
+    if (cfg.theme === 'highcontrast') cfg.theme = 'default'; // renamed theme — migrate
+    return cfg;
   }
   async function persistConfig(config) {
     try {
