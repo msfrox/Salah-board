@@ -8,6 +8,7 @@
 </head>
 <body>
   <header class="admin-header">
+    <a href="../display/" class="btn btn--secondary back-to-display">&larr; Back to display</a>
     <h1>Salah Board — Admin</h1>
     <p class="admin-sub">Changes save to this device/browser and reach the display within a couple of seconds.</p>
   </header>
@@ -35,6 +36,27 @@
         <span>Primary language (used for main labels)</span>
         <select id="primary-lang"></select>
       </label>
+    </section>
+
+    <section class="card">
+      <h2>Connect a phone</h2>
+      <p class="hint">Open these settings on your phone — handy for typing longer text. The phone must be on the same WiFi as the board.</p>
+      <button type="button" id="phone-link-btn" class="btn btn--secondary">Show phone link &amp; QR</button>
+      <div id="phone-link" hidden>
+        <div id="phone-qr" class="phone-qr"></div>
+        <p class="phone-url" id="phone-url"></p>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Displays</h2>
+      <p class="hint">Choose which screen shows the board. Works on the board device itself (not from a phone/dev browser). You can also press Super+P on the device to toggle.</p>
+      <div class="display-btns">
+        <button type="button" class="btn btn--secondary" data-display="external">External monitor only</button>
+        <button type="button" class="btn btn--secondary" data-display="both">Both (mirror)</button>
+        <button type="button" class="btn btn--secondary" data-display="tablet">Tablet screen only</button>
+      </div>
+      <p class="readonly-status" id="display-status"></p>
     </section>
 
     <section class="card">
@@ -225,5 +247,8 @@
   <script src="../display/js/engine.js"></script>
   <script src="../display/js/config.js"></script>
   <script src="./js/admin.js"></script>
+  <script src="./js/vendor/qrcode.js"></script>
+  <script src="./js/device.js"></script>
+  <script src="./js/osk.js"></script>
 </body>
 </html>

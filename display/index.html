@@ -11,6 +11,13 @@
   <div id="screen-root" class="screen-root"></div>
   <div id="night-overlay" aria-hidden="true"></div>
 
+  <!-- Click/tap anywhere on the board opens the on-device settings page —
+       the same gesture the Android shell uses (touch the screen → settings).
+       The board has no other interactive elements, so any click means "settings". -->
+  <script>
+    document.addEventListener('click', function () { location.href = '../admin/'; });
+  </script>
+
   <script src="./js/config.js"></script>
   <script src="./js/engine.js"></script>
   <script src="./js/state.js"></script>

@@ -1,0 +1,15 @@
+# One-shot: on the first boot after an automated (preseed) install, run the
+# kiosk installer, then disable itself. Enabled by preseed/late_command.
+[Unit]
+Description=Salah Board first-boot kiosk setup
+After=network-online.target
+Wants=network-online.target
+ConditionPathExists=/home/board/Salah-board/deploy/linux/firstboot.sh
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /home/board/Salah-board/deploy/linux/firstboot.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

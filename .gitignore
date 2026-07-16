@@ -8,3 +8,7 @@ android/build/
 android/app/build/
 .DS_Store
 Thumbs.db
+
+# Offline .deb bundle for the PC kiosk — large binaries, staged locally by
+# deploy/linux/fetch-offline-debs.sh and copied onto install media, not committed.
+deploy/linux/offline-debs/

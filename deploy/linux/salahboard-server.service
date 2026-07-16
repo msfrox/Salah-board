@@ -1,0 +1,17 @@
+# Salah Board static server — systemd unit TEMPLATE.
+# install-kiosk.sh copies this to /etc/systemd/system/ with @REPO@ and
+# @USER@ substituted. You normally don't edit or install this by hand.
+[Unit]
+Description=Salah Board static server (display/)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=@USER@
+ExecStart=/usr/bin/python3 @REPO@/deploy/serve.py 8080
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

@@ -58,10 +58,16 @@ so the app never *needs* the internet.
 # 1. Get the timetable data (copies from sibling repo or downloads)
 powershell tools/sync-data.ps1
 
-# 2. Serve the display folder (any static server)
-cd display && python -m http.server 8000
-# open http://localhost:8000  — add ?t=2026-07-02T12:10 to fake the clock
+# 2. Serve the repo (any static server; this one adds no-cache headers)
+python3 deploy/serve.py 8080
+# board:    http://localhost:8080/display/  — add ?t=2026-07-02T12:10 to fake the clock
+# settings: http://localhost:8080/admin/    — or click the gear on the board
 ```
+
+Serving the repo root (not just `display/`) keeps the on-device settings link
+working: the board's gear button opens `/admin/`, which shares its browser
+storage, so a Save reaches the display. To run it on a spare PC/tablet as a
+real auto-starting kiosk, see [`deploy/`](deploy/README.md).
 
 ## Documentation
 

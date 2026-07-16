@@ -13,10 +13,11 @@ Notes:
   Board handles this (NTP when online, or set the time from your phone) —
   see docs/ARCHITECTURE.md D5. You do NOT need an expensive box.
 - A SIM-router/hotspot is optional. The app works fully offline.
-- Also runs without Android at all: any device with a browser in kiosk
-  mode (Raspberry Pi + Chromium, old laptop, smart TV browser) can open
-  the display page — you lose the built-in admin server and auto-boot
-  conveniences, and manage config in that browser instead.
+- Also runs without Android at all: any spare x86 PC, laptop or Windows
+  tablet works as a stop-gap. `deploy/` has a copy-and-run kiosk kit
+  (tiny Python static server + fullscreen Chromium/Edge + auto-boot) for
+  minimal Linux (recommended) or Windows — see `deploy/README.md`. You
+  manage config in that browser instead of the built-in admin server.
 
 ## Setup overview
 

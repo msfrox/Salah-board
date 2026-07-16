@@ -15,10 +15,10 @@
       configVersion: 1,
       masjid: {
         name: '',
-        languages: ['ta', 'en'],
+        languages: ['en'],
       },
-      zone: '01',
-      theme: 'classic',
+      zone: '01',            // ACJU Zone 01 = Colombo / Gampaha / Kalutara
+      theme: 'highcontrast',
       display: { scale: 1.0 },
       clock: { format: '12h', showSeconds: true },
       hijri: { offsetDays: 0, flipAtMaghrib: true },
