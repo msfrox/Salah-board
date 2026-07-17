@@ -120,6 +120,10 @@ if [ -n "\$EXT" ]; then
   echo external > /tmp/salahboard-display-mode
 fi
 
+# Auto-switch to the tablet panel if the HDMI monitor is unplugged (and back to
+# HDMI when it is replugged). See deploy/linux/hdmi-watch.sh.
+${REPO_DIR}/deploy/linux/hdmi-watch.sh &
+
 # Chromium in kiosk mode, restarted automatically if it ever exits/crashes
 while true; do
   ${CHROME_BIN} \\
@@ -137,7 +141,7 @@ done
 EOF
 
 echo ">> Adding a display-switch keybind (Super+P / Ctrl+Alt+P)..."
-chmod +x "${REPO_DIR}/deploy/linux/display-toggle.sh" 2>/dev/null || true
+chmod +x "${REPO_DIR}/deploy/linux/display-toggle.sh" "${REPO_DIR}/deploy/linux/hdmi-watch.sh" 2>/dev/null || true
 OB_RC="${USER_HOME}/.config/openbox/rc.xml"
 [ -f "$OB_RC" ] || cp /etc/xdg/openbox/rc.xml "$OB_RC" 2>/dev/null || true
 python3 - "$OB_RC" "${REPO_DIR}/deploy/linux/display-toggle.sh" <<'PY'
