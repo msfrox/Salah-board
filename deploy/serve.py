@@ -27,6 +27,10 @@ the LAN-only device endpoints the admin panel uses:
   POST /api/hotspot/start   -> turn the hotspot on
   POST /api/hotspot/stop    -> turn the hotspot off
   POST /api/hotspot/config  -> set {ssid, password} (and turn it on)
+  GET  /api/wifi/scan       -> nearby WiFi networks (read-only nmcli)
+  POST /api/wifi/connect    -> join {ssid, password?} an existing network
+  GET  /api/preview         -> current forced-state preview on the board (or none)
+  POST /api/preview         -> push {state, t?, seconds?} to the board (auto-expires)
 
 Config is stored OUTSIDE the repo (default ~/.config/salahboard/config.json,
 override with $SALAHBOARD_CONFIG) so a `git pull` update never touches the
@@ -36,10 +40,12 @@ do nothing unless install-kiosk.sh has added the sudoers drop-in.
 import http.server
 import json
 import os
+import shutil
 import socket
 import socketserver
 import subprocess
 import sys
+import threading
 import time
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
@@ -54,7 +60,24 @@ DISPLAY_TOGGLE = os.path.join(ROOT, "deploy", "linux", "display-toggle.sh")
 HOTSPOT_SH = os.path.join(ROOT, "deploy", "linux", "hotspot.sh")
 SETTIME_SH = os.path.join(ROOT, "deploy", "linux", "settime.sh")
 REBOOT_SH = os.path.join(ROOT, "deploy", "linux", "reboot.sh")
+WIFI_SH = os.path.join(ROOT, "deploy", "linux", "wifi.sh")
 VALID_MODES = ("external", "tablet", "both", "toggle")
+
+# ── Preview channel (show a forced state on the BOARD, not the phone) ────────
+# The admin Preview tab can push a state here; the display polls /api/preview
+# and applies it via its existing ?state= forceState path until `until` passes
+# (auto-expiry, so the board can never get stuck on a preview). In-memory only:
+# a preview is a transient QA action, never persisted.
+_PREVIEW = {"state": None, "t": None, "until": 0.0}
+_PREVIEW_LOCK = threading.Lock()
+PREVIEW_DEFAULT_SECONDS = 300
+PREVIEW_MAX_SECONDS = 3600
+# Lowercase/hyphen state keys the admin Preview grid uses; the display's
+# forceState() uppercases + underscores them (see display/js/state.js).
+VALID_PREVIEW_STATES = {
+    "normal", "azan", "between", "iqamah", "salah", "after",
+    "sunrise-wait", "luha-wait", "luha-open", "night", "jumuah", "khutbah",
+}
 
 CONFIG_PATH = os.environ.get("SALAHBOARD_CONFIG") or os.path.join(
     os.path.expanduser("~"), ".config", "salahboard", "config.json"
@@ -177,6 +200,19 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             return self._json(200, {"available": False, "active": False,
                                     "error": err or out or "hotspot helper unavailable"})
 
+        if path == "/api/preview":
+            with _PREVIEW_LOCK:
+                remaining = _PREVIEW["until"] - time.time()
+                if remaining <= 0:
+                    return self._json(200, {"active": False})
+                return self._json(200, {
+                    "active": True, "state": _PREVIEW["state"],
+                    "t": _PREVIEW["t"], "remaining": int(remaining),
+                })
+
+        if path == "/api/wifi/scan":
+            return self._wifi_scan()
+
         return super().do_GET()
 
     # ── PUT ──────────────────────────────────────────────────
@@ -207,6 +243,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         # /api/hotspot/<action>
         if len(parts) == 3 and parts[0] == "api" and parts[1] == "hotspot":
             return self._hotspot(parts[2])
+
+        # /api/preview  { state, t?, seconds? }  -> push a forced state to the board
+        if parts == ["api", "preview"]:
+            return self._preview()
+
+        # /api/wifi/connect  { ssid, password? }  -> join an existing network
+        if parts == ["api", "wifi", "connect"]:
+            return self._wifi_connect()
 
         # /api/update  -> git pull the repo to the latest code
         if parts == ["api", "update"]:
@@ -283,6 +327,79 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             ok, out, err = run_helper(HOTSPOT_SH, "config", ssid, password)
             return self._json(200 if ok else 500, {"ok": ok, "output": out, "error": None if ok else (err or out)})
         return self._json(400, {"ok": False, "error": f"bad hotspot action: {action}"})
+
+    def _preview(self):
+        """Push a forced state to the board (or clear it). Auto-expires."""
+        obj = self._read_body() or {}
+        if obj.get("clear") or not obj.get("state"):
+            with _PREVIEW_LOCK:
+                _PREVIEW.update(state=None, t=None, until=0.0)
+            return self._json(200, {"ok": True, "active": False})
+        state = str(obj.get("state")).strip().lower()
+        if state not in VALID_PREVIEW_STATES:
+            return self._json(400, {"ok": False, "error": f"unknown state: {state}"})
+        try:
+            seconds = int(obj.get("seconds") or PREVIEW_DEFAULT_SECONDS)
+        except (TypeError, ValueError):
+            seconds = PREVIEW_DEFAULT_SECONDS
+        seconds = max(5, min(PREVIEW_MAX_SECONDS, seconds))
+        t = obj.get("t")
+        with _PREVIEW_LOCK:
+            _PREVIEW.update(state=state, t=(str(t) if t else None),
+                            until=time.time() + seconds)
+        return self._json(200, {"ok": True, "active": True, "state": state, "remaining": seconds})
+
+    def _wifi_scan(self):
+        """List nearby WiFi networks. Read-only nmcli — no privilege needed, so
+        this works even without the sudoers helper (unlike connect)."""
+        if not shutil.which("nmcli"):
+            return self._json(200, {"available": False, "networks": [],
+                                    "error": "NetworkManager (nmcli) not installed"})
+        try:
+            # SSID last + --escape no so a ':' inside an SSID doesn't break the
+            # split (we maxsplit=3 and take the remainder as the SSID).
+            r = subprocess.run(
+                ["nmcli", "--escape", "no", "-t", "-f",
+                 "IN-USE,SIGNAL,SECURITY,SSID", "device", "wifi", "list", "--rescan", "yes"],
+                capture_output=True, text=True, timeout=20,
+            )
+        except (OSError, subprocess.SubprocessError) as e:
+            return self._json(200, {"available": False, "networks": [], "error": str(e)})
+        best = {}
+        for line in r.stdout.splitlines():
+            fields = line.split(":", 3)
+            if len(fields) < 4:
+                continue
+            in_use, signal, security, ssid = fields
+            if not ssid:  # hidden network — nothing to tap
+                continue
+            try:
+                sig = int(signal)
+            except ValueError:
+                sig = 0
+            cur = best.get(ssid)
+            if cur is None or sig > cur["signal"]:
+                best[ssid] = {
+                    "ssid": ssid, "signal": sig,
+                    "security": security.strip(),
+                    "open": security.strip() in ("", "--"),
+                    "inUse": in_use.strip() == "*",
+                }
+        networks = sorted(best.values(), key=lambda n: (-n["inUse"], -n["signal"]))
+        return self._json(200, {"available": True, "networks": networks})
+
+    def _wifi_connect(self):
+        obj = self._read_body() or {}
+        ssid = str(obj.get("ssid") or "").strip()
+        password = str(obj.get("password") or "")
+        if not ssid:
+            return self._json(400, {"ok": False, "error": "ssid is required"})
+        args = ["connect", ssid, password] if password else ["connect", ssid]
+        ok, out, err = run_helper(WIFI_SH, *args, timeout=45)
+        return self._json(200 if ok else 500, {
+            "ok": ok, "output": out,
+            "error": None if ok else (err or out or "wifi helper unavailable (run install-kiosk.sh)"),
+        })
 
 
 # Correct MIME for the assets the display fetches. Some minimal setups serve

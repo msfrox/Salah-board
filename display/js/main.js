@@ -19,11 +19,20 @@
     const parsed = new Date(dbg.t);
     if (!isNaN(parsed.getTime())) { fakeBase = parsed; realBase = Date.now(); }
   }
+  // Live preview channel (admin "Preview" tab → serve.py /api/preview). When a
+  // caretaker pushes a state to the BOARD, `preview` holds {state, tMs?, base}
+  // and the board forces that state (and optional fake clock) until it expires.
+  // Null on a plain dev server (endpoint 404s) — harmless.
+  let preview = null;
+  let lastPreviewSig = null;
+
   // The board shows the real device clock — a single source of truth. The
   // admin Time tab adjusts the actual OS clock (not a display-only offset), so
   // there is never a second "board time" to reconcile. The ?t= fake clock is
-  // the only exception, and only for dev/QA.
+  // the only exception, and only for dev/QA. A live preview with its own ?t=
+  // takes precedence while active.
   function now() {
+    if (preview && preview.tMs != null) return new Date(preview.tMs + (Date.now() - preview.base));
     if (fakeBase) return new Date(fakeBase.getTime() + (Date.now() - realBase));
     return new Date();
   }
@@ -119,6 +128,24 @@
     } catch (e) { /* transient fetch error — try again next tick */ }
   }
 
+  // Poll the preview channel; re-anchor the fake clock only when the directive
+  // actually changes, so a preview with ?t= keeps advancing smoothly instead of
+  // jumping back to `t` on every poll.
+  async function pollPreview() {
+    try {
+      const res = await fetch('/api/preview', { cache: 'no-store' });
+      if (!res.ok) { if (preview) { preview = null; lastPreviewSig = null; } return; }
+      const p = await res.json();
+      if (!p || !p.active) { if (preview) { preview = null; lastPreviewSig = null; } return; }
+      const sig = (p.state || '') + '|' + (p.t || '');
+      if (sig !== lastPreviewSig) {
+        lastPreviewSig = sig;
+        const tMs = p.t ? Date.parse(p.t) : NaN;
+        preview = { state: p.state || null, tMs: isNaN(tMs) ? null : tMs, base: Date.now() };
+      }
+    } catch (e) { /* not on the board / transient — leave current preview state */ }
+  }
+
   let ticking = false;
   async function tick() {
     if (ticking) return; // guard against overlapping async ticks at a date rollover
@@ -127,7 +154,9 @@
       const n = now();
       await ensureTimeline(n);
       let result = SBState.resolve(config, timeline, n, contentPack);
-      if (dbg.state) result = SBState.forceState(result, dbg.state);
+      // A live preview (board) or ?state= (dev URL) forces the shown state.
+      const forced = (preview && preview.state) || dbg.state;
+      if (forced) result = SBState.forceState(result, forced);
       SBUi.render(root, result, config, contentByLang);
       SBUi.applyNightDim(nightOverlay, result.state === 'NIGHT' && config.night.dim, config.night.brightness);
     } finally {
@@ -145,6 +174,7 @@
     lastConfigJson = JSON.stringify(await SBConfig.getStoredAsync());
     setInterval(tick, 1000); // single interval for the app's lifetime — no leaks
     setInterval(pollConfig, 3000); // pick up phone/admin saves on the board
+    setInterval(pollPreview, 2000); // pick up admin "show on board" previews
   }
 
   boot();

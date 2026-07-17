@@ -80,6 +80,81 @@
     });
   }
 
+  // ── Join an existing WiFi network (scan + connect) ───────
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+    }[c]));
+  }
+  function wifiSetStatus(msg) { const el = $('#wifi-status'); if (el) el.textContent = msg || ''; }
+
+  function bars(signal) {
+    const n = signal >= 75 ? 4 : signal >= 50 ? 3 : signal >= 25 ? 2 : 1;
+    return '▂▄▆█'.slice(0, n) + '·'.repeat(4 - n);
+  }
+
+  function renderWifiList(networks) {
+    const list = $('#wifi-list');
+    if (!list) return;
+    if (!networks.length) { list.innerHTML = '<p class="hint">No networks found.</p>'; return; }
+    list.innerHTML = networks.map(n => `
+      <button type="button" class="btn btn--secondary wifi-row" data-ssid="${escapeHtml(n.ssid)}" data-open="${n.open ? '1' : '0'}">
+        <span class="wifi-name">${n.inUse ? '✓ ' : ''}${escapeHtml(n.ssid)}${n.open ? '' : ' 🔒'}</span>
+        <span class="wifi-sig">${bars(n.signal)}</span>
+      </button>`).join('');
+  }
+
+  function selectWifi(ssid, open) {
+    const box = $('#wifi-connect');
+    if (open) { connectWifi(ssid, ''); return; } // open network — no password needed
+    $('#wifi-sel-ssid').textContent = ssid;
+    $('#wifi-pass').value = '';
+    box.hidden = false;
+    box.dataset.ssid = ssid;
+    $('#wifi-pass').focus();
+  }
+
+  async function connectWifi(ssid, password) {
+    wifiSetStatus(`Connecting to "${ssid}"… the board may briefly drop off the network.`);
+    $('#wifi-connect').hidden = true;
+    const r = await post('/api/wifi/connect', { ssid, password });
+    wifiSetStatus(r.ok
+      ? `Connected to "${ssid}".`
+      : `Could not connect to "${ssid}" — ` + (r.error || 'board device only, or wrong password.'));
+  }
+
+  function wireWifi() {
+    const scan = $('#wifi-scan');
+    if (scan) scan.addEventListener('click', async () => {
+      wifiSetStatus('Scanning…');
+      $('#wifi-connect').hidden = true;
+      $('#wifi-list').innerHTML = '';
+      try {
+        const res = await fetch('/api/wifi/scan', { cache: 'no-store' });
+        const info = await res.json();
+        if (!info.available) { wifiSetStatus('WiFi scan is available only on the board device' + (info.error ? ` (${info.error}).` : '.')); return; }
+        renderWifiList(info.networks || []);
+        wifiSetStatus((info.networks || []).length ? 'Tap a network to join it.' : 'No networks found.');
+      } catch (e) {
+        wifiSetStatus('WiFi scan is available only on the board device.');
+      }
+    });
+
+    const list = $('#wifi-list');
+    if (list) list.addEventListener('click', e => {
+      const row = e.target.closest('.wifi-row');
+      if (row) selectWifi(row.getAttribute('data-ssid'), row.getAttribute('data-open') === '1');
+    });
+
+    const cbtn = $('#wifi-connect-btn');
+    if (cbtn) cbtn.addEventListener('click', () => {
+      const ssid = $('#wifi-connect').dataset.ssid || '';
+      connectWifi(ssid, $('#wifi-pass').value || '');
+    });
+    const cancel = $('#wifi-cancel-btn');
+    if (cancel) cancel.addEventListener('click', () => { $('#wifi-connect').hidden = true; });
+  }
+
   // ── Software update (git pull) + reboot ──────────────────
   function wireUpdate() {
     const upStatus = m => { const el = $('#update-status'); if (el) el.textContent = m; };
@@ -110,5 +185,6 @@
   document.addEventListener('sb-tab-shown', e => { if (e.detail.tab === 'network') refresh(); });
 
   wire();
+  wireWifi();
   wireUpdate();
 })();

@@ -305,6 +305,26 @@
       </section>
 
       <section class="card">
+        <h2>Join a WiFi network</h2>
+        <p class="hint">Connect the board to an existing WiFi network. (Board device only.) The board has one WiFi radio, so joining a network turns the hotspot off.</p>
+        <div class="hotspot-btns">
+          <button type="button" class="btn btn--secondary" id="wifi-scan">Scan for networks</button>
+        </div>
+        <div id="wifi-list" class="wifi-list"></div>
+        <div id="wifi-connect" class="wifi-connect" hidden>
+          <label class="field">
+            <span>Password for "<span id="wifi-sel-ssid"></span>"</span>
+            <input type="text" id="wifi-pass" placeholder="network password" autocomplete="off">
+          </label>
+          <div class="hotspot-btns">
+            <button type="button" class="btn btn--primary" id="wifi-connect-btn">Connect</button>
+            <button type="button" class="btn btn--secondary" id="wifi-cancel-btn">Cancel</button>
+          </div>
+        </div>
+        <p class="readonly-status" id="wifi-status"></p>
+      </section>
+
+      <section class="card">
         <h2>Displays</h2>
         <p class="hint">Choose which screen shows the board. Works on the board device itself (not from a phone/dev browser). You can also press Super+P on the device to toggle.</p>
         <div class="display-btns">
@@ -330,13 +350,19 @@
     <div class="tab-panel" data-panel="preview" hidden>
       <section class="card">
         <h2>Preview &amp; test</h2>
-        <p class="hint">Open the live board forced into any state, without waiting for that time of day — great for checking the theme and content. Save your settings first so the preview reflects them. Each opens in a new tab.</p>
+        <p class="hint">Force the board into any state without waiting for that time of day — great for checking the theme and content. Save your settings first so the preview reflects them.</p>
+        <label class="field checkbox-field">
+          <input type="checkbox" id="preview-on-board">
+          <span>Show on the board screen (instead of opening a new tab here). Board device only — reverts to live automatically after 5&nbsp;minutes.</span>
+        </label>
         <label class="field">
           <span>Pretend the time is (optional — drives clocks &amp; countdowns)</span>
           <input type="datetime-local" step="60" id="preview-time">
         </label>
         <div class="preview-grid" id="preview-grid"></div>
-        <button type="button" class="btn btn--primary" id="preview-open-live">Open board (live, no forced state)</button>
+        <button type="button" class="btn btn--primary" id="preview-open-live">Open board (live) in a new tab</button>
+        <button type="button" class="btn btn--secondary" id="preview-resume-live" hidden>Resume live board</button>
+        <p class="readonly-status" id="preview-board-status"></p>
       </section>
     </div>
 

@@ -235,3 +235,9 @@ html, body {
 .preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin: .5rem 0 1rem; }
 .preview-grid .btn { justify-content: flex-start; text-align: left; font-size: .88rem; padding: .7rem .8rem; }
 @media (max-width: 460px) { .preview-grid { grid-template-columns: 1fr; } }
+
+/* ── WiFi join list (Network tab) ─────────────────────────── */
+.wifi-list { display: flex; flex-direction: column; gap: .4rem; margin: .6rem 0; }
+.wifi-row { display: flex; justify-content: space-between; align-items: center; gap: .8rem; text-align: left; }
+.wifi-row .wifi-sig { font-family: monospace; letter-spacing: 1px; opacity: .8; }
+.wifi-connect { margin: .4rem 0 .2rem; }
