@@ -56,7 +56,7 @@ else
   apt-get update
   apt-get install -y --no-install-recommends \
     xserver-xorg xinit openbox chromium x11-xserver-utils unclutter python3 \
-    network-manager
+    network-manager dnsmasq-base
 fi
 
 # Debian ships /usr/bin/chromium; some spins use chromium-browser.
@@ -163,6 +163,19 @@ PY
 
 chown -R "${KIOSK_USER}:${KIOSK_USER}" \
   "$BASH_PROFILE" "${USER_HOME}/.xinitrc" "${USER_HOME}/.config"
+
+echo ">> Ensuring NetworkManager manages the WiFi (so the hotspot can start)..."
+# Debian's default NetworkManager.conf ships `[ifupdown] managed=false`, which
+# leaves the wifi device "strictly unmanaged" — nmcli then refuses to bring the
+# hotspot up ("device is strictly unmanaged"). A conf.d drop-in overrides that
+# without editing the shipped file (and survives NM package upgrades).
+install -d /etc/NetworkManager/conf.d
+cat >/etc/NetworkManager/conf.d/10-salahboard-managed.conf <<'EOF'
+# Salah Board — let NetworkManager manage the wifi so the hotspot can start.
+[ifupdown]
+managed=true
+EOF
+systemctl reload NetworkManager 2>/dev/null || systemctl restart NetworkManager 2>/dev/null || true
 
 echo ">> Allowing the admin panel to control the WiFi hotspot & clock..."
 # serve.py runs as the kiosk user (unprivileged). The hotspot (nmcli) and

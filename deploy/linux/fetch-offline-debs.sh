@@ -17,7 +17,7 @@
 set -euo pipefail
 
 DEST="$(cd "$(dirname "$0")" && pwd)/offline-debs"
-PKGS="xserver-xorg xinit openbox chromium x11-xserver-utils unclutter python3"
+PKGS="xserver-xorg xinit openbox chromium x11-xserver-utils unclutter python3 network-manager dnsmasq-base"
 
 mkdir -p "$DEST"
 cd "$DEST"

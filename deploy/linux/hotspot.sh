@@ -63,7 +63,14 @@ ensure_profile() {
     connection.interface-name "$dev" \
     802-11-wireless.mode ap 802-11-wireless.band bg \
     ipv4.method shared \
-    802-11-wireless-security.key-mgmt wpa-psk >/dev/null
+    802-11-wireless-security.key-mgmt wpa-psk \
+    802-11-wireless-security.proto rsn \
+    802-11-wireless-security.pairwise ccmp \
+    802-11-wireless-security.group ccmp \
+    802-11-wireless-security.pmf 1 >/dev/null
+  # ipv4.method shared hands out DHCP + DNS via dnsmasq; without the
+  # `dnsmasq-base` package a client associates but never gets an IP
+  # ("unable to connect"). install-kiosk.sh installs it.
   # Give it a default password if none is set yet, so `start` alone works.
   local psk; psk="$(nmcli -s -g 802-11-wireless-security.psk connection show "$CON" 2>/dev/null || true)"
   [ -n "$psk" ] || nmcli connection modify "$CON" 802-11-wireless-security.psk "salahboard" >/dev/null
