@@ -8,18 +8,27 @@ shell untouched.
 Session 1 (commit d8409ff): theme resize to fill the screen, 0.2–5× scale,
 `/api/config` phone-sync, admin tabs, Time/Network/Preview tabs, hotspot scaffolding.
 
-Session 2 follow-ups:
-- **09b1848** — embedded modern variable fonts (Google Sans Flex default, Manrope,
-  Figtree) + admin font picker (`config.display.font`); renamed theme
-  `highcontrast`→`default` (with transparent migration); masjid name auto-shrinks to
-  one line (`ui.js fitMasjidName` + reduced letter-spacing); emoji icon → inline SVG;
-  admin tabs wrap on desktop; serve.py pins font/woff2/svg MIME.
-- **25f3760** — time unified to the **real device clock** (display shows system time;
-  admin Time tab reads the board's own wall clock and SETS the OS clock via
-  `/api/time`→`settime.sh`; fixes the "4:30 ahead" skew and the dual-time confusion);
-  fixed hotspot `lo`/"no suitable device" (bind `connection.interface-name` + explicit
-  `ifname`); **Update-from-GitHub** + Reboot buttons (`/api/update` git pull,
-  `/api/reboot`→`reboot.sh`; sudoers extended).
+Session 2: **09b1848** embedded fonts + picker, theme→`default`, name auto-shrink,
+SVG icon. **25f3760** time→real device clock (`/api/time`→settime.sh), hotspot iface
+binding, Update-from-GitHub + Reboot buttons.
+
+Session 3 (commit 8c98374) — **hotspot now works end-to-end** (verified live on the
+board: AP up on 10.42.0.1, dnsmasq serving DHCP, a phone got a lease, reverted clean):
+- Root cause of "hotspot shows but can't connect": `dnsmasq-base` was never installed,
+  so NM's `ipv4.method shared` had no DHCP server → clients associate but get no IP.
+  `install-kiosk.sh` + `fetch-offline-debs.sh` now install it explicitly.
+- Root cause of "strictly unmanaged / can't start": Debian ships `[ifupdown]
+  managed=false`. Installer now drops `/etc/NetworkManager/conf.d/10-salahboard-managed.conf`.
+- `hotspot.sh` forces WPA2 (rsn/ccmp/pmf) for modern-phone compatibility.
+- Root cause of "git pull says local changed": the installer `chmod +x`'d the deploy
+  scripts but git tracked them 100644 → mode-bit collision every pull. All
+  `deploy/linux/*.sh` are now tracked 100755, so pulls are clean. Board pulled to
+  8c98374, working tree clean, obsolete stash dropped.
+
+The **live board** already had `dnsmasq-base` + `managed=true` applied manually this
+session; a **fresh board** gets both from the updated installer. The existing
+`salahboard-hotspot` NM profile picks up the WPA2 settings on its next start (self-heals
+via `ensure_profile`).
 
 ## Deferred (not started — pick up in a fresh session)
 
@@ -49,3 +58,8 @@ bigger, board-only pieces:
   "unavailable" cleanly. This update also adds `reboot.sh` to sudoers, so a re-run is
   needed to enable the reboot button.
 - Masjid settings live in `~/.config/salahboard/config.json` (outside the repo).
+- Board is SSH-reachable as `board@<ip>` (pw `12345678`); repo at `~/Salah-board`,
+  single wifi radio so starting the hotspot drops any SSH over wifi — test via a
+  self-reverting script (see git history, session 3) or accept the drop.
+- The mode-bit pull collision is fixed repo-wide; if it recurs on a board, run
+  `git checkout -- deploy/linux/ && git pull` (the local changes are only chmod noise).
