@@ -95,7 +95,7 @@ Stick / Mi Box** or **Nokia Streaming Box**. They cost a bit more, are
 Play-certified, and carry no BadBox. Worth it for a hands-off install.
 
 The full research trail (models, sources, the malware reports) is kept in
-`docs/kb/2026-07-hardware-android-box-sri-lanka.md`.
+`docs/HARDWARE-RESEARCH.md`.
 
 ## Setup overview
 
