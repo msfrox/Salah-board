@@ -2,7 +2,7 @@
 
 Open-source masjid prayer display for Sri Lanka (ACJU timetable, Shafi'i).
 Web display (`display/`) wrapped by a thin Android kiosk shell (`android/`).
-Sister project: **pray.gear.lk** (`E:\GitHub\Prayer Time Site`) — same data,
+Sister project: **pray.gear.lk** (`~/Projects/Prayer-Time-Site`) — same data,
 same ethos.
 
 ## Golden rules — do not violate
