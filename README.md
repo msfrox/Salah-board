@@ -10,8 +10,17 @@ tracking, and works fully offline. Any masjid, anywhere in Sri Lanka, can
 set one up for roughly the cost of a budget Android box (~LKR 10,000) and
 any HDMI screen.
 
-> **Status: foundation.** Architecture and specs are complete; implementation
-> follows the milestones in [`docs/MILESTONES.md`](docs/MILESTONES.md).
+> **Status: working, piloting on real hardware.** The web display and admin
+> panel (milestones M1, M1.5, M2 in [`docs/MILESTONES.md`](docs/MILESTONES.md))
+> are done. It is currently deployed and **live-verified on a real tablet
+> as a Linux kiosk** (`deploy/linux/`, not the Android shell) — not
+> confirmed installed at a masjid yet, see `HANDOFF.md` for the exact device —
+> full state machine, admin panel, WiFi hotspot/join, HDMI hotplug switching,
+> and remote preview all working — see [`HANDOFF.md`](HANDOFF.md) for the
+> exact current state. The native **Android TV shell** (`android/`) has real
+> Kotlin code scaffolded but is
+> not the pilot's deploy path right now — `docs/MILESTONES.md` M3 is not
+> started; the Linux kiosk under `deploy/` is the proven route today.
 
 ---
 
@@ -78,6 +87,9 @@ real auto-starting kiosk, see [`deploy/`](deploy/README.md).
 | [`docs/CONFIG-SCHEMA.md`](docs/CONFIG-SCHEMA.md) | `config.json` — the contract between all parts |
 | [`docs/MILESTONES.md`](docs/MILESTONES.md) | Build order M1→M5 with acceptance criteria |
 | [`docs/HARDWARE.md`](docs/HARDWARE.md) | What box/TV to buy, masjid setup guide |
+| [`docs/CARETAKER-GUIDE.md`](docs/CARETAKER-GUIDE.md) | Non-technical guide for whoever runs the board day to day |
+| [`HANDOFF.md`](HANDOFF.md) | Current live state — what's deployed, what's deferred, session-by-session gotchas |
+| [`deploy/README.md`](deploy/README.md) | Linux kiosk install/deploy — the currently-piloted path |
 
 ## License & data
 
