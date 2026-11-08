@@ -326,7 +326,12 @@ html, body {
   .screen { gap: 1rem; }
 
   .topbar { flex-direction: column; align-items: center; text-align: center; gap: .4rem; }
-  .dates { text-align: center; }
+  /* Long dates (e.g. Tamil: ~1210px) ran off both edges of a 1080px-wide
+     portrait screen — let the Gregorian and Hijri parts wrap onto two lines. */
+  .dates { text-align: center; flex-wrap: wrap; justify-content: center; row-gap: .2rem; white-space: normal; }
+  .dates > span { white-space: nowrap; }
+  /* "04:00" at 17rem is ~100%+ of a portrait screen's width — cap by width. */
+  .icd-countdown { font-size: min(17rem, 28vw); }
 
   .hero-row { gap: 1.2rem; }
   .hero-clock { align-self: center; justify-content: center; margin-bottom: .4rem; }
