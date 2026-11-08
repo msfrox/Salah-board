@@ -42,7 +42,8 @@ breaking change via `configVersion`.
     "bayanTopic": "",                  // optional, e.g. "Patience in hardship"
     "bayanDate": null                  // optional ISO Friday "2026-11-13"; set →
                                        // speaker/topic shown only on that date.
-    // Speaker/topic appear in the "Jumu'ah today" banner and on the bayan
+    // Speaker/topic alternate with the times in the "Jumu'ah today" banner
+    // (one-line carousel) and appear on the bayan
     // screen, only when `bayan` is set, and disappear once Jumu'ah salah ends.
     // Jumu'ah azan is NOT separately configured — it's that Friday's own
     // luhr azan time from the zone data (there's no distinct Jumu'ah clock).

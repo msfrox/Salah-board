@@ -269,7 +269,7 @@ html, body {
     container-type: size;   /* lets .np-time size itself to the room left */
   }
   .hero-next { display: contents; }
-  .hero-clock { grid-area: clock; justify-self: end; align-self: center; }
+  .hero-clock { grid-area: clock; justify-self: end; align-self: center; margin-bottom: .5rem; }
   .np-label { grid-area: label; }
   .np-name { grid-area: name; }
   .np-times { grid-area: times; }
@@ -278,9 +278,12 @@ html, body {
      room. Only when banners (Jumu'ah + bayan line, pinned notice, Ramadan)
      eat the height do they shrink — just enough to keep the countdown off
      the timetable. ~17rem = the rest of the hero; 0.8 = .np-time line-height.
-     Floor of 5rem so they can never collapse. (Browsers without container
+     They are also capped by WIDTH: two 4-digit times (11:56 | 12:20) at 13rem
+     ran to ~40px from the edge at 1366x768, where TV overscan can crop them;
+     /6.4 ≈ two "12:20"s (~3em each) plus the gap and divider. Floor of 5rem so they can
+     never collapse. (Browsers without container
      units ignore this and keep 13rem.) */
-  .np-time { font-size: max(5rem, min(13rem, calc(125cqh - 17rem))); }
+  .np-time { font-size: max(5rem, min(13rem, calc(125cqh - 17rem), calc((100cqw - 4rem) / 6.4))); }
 
   /* Banners showing (Jumu'ah, pinned notice, Ramadan)? Win height back from
      the generous gaps first, so the big numbers rarely need to shrink. */
@@ -298,7 +301,7 @@ html, body {
     padding-top: .4rem; padding-bottom: .4rem;
   }
   .screen--normal:has(.jumuah-day-banner, .pinned-banner, .ramadan-block) .np-time {
-    font-size: max(5rem, min(13rem, calc(125cqh - 15rem)));
+    font-size: max(5rem, min(13rem, calc(125cqh - 15rem), calc((100cqw - 4rem) / 6.4)));
   }
 }
 
@@ -313,7 +316,7 @@ html, body {
 /* Only on genuinely tiny landscape panels, and only when banners can eat the
    vertical budget, ease the hero down a little to avoid clipping. */
 @media (max-height: 560px) and (orientation: landscape) {
-  .np-time { font-size: max(5rem, min(11rem, calc(125cqh - 17rem))); }
+  .np-time { font-size: max(5rem, min(11rem, calc(125cqh - 17rem), calc((100cqw - 4rem) / 6.4))); }
   .clock-big { font-size: 4.6rem; }
 }
 

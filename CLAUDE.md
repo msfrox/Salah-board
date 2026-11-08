@@ -35,6 +35,9 @@ same ethos.
 3. Test in a normal desktop browser first. Use the debug URL params:
    `?t=2026-07-02T12:10` (fake clock), `?state=between` (force a state),
    `?zone=01` (override zone). Implement these params in M1 and keep them.
+   **Always test at 1366×768** — the most common resolution on the local
+   TVs masjids use. Every visual change must be checked there (all themes,
+   all states, with banners on), in addition to any other sizes.
 4. Don't start Android work (M3) until M1–M2 are done and reviewed.
 
 ## Repo layout
