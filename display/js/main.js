@@ -213,7 +213,7 @@
       let result = SBState.resolve(config, timeline, n, contentPack);
       // A live preview (board) or ?state= (dev URL) forces the shown state.
       const forced = (preview && preview.state) || dbg.state;
-      if (forced) result = SBState.forceState(result, forced);
+      if (forced) result = SBState.forceState(result, forced, config);
       SBUi.render(root, result, config, contentByLang);
       SBUi.applyNightDim(nightOverlay, result.state === 'NIGHT' && config.night.dim, config.night.brightness);
     } finally {

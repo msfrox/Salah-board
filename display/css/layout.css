@@ -12,6 +12,8 @@
    because its auto-fit-to-one-line logic measures it.
 
    Visibility: main.js lists hidden elements in <html data-sb-hide="...">.
+
+   Also holds small theme-independent structural rules (end of file).
    ============================================================ */
 
 .screen--normal .dates             { zoom: var(--sb-z-dates, 1); }
@@ -36,3 +38,11 @@ html[data-sb-hide~="countdown"]  .screen--normal .np-countdown,
 html[data-sb-hide~="timetable"]  .screen--normal .card--timetable,
 html[data-sb-hide~="cards"]      .screen--normal .card--notice,
 html[data-sb-hide~="cards"]      .screen--normal .card--etiquette { display: none; }
+
+/* ── Jumu'ah banner: bayan speaker · topic on a second line ──────
+   Structural only (sizes in em, colour inherited), so it suits every
+   theme. The line disappears once Jumu'ah salah is over. */
+.jumuah-day-banner.has-bayan-info { flex-direction: column; gap: .25em; }
+.jumuah-day-banner .jdb-main, .jumuah-day-banner .jdb-bayan { display: block; }
+.jumuah-day-banner .jdb-bayan { font-size: .85em; font-weight: 600; opacity: .9; }
+.jumuah-day-banner .jdb-sep { opacity: .6; }

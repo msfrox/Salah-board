@@ -227,8 +227,10 @@
         ? ` · ${escapeHtml(label(content, 'bayan'))} ${escapeHtml(E.formatTime(E.parseTime(config.jumuah.bayan, result.dates.today), config))}`
         : '';
       const jumuahAzanTime = todayRow ? fmtRowTime(todayRow.luhr, config, result) : '--:--';
-      jumuahBanner = `<div class="jumuah-day-banner">${escapeHtml(label(content, 'jumuahToday'))}` +
-        `${bayanPart} · ${escapeHtml(label(content, 'azan'))} ${escapeHtml(jumuahAzanTime)}</div>`;
+      jumuahBanner = `<div class="jumuah-day-banner${result.bayanInfo ? ' has-bayan-info' : ''}">` +
+        `<span class="jdb-main">${escapeHtml(label(content, 'jumuahToday'))}` +
+        `${bayanPart} · ${escapeHtml(label(content, 'azan'))} ${escapeHtml(jumuahAzanTime)}</span>` +
+        bayanInfoLine(result.bayanInfo) + `</div>`;
     }
 
     let ramadanBlock = '';
@@ -377,11 +379,25 @@
       </div>`;
   }
 
+  // "Speaker · Topic" (either part optional) — names and topics are typed by
+  // the masjid in whatever language they use, so no translated labels needed.
+  function bayanInfoLine(info) {
+    if (!info) return '';
+    const parts = [];
+    if (info.speaker) parts.push(`<span class="jdb-speaker">${escapeHtml(info.speaker)}</span>`);
+    if (info.topic) parts.push(`<span class="jdb-topic">${escapeHtml(info.topic)}</span>`);
+    return `<span class="jdb-bayan">${parts.join('<span class="jdb-sep"> · </span>')}</span>`;
+  }
+
   function renderJumuah(config, result, contentByLang) {
     const content = primaryContent(contentByLang, config);
+    const info = result.bayanInfo;
+    const speaker = info && info.speaker ? `<div class="jumuah-speaker">${escapeHtml(info.speaker)}</div>` : '';
+    const topic = info && info.topic ? `<div class="jumuah-topic">${escapeHtml(info.topic)}</div>` : '';
     return `
       <div class="screen screen--jumuah">
         <div class="jumuah-banner">${escapeHtml((content.jumuahBayan || {}).text)}</div>
+        ${speaker}${topic}
         ${jumuahEtiquetteCardHtml(content, config, result)}
       </div>`;
   }

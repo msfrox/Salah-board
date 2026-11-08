@@ -125,9 +125,8 @@ html, body {
 .screen--normal { justify-content: space-between; }
 .hero-row { position: relative; flex: 1; display: flex; flex-direction: column; gap: 1rem; align-items: stretch; min-height: 0; }
 
-/* In normal flow (its own row, right-aligned) rather than floating: the
-   clock is now bigger and caretakers can enlarge it further (Advanced tab),
-   so it must push the hero down instead of ever overlapping it. */
+/* Portrait: the clock is its own centred row (set in the portrait block).
+   Landscape: see the grid below — the clock shares the "Next prayer" rows. */
 .hero-clock {
   align-self: flex-end;
   display: flex; flex-direction: row; align-items: baseline; justify-content: flex-end;
@@ -239,11 +238,69 @@ html, body {
 /* ── JUMUAH (bayan) / KHUTBAH — gold, never red ─────────────── */
 .screen--jumuah { justify-content: center; align-items: center; text-align: center; gap: 2rem; }
 .jumuah-banner { font-size: 4.5rem; font-weight: 700; color: var(--sb-accent); }
+.jumuah-speaker { font-size: 2.8rem; font-weight: 700; color: var(--sb-fg); }
+.jumuah-topic { font-size: 2rem; font-weight: 500; color: var(--sb-fg-dim); max-width: 85vw; }
 .screen--khutbah {
   justify-content: center; align-items: center; text-align: center;
   background: radial-gradient(ellipse at center, #231a05 0%, var(--sb-bg) 74%);
 }
 .khutbah-line { font-size: 5rem; font-weight: 800; color: var(--sb-danger); }
+
+/* ── Landscape hero layout ─────────────────────────────────────
+   The clock sits in the right-hand column, level with "NEXT PRAYER /
+   name", instead of taking a row of its own (that cost ~6rem of height
+   and made banners push the countdown into the timetable). Being a grid
+   column — not position:absolute — it still can never overlap the
+   centred text, however large the caretaker makes it.
+   hero-next uses display:contents so its children join the grid. */
+@media (orientation: landscape) {
+  .hero-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-areas:
+      ".     label clock"
+      ".     name  clock"
+      "times times times"
+      ".     cd    .";
+    align-content: center;
+    justify-items: center;
+    row-gap: .3rem;
+    column-gap: 1rem;
+    container-type: size;   /* lets .np-time size itself to the room left */
+  }
+  .hero-next { display: contents; }
+  .hero-clock { grid-area: clock; justify-self: end; align-self: center; }
+  .np-label { grid-area: label; }
+  .np-name { grid-area: name; }
+  .np-times { grid-area: times; }
+  .np-countdown { grid-area: cd; }
+  /* The big azan/iqamah numbers keep their full 13rem whenever there is
+     room. Only when banners (Jumu'ah + bayan line, pinned notice, Ramadan)
+     eat the height do they shrink — just enough to keep the countdown off
+     the timetable. ~17rem = the rest of the hero; 0.8 = .np-time line-height.
+     Floor of 5rem so they can never collapse. (Browsers without container
+     units ignore this and keep 13rem.) */
+  .np-time { font-size: max(5rem, min(13rem, calc(125cqh - 17rem))); }
+
+  /* Banners showing (Jumu'ah, pinned notice, Ramadan)? Win height back from
+     the generous gaps first, so the big numbers rarely need to shrink. */
+  .screen--normal:has(.jumuah-day-banner, .pinned-banner, .ramadan-block) { gap: 1rem; }
+  .screen--normal:has(.jumuah-day-banner, .pinned-banner, .ramadan-block) .hero-row { row-gap: .15rem; }
+  .screen--normal:has(.jumuah-day-banner, .pinned-banner, .ramadan-block) .np-times { margin: .2rem 0; }
+  /* Two or more banners at once (e.g. a Ramadan Friday with an Eid notice):
+     tighter still, and slimmer banner padding. */
+  .screen--normal:has(.jumuah-day-banner):has(.pinned-banner),
+  .screen--normal:has(.jumuah-day-banner):has(.ramadan-block),
+  .screen--normal:has(.pinned-banner):has(.ramadan-block) { gap: .5rem; }
+  .screen--normal:has(.jumuah-day-banner):has(.pinned-banner) :is(.jumuah-day-banner, .pinned-banner, .ramadan-block),
+  .screen--normal:has(.jumuah-day-banner):has(.ramadan-block) :is(.jumuah-day-banner, .pinned-banner, .ramadan-block),
+  .screen--normal:has(.pinned-banner):has(.ramadan-block) :is(.jumuah-day-banner, .pinned-banner, .ramadan-block) {
+    padding-top: .4rem; padding-bottom: .4rem;
+  }
+  .screen--normal:has(.jumuah-day-banner, .pinned-banner, .ramadan-block) .np-time {
+    font-size: max(5rem, min(13rem, calc(125cqh - 15rem)));
+  }
+}
 
 /* ── Short landscape panels (720p and the ~600px tablet panels): the
    proportions already fit by design, so only tighten chrome spacing. The
@@ -256,7 +313,7 @@ html, body {
 /* Only on genuinely tiny landscape panels, and only when banners can eat the
    vertical budget, ease the hero down a little to avoid clipping. */
 @media (max-height: 560px) and (orientation: landscape) {
-  .np-time { font-size: 11rem; }
+  .np-time { font-size: max(5rem, min(11rem, calc(125cqh - 17rem))); }
   .clock-big { font-size: 4.6rem; }
 }
 

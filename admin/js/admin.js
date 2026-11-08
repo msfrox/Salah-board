@@ -320,7 +320,8 @@
     // Jumu'ah bayan enabled toggle
     const bayanEnabled = !!config.jumuah.bayan;
     $('#bayan-enabled').checked = bayanEnabled;
-    $('#bayan-time').closest('.field').classList.toggle('hidden', !bayanEnabled);
+    $('#bayan-details').classList.toggle('hidden', !bayanEnabled);
+    $('#bayan-date').value = config.jumuah.bayanDate || '';
 
     // Ramadan overrides enabled toggles
     PRAYERS.forEach(p => {
@@ -389,6 +390,9 @@
 
     // Jumu'ah bayan: null when disabled
     config.jumuah.bayan = $('#bayan-enabled').checked ? inputValueToAmpm($('#bayan-time').value) : null;
+    config.jumuah.bayanSpeaker = String(config.jumuah.bayanSpeaker || '').trim();
+    config.jumuah.bayanTopic = String(config.jumuah.bayanTopic || '').trim();
+    config.jumuah.bayanDate = $('#bayan-date').value || null;
 
     // Ramadan overrides: delete key entirely when disabled (sparse per spec)
     config.ramadan.iqamahOverrides = config.ramadan.iqamahOverrides || {};
@@ -459,6 +463,11 @@
     if (config.jumuah.enabled) {
       if (!config.jumuah.iqamah) errors.push("Jumu'ah iqamah time is required when Jumu'ah mode is enabled.");
       if (!(Number(config.jumuah.salahDuration) > 0)) errors.push("Jumu'ah salah duration must be more than 0.");
+    }
+    if (config.jumuah.bayanDate) {
+      const d = new Date(config.jumuah.bayanDate + 'T12:00:00');
+      if (isNaN(d.getTime())) errors.push("Bayan date is not a valid date.");
+      else if (d.getDay() !== 5) errors.push("Bayan date must be a Friday (or leave it empty).");
     }
     if (config.luha.enabled && !(Number(config.luha.waitAfterSunrise) >= 0)) {
       errors.push('Luha wait-after-sunrise must be 0 or more.');
@@ -558,7 +567,7 @@
     document.addEventListener('change', e => {
       if (e.target.classList.contains('iqamah-mode')) updateModeVisibility(document);
       if (e.target.id === 'bayan-enabled') {
-        $('#bayan-time').closest('.field').classList.toggle('hidden', !e.target.checked);
+        $('#bayan-details').classList.toggle('hidden', !e.target.checked);
       }
       if (e.target.classList.contains('ramadan-override-enabled')) {
         e.target.closest('.subcard').querySelector('.ramadan-override-body').classList.toggle('hidden', !e.target.checked);

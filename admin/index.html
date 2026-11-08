@@ -153,10 +153,25 @@
           <input type="checkbox" id="bayan-enabled">
           <span>Show a bayan (pre-khutbah talk)</span>
         </label>
-        <label class="field">
-          <span>Bayan start time</span>
-          <input type="time" id="bayan-time" data-path="jumuah.bayan" data-time="ampm">
-        </label>
+        <div id="bayan-details">
+          <label class="field">
+            <span>Bayan start time</span>
+            <input type="time" id="bayan-time" data-path="jumuah.bayan" data-time="ampm">
+          </label>
+          <label class="field">
+            <span>Bayan by (speaker's name — optional)</span>
+            <input type="text" data-path="jumuah.bayanSpeaker" placeholder="e.g. Moulavi Ahmed Rizwan">
+          </label>
+          <label class="field">
+            <span>Bayan topic (optional)</span>
+            <input type="text" data-path="jumuah.bayanTopic" placeholder="e.g. Patience in times of hardship">
+          </label>
+          <label class="field">
+            <span>Only show the name &amp; topic on this Friday (optional)</span>
+            <input type="date" id="bayan-date">
+            <span class="hint">Shown in the "Jumu'ah today" banner and on the bayan screen until Jumu'ah salah ends. Set the date so last week's speaker never appears by mistake; leave it empty to show every Friday until you change it.</span>
+          </label>
+        </div>
         <label class="field">
           <span>Iqamah time (fixed, e.g. 1:15 PM)</span>
           <input type="time" data-path="jumuah.iqamah" data-time="ampm">

@@ -37,7 +37,13 @@ breaking change via `configVersion`.
     "enabled": true,
     "bayan": "12:30 PM",               // fixed set time; null = no bayan card
     "iqamah": "1:15 PM",               // fixed set time (khutbah runs until this)
-    "salahDuration": 15
+    "salahDuration": 15,
+    "bayanSpeaker": "",                // optional, e.g. "Moulavi Ahmed Rizwan"
+    "bayanTopic": "",                  // optional, e.g. "Patience in hardship"
+    "bayanDate": null                  // optional ISO Friday "2026-11-13"; set →
+                                       // speaker/topic shown only on that date.
+    // Speaker/topic appear in the "Jumu'ah today" banner and on the bayan
+    // screen, only when `bayan` is set, and disappear once Jumu'ah salah ends.
     // Jumu'ah azan is NOT separately configured — it's that Friday's own
     // luhr azan time from the zone data (there's no distinct Jumu'ah clock).
   },

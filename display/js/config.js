@@ -43,6 +43,11 @@
         bayan: '12:30 PM',       // fixed set time; null = no bayan card
         iqamah: '1:15 PM',       // fixed set time (azan is that Friday's luhr time)
         salahDuration: 15,
+        // Who gives the bayan and on what — shown in the "Jumu'ah today"
+        // banner and on the bayan screen, until Jumu'ah salah ends.
+        bayanSpeaker: '',
+        bayanTopic: '',
+        bayanDate: null,         // optional ISO date: only show on that Friday
       },
 
       luha: { enabled: true, waitAfterSunrise: 20 },

@@ -71,7 +71,12 @@ editable in the admin panel:
    rotating Jumu'ah etiquette cards (ghusl, early arrival, Surah al-Kahf,
    salawat, listen silently during khutbah). Both stop at that day's Asr
    azan — Jumu'ah is over by then, so the reminders would only be noise.
-2. `bayan` time → card "Bayan in progress".
+   If the masjid entered the bayan speaker and/or topic, the banner shows
+   them on a second line; that line disappears as soon as Jumu'ah salah
+   ends (it is no longer relevant). Optional `bayanDate` limits it to one
+   Friday so a previous week's speaker is never shown by mistake.
+2. `bayan` time → card "Bayan in progress", with the speaker and topic
+   underneath when set.
 3. Azan (today's `luhr` time) → AZAN state as usual.
 4. After azan → KHUTBAH state (not BETWEEN): screen shows ONLY "Khutbah in
    progress — remain silent" (talking during khutbah forfeits the reward —

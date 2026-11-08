@@ -159,6 +159,8 @@ html, body {
 /* ── JUMUAH / KHUTBAH ─────────────────────────────────────── */
 .screen--jumuah { justify-content: center; align-items: center; text-align: center; gap: 3rem; }
 .jumuah-banner { font-size: 6.5rem; font-weight: 700; color: var(--sb-accent); }
+.jumuah-speaker { font-size: 5.5rem; font-weight: 700; color: var(--sb-warn); }
+.jumuah-topic { font-size: 4rem; font-weight: 500; color: var(--sb-fg-dim); max-width: 85vw; }
 .screen--khutbah { justify-content: center; align-items: center; text-align: center; background: radial-gradient(ellipse at center, #2a0f0f 0%, var(--sb-bg) 70%); }
 .khutbah-line { font-size: 7.5rem; font-weight: 800; color: var(--sb-danger); }
 
