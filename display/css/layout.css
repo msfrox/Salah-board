@@ -1,0 +1,54 @@
+/* ============================================================
+   Salah Board — layout.css
+   Per-board fine-tuning, driven by config.layout (admin → Advanced tab).
+   Loaded AFTER the theme, so it works on top of every theme without
+   touching theme files.
+
+   Sizes: main.js sets one CSS variable per element (--sb-z-<key>, a
+   multiplier, 1 = the theme's own size) and injects one rule per element
+   from SBConfig.LAYOUT_GROUPS (config.js): `selector { zoom: var(...) }`.
+   `zoom` — unlike transform — also resizes the space an element takes, so
+   the layout re-flows around it. The masjid name is the exception: ui.js
+   scales its font-size in JS because its auto-fit logic measures it.
+
+   Visibility: main.js lists hidden elements in <html data-sb-hide="...">.
+
+   Also holds small theme-independent structural rules (end of file).
+   ============================================================ */
+
+html[data-sb-hide~="masjidName"] .screen--normal .masjid-name,
+html[data-sb-hide~="dates"]      .screen--normal .dates,
+html[data-sb-hide~="nextLabel"]  .screen--normal .np-label,
+html[data-sb-hide~="countdown"]  .screen--normal .np-countdown,
+html[data-sb-hide~="timetable"]  .screen--normal .card--timetable,
+html[data-sb-hide~="cards"]      .screen--normal .card--notice,
+html[data-sb-hide~="cards"]      .screen--normal .card--etiquette { display: none; }
+
+/* ── Jumu'ah banner carousel ───────────────────────────────────
+   When a bayan speaker/topic is set, the banner alternates between
+   "Jumu'ah today · Bayan · Azan" and "Speaker · Topic" on ONE line
+   (crossfade, 6 s each — see jumuahCarouselHtml in ui.js), so it takes
+   no more height than the plain banner. Structural only (inherits the
+   theme's colours and size), so it suits every theme. Slides stack in
+   one grid cell, so the banner is as tall as the taller slide. */
+.jumuah-day-banner.jdb-carousel { display: grid; place-items: center; }
+.jdb-carousel .jdb-slide {
+  grid-area: 1 / 1;
+  opacity: 0;
+  animation: jdb-cycle var(--jdb-cycle, 12s) linear infinite;
+}
+/* Two slides: each visible for its half of the cycle, 0.5 s fades. */
+@keyframes jdb-cycle {
+  0%    { opacity: 0; }
+  4%    { opacity: 1; }
+  46%   { opacity: 1; }
+  50%   { opacity: 0; }
+  100%  { opacity: 0; }
+}
+.jumuah-day-banner .jdb-sep { opacity: .6; }
+
+/* ── Transient screens under the corner clock ───────────────────
+   If a screen's content is ever taller than the room left (e.g. very
+   large custom sizes), `safe center` lets it overflow at the BOTTOM
+   instead of sliding up underneath the clock. */
+.corner-clock + .screen { justify-content: safe center; }

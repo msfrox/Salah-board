@@ -21,8 +21,8 @@
   // Shrink the masjid name to fit its row on one line (long names like
   // "Athurugiriya Jumma Masjidh" otherwise wrapped and broke the layout).
   // Cheap: only measures/adjusts when the name or available width changed.
-  let _fitCache = { name: null, avail: 0 };
-  function fitMasjidName(root) {
+  let _fitCache = { name: null, avail: 0, factor: 1 };
+  function fitMasjidName(root, config) {
     const el = root.querySelector('.masjid-name');
     if (!el) return;
     const topbar = el.closest('.topbar') || el.parentElement;
@@ -31,17 +31,25 @@
       ? topbar.clientWidth - (dates ? dates.getBoundingClientRect().width : 0) - 32
       : el.clientWidth;
     const name = el.textContent;
-    if (_fitCache.name === name && Math.abs(_fitCache.avail - avail) < 2) return;
-    _fitCache = { name, avail };
+    // Admin → Advanced "Masjid name" size, as a multiplier on the theme size.
+    const sizes = config && config.layout && config.layout.normal && config.layout.normal.sizes;
+    const factor = global.SBConfig.layoutFactor(sizes ? sizes.masjidName : 100);
+    if (_fitCache.name === name && _fitCache.factor === factor && Math.abs(_fitCache.avail - avail) < 2) {
+      if (_fitCache.size) el.style.fontSize = _fitCache.size; // fresh element after re-render
+      return;
+    }
     el.style.fontSize = '';                 // reset to the theme's default
-    if (avail <= 0) return;
-    const base = parseFloat(getComputedStyle(el).fontSize);
+    const base = parseFloat(getComputedStyle(el).fontSize) * factor;
     let size = base;
+    el.style.fontSize = size + 'px';
+    _fitCache = { name, avail, factor, size: el.style.fontSize };
+    if (avail <= 0) return;
     // Reduce until it fits, but never below 55% of the theme size.
     for (let i = 0; i < 24 && el.scrollWidth > avail && size > base * 0.55; i++) {
       size *= 0.96;
       el.style.fontSize = size + 'px';
     }
+    _fitCache.size = el.style.fontSize;
   }
 
   function escapeHtml(s) {
@@ -135,19 +143,23 @@
     }</div></div>`;
   }
 
-  function noticeCardHtml(content, config, result) {
+  // `stride` = how many card types share the rotation slot. Each card's own
+  // item index must advance once per FULL round of card types; with the same
+  // period as the card rotation, e.g. 2 card types + 2 notices always landed
+  // on notice #1 and notice #2 never showed.
+  function noticeCardHtml(content, config, result, stride = 1) {
     const ls = langs(config);
     const notices = activeNotices(config.notices, result.now).filter(n => n.priority !== 'high');
     if (!notices.length) return '';
-    const idx = rotationIndex(result.now, config.rotation.seconds, notices.length);
+    const idx = rotationIndex(result.now, config.rotation.seconds * stride, notices.length);
     const n = notices[idx];
     return `<div class="card card--notice"><p class="notice-text">${escapeHtml(pickNoticeText(n, ls))}</p></div>`;
   }
 
-  function jumuahEtiquetteCardHtml(content, config, result) {
+  function jumuahEtiquetteCardHtml(content, config, result, stride = 1) {
     const items = content.jumuahEtiquette || [];
     if (!items.length) return '';
-    const idx = rotationIndex(result.now, config.rotation.seconds, items.length);
+    const idx = rotationIndex(result.now, config.rotation.seconds * stride, items.length);
     const item = items[idx];
     return `<div class="card card--etiquette"><p class="etiquette-text">${escapeHtml(item.text)}</p></div>`;
   }
@@ -157,13 +169,19 @@
   // rotates the genuinely rotating cards (notices, Jumu'ah etiquette).
   function rotationCardHtml(content, config, result) {
     let cards = (config.rotation.cards || []).filter(c => c !== 'timetable');
-    if (!result.isJumuahDay) cards = cards.filter(c => c !== 'jumuah-etiquette');
-    if (!cards.length) return '';
-    const idx = rotationIndex(result.now, config.rotation.seconds, cards.length);
-    const card = cards[idx];
-    if (card === 'notices') return noticeCardHtml(content, config, result);
-    if (card === 'jumuah-etiquette') return jumuahEtiquetteCardHtml(content, config, result);
-    return '';
+    if (!result.jumuahAlerts) cards = cards.filter(c => c !== 'jumuah-etiquette');
+    // Build every card first and rotate only through the non-empty ones —
+    // otherwise an empty slot (e.g. "notices" with none active) made the
+    // card vanish every other period and the whole screen jump up and down.
+    const build = (card, stride) => {
+      if (card === 'notices') return noticeCardHtml(content, config, result, stride);
+      if (card === 'jumuah-etiquette') return jumuahEtiquetteCardHtml(content, config, result, stride);
+      return '';
+    };
+    const live = cards.filter(card => build(card, 1));
+    if (!live.length) return '';
+    const card = live[rotationIndex(result.now, config.rotation.seconds, live.length)];
+    return build(card, live.length);
   }
 
   function pinnedNoticeHtml(config, result) {
@@ -213,14 +231,17 @@
     const nextName = next ? prayerLabel(content, next.prayer, next.jumuah) : '—';
 
     let jumuahBanner = '';
-    if (result.isJumuahDay) {
+    if (result.jumuahAlerts) {
       const todayRow = result.rows.today;
       const bayanPart = config.jumuah.bayan
         ? ` · ${escapeHtml(label(content, 'bayan'))} ${escapeHtml(E.formatTime(E.parseTime(config.jumuah.bayan, result.dates.today), config))}`
         : '';
       const jumuahAzanTime = todayRow ? fmtRowTime(todayRow.luhr, config, result) : '--:--';
-      jumuahBanner = `<div class="jumuah-day-banner">${escapeHtml(label(content, 'jumuahToday'))}` +
-        `${bayanPart} · ${escapeHtml(label(content, 'azan'))} ${escapeHtml(jumuahAzanTime)}</div>`;
+      const mainLine = `<span class="jdb-main">${escapeHtml(label(content, 'jumuahToday'))}` +
+        `${bayanPart} · ${escapeHtml(label(content, 'azan'))} ${escapeHtml(jumuahAzanTime)}</span>`;
+      jumuahBanner = result.bayanInfo
+        ? jumuahCarouselHtml([mainLine, bayanInfoLine(result.bayanInfo)], result.now)
+        : `<div class="jumuah-day-banner">${mainLine}</div>`;
     }
 
     let ramadanBlock = '';
@@ -339,17 +360,6 @@
       </div>`;
   }
 
-  function renderSunriseWait(config, result, contentByLang) {
-    const content = primaryContent(contentByLang, config);
-    const E = global.SBEngine;
-    const countdown = E.fmtCountdown(result.segEnd - result.now);
-    return `
-      <div class="screen screen--sunrise-wait">
-        <div class="countdown-label">${escapeHtml(label(content, 'sunrise'))}</div>
-        <div class="countdown">${countdown}</div>
-      </div>`;
-  }
-
   function renderLuhaWait(config, result, contentByLang) {
     const content = primaryContent(contentByLang, config);
     const E = global.SBEngine;
@@ -380,11 +390,44 @@
       </div>`;
   }
 
+  // Jumu'ah banner carousel: the slides share ONE line of height and
+  // crossfade, instead of stacking (saves vertical room on 768p TVs).
+  // The whole board re-renders every second, so a CSS animation would
+  // restart each tick; instead each slide's animation-delay is set to the
+  // current phase of a clock-derived cycle (negative delay = "already this
+  // far in"). That keeps the fade continuous across re-renders and, like
+  // the other rotations, is a pure function of `now`.
+  const JDB_SLIDE_SECONDS = 6;
+  function jumuahCarouselHtml(slides, now) {
+    const n = slides.length;
+    const cycle = n * JDB_SLIDE_SECONDS;
+    const phase = (now.getTime() / 1000) % cycle;
+    return `<div class="jumuah-day-banner jdb-carousel" style="--jdb-cycle:${cycle}s">` +
+      slides.map((html, i) => {
+        const offset = ((phase - i * JDB_SLIDE_SECONDS) % cycle + cycle) % cycle;
+        return `<span class="jdb-slide" style="animation-delay:-${offset.toFixed(2)}s">${html}</span>`;
+      }).join('') + `</div>`;
+  }
+
+  // "Speaker · Topic" (either part optional) — names and topics are typed by
+  // the masjid in whatever language they use, so no translated labels needed.
+  function bayanInfoLine(info) {
+    if (!info) return '';
+    const parts = [];
+    if (info.speaker) parts.push(`<span class="jdb-speaker">${escapeHtml(info.speaker)}</span>`);
+    if (info.topic) parts.push(`<span class="jdb-topic">${escapeHtml(info.topic)}</span>`);
+    return `<span class="jdb-bayan">${parts.join('<span class="jdb-sep"> · </span>')}</span>`;
+  }
+
   function renderJumuah(config, result, contentByLang) {
     const content = primaryContent(contentByLang, config);
+    const info = result.bayanInfo;
+    const speaker = info && info.speaker ? `<div class="jumuah-speaker">${escapeHtml(info.speaker)}</div>` : '';
+    const topic = info && info.topic ? `<div class="jumuah-topic">${escapeHtml(info.topic)}</div>` : '';
     return `
       <div class="screen screen--jumuah">
         <div class="jumuah-banner">${escapeHtml((content.jumuahBayan || {}).text)}</div>
+        ${speaker}${topic}
         ${jumuahEtiquetteCardHtml(content, config, result)}
       </div>`;
   }
@@ -397,6 +440,19 @@
       </div>`;
   }
 
+  // Transient screens (azan, iqamah countdown, luha timer, Jumu'ah…)
+  // take over the whole board, which used to hide the time. A small corner
+  // clock keeps "what time is it now?" answerable on every screen. NORMAL
+  // already has the big hero clock; SALAH and NIGHT already show their own
+  // (deliberately dim) clock, so they are left as they are.
+  const CORNER_CLOCK_STATES = ['AZAN', 'BETWEEN', 'IQAMAH', 'AFTER',
+    'LUHA_WAIT', 'LUHA_OPEN', 'JUMUAH', 'KHUTBAH'];
+
+  function cornerClockHtml(config, result) {
+    if (!CORNER_CLOCK_STATES.includes(result.state)) return '';
+    return `<div class="corner-clock">${escapeHtml(global.SBEngine.formatClock(result.now, config))}</div>`;
+  }
+
   const RENDERERS = {
     NORMAL: renderNormal,
     AZAN: renderAzan,
@@ -404,7 +460,6 @@
     IQAMAH: renderIqamah,
     SALAH: renderSalah,
     AFTER: renderAfter,
-    SUNRISE_WAIT: renderSunriseWait,
     LUHA_WAIT: renderLuhaWait,
     LUHA_OPEN: renderLuhaOpen,
     NIGHT: renderNight,
@@ -414,9 +469,9 @@
 
   function render(container, result, config, contentByLang) {
     const fn = RENDERERS[result.state] || renderNormal;
-    container.innerHTML = fn(config, result, contentByLang);
+    container.innerHTML = cornerClockHtml(config, result) + fn(config, result, contentByLang);
     container.className = `screen-root theme-${config.theme} state-${result.state.toLowerCase()}`;
-    if (result.state === 'NORMAL') fitMasjidName(container);
+    if (result.state === 'NORMAL') fitMasjidName(container, config);
   }
 
   function applyNightDim(overlayEl, active, brightnessPercent) {

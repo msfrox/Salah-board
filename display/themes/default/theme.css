@@ -118,22 +118,21 @@ html, body {
 
 .card { background: transparent; border: none; border-radius: 0; padding: 0; }
 
-/* ── Hero: azan/iqamah times are the largest text on the board; the
-   clock shrinks into the corner and the countdown stays small. The
-   clock is pulled out of the hero-row's flex flow and anchored to the
-   top-right of the whole screen, level with the masjid name/date, via
-   position:absolute — no markup change needed. ──────────────────── */
+/* ── Hero: azan/iqamah times are the largest text on the board. The
+   clock sits right-aligned at the top of the hero; it and the countdown
+   were enlarged after board feedback (hard to read across the hall).
+   Per-board fine-tuning on top lives in the admin Advanced tab. ─────── */
 .screen--normal { justify-content: space-between; }
 .hero-row { position: relative; flex: 1; display: flex; flex-direction: column; gap: 1rem; align-items: stretch; min-height: 0; }
 
+/* Portrait: the clock is its own centred row (set in the portrait block).
+   Landscape: see the grid below — the clock shares the "Next prayer" rows. */
 .hero-clock {
-  position: absolute;
-  top: 0;
-  right: 0;
+  align-self: flex-end;
   display: flex; flex-direction: row; align-items: baseline; justify-content: flex-end;
   gap: .4rem;
 }
-.clock-big { font-size: 4.4rem; font-weight: 700; line-height: .82; letter-spacing: -.01em; color: var(--sb-fg); font-variant-numeric: tabular-nums; }
+.clock-big { font-size: 6rem; font-weight: 700; line-height: .82; letter-spacing: -.01em; color: var(--sb-fg); font-variant-numeric: tabular-nums; }
 
 .hero-next {
   flex: 1;
@@ -147,7 +146,7 @@ html, body {
 .np-divider { width: 1px; align-self: stretch; background: var(--sb-border); }
 .np-time-label { font-size: 1.3rem; font-weight: 700; color: var(--sb-fg-dim); text-transform: uppercase; letter-spacing: .3em; }
 .np-time { font-size: 13rem; font-weight: 700; line-height: .8; font-variant-numeric: tabular-nums; }
-.np-countdown { font-size: 1.8rem; font-weight: 600; color: var(--sb-fg-dim); font-variant-numeric: tabular-nums; }
+.np-countdown { font-size: 3.2rem; font-weight: 700; color: var(--sb-fg-dim); font-variant-numeric: tabular-nums; }
 
 .timetable-strip { display: flex; justify-content: space-between; gap: 1.5rem; border-top: 1px solid var(--sb-border); padding-top: 1.5rem; }
 .tt-cell { flex: 1; text-align: center; display: flex; flex-direction: column; gap: .3em; }
@@ -223,12 +222,10 @@ html, body {
 .screen--after { justify-content: center; align-items: center; text-align: center; }
 .screen--after .arabic { color: var(--sb-accent); font-weight: 700; font-size: 4.4rem; }
 
-/* ── SUNRISE_WAIT / LUHA_WAIT / LUHA_OPEN ───────────────────── */
-.screen--sunrise-wait, .screen--luha-wait { justify-content: center; align-items: center; text-align: center; gap: 1.4rem; }
+/* ── LUHA_WAIT / LUHA_OPEN ─────────────────────────────── */
+.screen--luha-wait { justify-content: center; align-items: center; text-align: center; gap: 1.4rem; }
 .countdown-label { font-size: 1.8rem; font-weight: 700; color: var(--sb-fg-dim); text-transform: uppercase; letter-spacing: .24em; }
 .countdown { font-size: 15rem; font-weight: 800; font-variant-numeric: tabular-nums; }
-.screen--sunrise-wait .countdown-label { color: #b07d1f; }
-.screen--sunrise-wait .countdown { color: var(--sb-warn); }
 .screen--luha-wait .countdown { color: var(--sb-accent); }
 .screen--luha-open { justify-content: center; align-items: center; text-align: center; }
 .luha-open-card { font-size: 4rem; font-weight: 800; color: var(--sb-accent); line-height: 1.15; }
@@ -241,11 +238,72 @@ html, body {
 /* ── JUMUAH (bayan) / KHUTBAH — gold, never red ─────────────── */
 .screen--jumuah { justify-content: center; align-items: center; text-align: center; gap: 2rem; }
 .jumuah-banner { font-size: 4.5rem; font-weight: 700; color: var(--sb-accent); }
+.jumuah-speaker { font-size: 2.8rem; font-weight: 700; color: var(--sb-fg); }
+.jumuah-topic { font-size: 2rem; font-weight: 500; color: var(--sb-fg-dim); max-width: 85vw; }
 .screen--khutbah {
   justify-content: center; align-items: center; text-align: center;
   background: radial-gradient(ellipse at center, #231a05 0%, var(--sb-bg) 74%);
 }
 .khutbah-line { font-size: 5rem; font-weight: 800; color: var(--sb-danger); }
+
+/* ── Landscape hero layout ─────────────────────────────────────
+   The clock sits in the right-hand column, level with "NEXT PRAYER /
+   name", instead of taking a row of its own (that cost ~6rem of height
+   and made banners push the countdown into the timetable). Being a grid
+   column — not position:absolute — it still can never overlap the
+   centred text, however large the caretaker makes it.
+   hero-next uses display:contents so its children join the grid. */
+@media (orientation: landscape) {
+  .hero-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    grid-template-areas:
+      ".     label clock"
+      ".     name  clock"
+      "times times times"
+      ".     cd    .";
+    align-content: center;
+    justify-items: center;
+    row-gap: .3rem;
+    column-gap: 1rem;
+    container-type: size;   /* lets .np-time size itself to the room left */
+  }
+  .hero-next { display: contents; }
+  .hero-clock { grid-area: clock; justify-self: end; align-self: center; margin-bottom: .5rem; }
+  .np-label { grid-area: label; }
+  .np-name { grid-area: name; }
+  .np-times { grid-area: times; }
+  .np-countdown { grid-area: cd; }
+  /* The big azan/iqamah numbers keep their full 13rem whenever there is
+     room. Only when banners (Jumu'ah + bayan line, pinned notice, Ramadan)
+     eat the height do they shrink — just enough to keep the countdown off
+     the timetable. ~17rem = the rest of the hero; 0.8 = .np-time line-height.
+     They are also capped by WIDTH: two 4-digit times (11:56 | 12:20) at 13rem
+     ran to ~40px from the edge at 1366x768, where TV overscan can crop them;
+     /6.4 ≈ two "12:20"s (~3em each) plus the gap and divider. Floor of 5rem so they can
+     never collapse. (Browsers without container
+     units ignore this and keep 13rem.) */
+  .np-time { font-size: max(5rem, min(13rem, calc(125cqh - 17rem), calc((100cqw - 4rem) / 6.4))); }
+
+  /* Banners showing (Jumu'ah, pinned notice, Ramadan)? Win height back from
+     the generous gaps first, so the big numbers rarely need to shrink. */
+  .screen--normal:has(.jumuah-day-banner, .pinned-banner, .ramadan-block) { gap: 1rem; }
+  .screen--normal:has(.jumuah-day-banner, .pinned-banner, .ramadan-block) .hero-row { row-gap: .15rem; }
+  .screen--normal:has(.jumuah-day-banner, .pinned-banner, .ramadan-block) .np-times { margin: .2rem 0; }
+  /* Two or more banners at once (e.g. a Ramadan Friday with an Eid notice):
+     tighter still, and slimmer banner padding. */
+  .screen--normal:has(.jumuah-day-banner):has(.pinned-banner),
+  .screen--normal:has(.jumuah-day-banner):has(.ramadan-block),
+  .screen--normal:has(.pinned-banner):has(.ramadan-block) { gap: .5rem; }
+  .screen--normal:has(.jumuah-day-banner):has(.pinned-banner) :is(.jumuah-day-banner, .pinned-banner, .ramadan-block),
+  .screen--normal:has(.jumuah-day-banner):has(.ramadan-block) :is(.jumuah-day-banner, .pinned-banner, .ramadan-block),
+  .screen--normal:has(.pinned-banner):has(.ramadan-block) :is(.jumuah-day-banner, .pinned-banner, .ramadan-block) {
+    padding-top: .4rem; padding-bottom: .4rem;
+  }
+  .screen--normal:has(.jumuah-day-banner, .pinned-banner, .ramadan-block) .np-time {
+    font-size: max(5rem, min(13rem, calc(125cqh - 15rem), calc((100cqw - 4rem) / 6.4)));
+  }
+}
 
 /* ── Short landscape panels (720p and the ~600px tablet panels): the
    proportions already fit by design, so only tighten chrome spacing. The
@@ -258,8 +316,8 @@ html, body {
 /* Only on genuinely tiny landscape panels, and only when banners can eat the
    vertical budget, ease the hero down a little to avoid clipping. */
 @media (max-height: 560px) and (orientation: landscape) {
-  .np-time { font-size: 11rem; }
-  .clock-big { font-size: 3.4rem; }
+  .np-time { font-size: max(5rem, min(11rem, calc(125cqh - 17rem), calc((100cqw - 4rem) / 6.4))); }
+  .clock-big { font-size: 4.6rem; }
 }
 
 /* ── Portrait 9:16 — hero stacks vertically (clock above the split,
@@ -268,13 +326,18 @@ html, body {
   .screen { gap: 1rem; }
 
   .topbar { flex-direction: column; align-items: center; text-align: center; gap: .4rem; }
-  .dates { text-align: center; }
+  /* Long dates (e.g. Tamil: ~1210px) ran off both edges of a 1080px-wide
+     portrait screen — let the Gregorian and Hijri parts wrap onto two lines. */
+  .dates { text-align: center; flex-wrap: wrap; justify-content: center; row-gap: .2rem; white-space: normal; }
+  .dates > span { white-space: nowrap; }
+  /* "04:00" at 17rem is ~100%+ of a portrait screen's width — cap by width. */
+  .icd-countdown { font-size: min(17rem, 28vw); }
 
   .hero-row { gap: 1.2rem; }
-  .hero-clock { position: static; justify-content: center; margin-bottom: .4rem; }
-  .clock-big { font-size: 6rem; }
+  .hero-clock { align-self: center; justify-content: center; margin-bottom: .4rem; }
+  .clock-big { font-size: 7.6rem; }
   .np-times { gap: 2rem; }
-  .np-time { font-size: 7.6rem; }
+  .np-time { font-size: 7rem; }   /* 7.6rem ran ~6px off both edges with two 4-digit times (11:56 | 12:20) */
 
   .timetable-strip { display: grid; grid-template-columns: 1fr 1fr; gap: 0; border-top: none; padding-top: 0; }
   .tt-cell { padding: 1rem 0; border-top: 1px solid var(--sb-border); }
@@ -283,4 +346,39 @@ html, body {
 
   .azan-reminder, .azan-dua, .between-reminder, .dua-card { max-width: 88vw; }
   .iqamah-lines { font-size: 1.7rem; }
+}
+
+/* ── Corner clock — the time stays visible on every transient
+   screen (azan, iqamah countdown, luha timer, Jumu'ah).
+   It sits in its own row at the top-right (in normal flow, not
+   floating), so it can never cover the screen's content; the
+   screen below simply takes the remaining height. Enlarged ~45% after
+   board feedback (hard to read across the hall). ─────────────────── */
+.corner-clock {
+  position: relative; z-index: 1; flex: none; align-self: flex-end;
+  margin-top: -1.5vh;
+  font-size: 3.6rem; font-weight: 700; line-height: 1;
+  font-variant-numeric: tabular-nums; letter-spacing: .02em;
+  color: var(--sb-fg-dim); pointer-events: none;
+}
+.corner-clock + .screen { height: auto; flex: 1; min-height: 0; }
+/* The Azan screen is the densest one; give back the clock row's height by
+   tightening its spacing only (gaps), so nothing is pushed off-screen. */
+.corner-clock + .screen--azan { gap: .5rem; }
+/* Landscape: with the larger corner clock the Azan screen's content was
+   taller than the room left under it (it slid up under the clock at
+   1366x768 and ran off the bottom at 1080p). Win the height back from
+   spacing, the dua box padding and a slightly smaller title — the Arabic
+   and translations keep their size. */
+@media (orientation: landscape) {
+  .corner-clock + .screen--azan { gap: .3rem; }
+  .screen--azan .azan-banner { font-size: 5rem; }
+  .screen--azan .azan-reminder { gap: .2rem; }
+  .screen--azan .azan-dua { padding: .7rem 2rem; gap: .3rem; }
+  .screen--azan .arabic { line-height: 1.28; }
+}
+@media (max-height: 620px) and (orientation: landscape) {
+  .screen--azan .azan-banner { font-size: 4.4rem; }
+  .screen--azan .arabic { line-height: 1.2; }
+  .screen--azan .azan-dua { padding: .5rem 2rem; }
 }

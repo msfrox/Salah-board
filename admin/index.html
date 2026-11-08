@@ -25,6 +25,7 @@
     <button type="button" class="tab" data-tab="time" role="tab">Time</button>
     <button type="button" class="tab" data-tab="network" role="tab">Network</button>
     <button type="button" class="tab" data-tab="preview" role="tab">Preview</button>
+    <button type="button" class="tab" data-tab="advanced" role="tab">Advanced</button>
   </nav>
 
   <main id="admin-form">
@@ -152,10 +153,25 @@
           <input type="checkbox" id="bayan-enabled">
           <span>Show a bayan (pre-khutbah talk)</span>
         </label>
-        <label class="field">
-          <span>Bayan start time</span>
-          <input type="time" id="bayan-time" data-path="jumuah.bayan" data-time="ampm">
-        </label>
+        <div id="bayan-details">
+          <label class="field">
+            <span>Bayan start time</span>
+            <input type="time" id="bayan-time" data-path="jumuah.bayan" data-time="ampm">
+          </label>
+          <label class="field">
+            <span>Bayan by (speaker's name — optional)</span>
+            <input type="text" data-path="jumuah.bayanSpeaker" placeholder="e.g. Moulavi Ahmed Rizwan">
+          </label>
+          <label class="field">
+            <span>Bayan topic (optional)</span>
+            <input type="text" data-path="jumuah.bayanTopic" placeholder="e.g. Patience in times of hardship">
+          </label>
+          <label class="field">
+            <span>Only show the name &amp; topic on this Friday (optional)</span>
+            <input type="date" id="bayan-date">
+            <span class="hint">Shown in the "Jumu'ah today" banner and on the bayan screen until Jumu'ah salah ends. Set the date so last week's speaker never appears by mistake; leave it empty to show every Friday until you change it.</span>
+          </label>
+        </div>
         <label class="field">
           <span>Iqamah time (fixed, e.g. 1:15 PM)</span>
           <input type="time" data-path="jumuah.iqamah" data-time="ampm">
@@ -366,6 +382,34 @@
       </section>
     </div>
 
+    <!-- ══ ADVANCED ═════════════════════════════════════════ -->
+    <div class="tab-panel" data-panel="advanced" hidden>
+      <section class="card">
+        <h2>Fine-tune every screen</h2>
+        <p class="hint">Every TV shows the board a little differently. Adjust the size of any element on any screen (100% = the theme's normal size), or hide parts of the normal screen you don't need. Open a screen's section below and the preview switches to it. Press <strong>Save</strong> to send it to the board — check the real screen, since that is what the congregation sees.</p>
+
+        <div class="layout-preview">
+          <div class="layout-preview-toolbar">
+            <label class="layout-preview-pick">Preview
+              <select id="layout-preview-state" aria-label="Screen to preview"></select>
+            </label>
+            <div class="seg" role="group" aria-label="Preview shape">
+              <button type="button" class="seg-btn active" data-preview-shape="landscape">Landscape TV</button>
+              <button type="button" class="seg-btn" data-preview-shape="portrait">Portrait TV</button>
+            </div>
+          </div>
+          <div class="layout-preview-frame landscape" id="layout-preview-frame">
+            <iframe id="layout-preview" title="Board preview" src="about:blank" tabindex="-1"></iframe>
+          </div>
+          <p class="layout-fit-warning" id="layout-fit-warning" hidden>Some elements no longer fit on the screen at these sizes — they overlap or run off the edge. Make something smaller, or hide an element you don't need.</p>
+        </div>
+
+        <div id="layout-groups"></div>
+
+        <button type="button" class="btn btn--secondary" id="layout-reset">Reset every screen to theme defaults</button>
+      </section>
+    </div>
+
   </main>
 
   <footer class="admin-footer">
@@ -386,6 +430,7 @@
   <script src="./js/time.js"></script>
   <script src="./js/network.js"></script>
   <script src="./js/preview.js"></script>
+  <script src="./js/advanced.js"></script>
   <script src="./js/osk.js"></script>
 </body>
 </html>

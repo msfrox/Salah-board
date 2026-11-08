@@ -6,6 +6,7 @@
 <title>Salah Board</title>
 <link rel="stylesheet" href="./fonts/fonts.css">
 <link rel="stylesheet" id="theme-css" href="./themes/classic/theme.css">
+<link rel="stylesheet" href="./css/layout.css">
 </head>
 <body>
   <div id="screen-root" class="screen-root"></div>
@@ -15,7 +16,10 @@
        the same gesture the Android shell uses (touch the screen → settings).
        The board has no other interactive elements, so any click means "settings". -->
   <script>
-    document.addEventListener('click', function () { location.href = '../admin/'; });
+    // Not when embedded (the admin Advanced tab shows the board in a preview frame).
+    if (window.self === window.top) {
+      document.addEventListener('click', function () { location.href = '../admin/'; });
+    }
   </script>
 
   <script src="./js/config.js"></script>

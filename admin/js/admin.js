@@ -25,6 +25,20 @@
   ];
   const ROUND_OPTIONS = [0, 5, 10, 15];
 
+  // Advanced tab — every resizable element, grouped by screen. The list
+  // lives in display/js/config.js (SBConfig.LAYOUT_GROUPS) so the admin,
+  // the config defaults and the display's zoom rules can never disagree.
+  const LAYOUT_GROUPS = SBConfig.LAYOUT_GROUPS;
+  const layoutPath = (group, key) => `layout.${group.store}.sizes.${key}`;
+  const LAYOUT_SHOW = [
+    { key: 'masjidName', label: 'Masjid name' },
+    { key: 'dates', label: 'Dates' },
+    { key: 'nextLabel', label: '"Next prayer" label' },
+    { key: 'countdown', label: 'Countdown to azan' },
+    { key: 'timetable', label: "Today's timetable strip" },
+    { key: 'cards', label: 'Rotating notice cards' },
+  ];
+
   const pad2 = n => String(n).padStart(2, '0');
   const $ = sel => document.querySelector(sel);
   const $$ = sel => Array.from(document.querySelectorAll(sel));
@@ -120,6 +134,51 @@
       </label>`;
   }
 
+  function layoutSizeRowHtml(item, group) {
+    const id = `layout-size-${item.key}`;
+    return `
+      <div class="field layout-size">
+        <span><label for="${id}">${item.label}</label> <strong class="layout-size-value" data-for="${id}">100%</strong></span>
+        <div class="stepper">
+          <button type="button" class="btn btn--secondary stepper-btn" data-step="-5" data-target="${id}" aria-label="Smaller">−</button>
+          <input type="range" id="${id}" class="layout-range" min="${SBConfig.LAYOUT_MIN}" max="${SBConfig.LAYOUT_MAX}" step="5"
+                 data-path="${layoutPath(group, item.key)}" data-number>
+          <button type="button" class="btn btn--secondary stepper-btn" data-step="5" data-target="${id}" aria-label="Bigger">+</button>
+        </div>
+      </div>`;
+  }
+
+  function layoutShowRowHtml(item) {
+    return `
+      <label class="field checkbox-field">
+        <input type="checkbox" data-path="layout.normal.show.${item.key}">
+        <span>${item.label}</span>
+      </label>`;
+  }
+
+  // One collapsible section per screen. Opening a section switches the live
+  // preview to that screen (advanced.js listens for the toggle).
+  function layoutGroupHtml(group) {
+    const showRows = group.id === 'normal'
+      ? `<h4>Show on the normal screen</h4><div id="layout-show-rows" class="checkbox-col"></div>` : '';
+    return `
+      <details class="layout-group" data-group="${group.id}" data-state="${group.state}"${group.id === 'normal' ? ' open' : ''}>
+        <summary>${group.title}</summary>
+        <div class="layout-group-body">
+          ${group.items.map(item => layoutSizeRowHtml(item, group)).join('')}
+          ${showRows}
+          <button type="button" class="btn btn--secondary layout-group-reset">Reset this screen</button>
+        </div>
+      </details>`;
+  }
+
+  function refreshLayoutValues() {
+    $$('.layout-range').forEach(r => {
+      const out = document.querySelector(`.layout-size-value[data-for="${r.id}"]`);
+      if (out) out.textContent = `${r.value}%`;
+    });
+  }
+
   function ramadanOverrideRowHtml(prayer) {
     return `
       <div class="subcard" data-ramadan-prayer="${prayer.key}">
@@ -210,6 +269,8 @@
     $('#salah-duration-rows').innerHTML = PRAYERS.map(salahDurationRowHtml).join('');
     $('#ramadan-override-rows').innerHTML = PRAYERS.map(ramadanOverrideRowHtml).join('');
     $('#taraweeh-note-rows').innerHTML = LANGS.map(taraweehNoteRowHtml).join('');
+    $('#layout-groups').innerHTML = LAYOUT_GROUPS.map(layoutGroupHtml).join('');
+    $('#layout-show-rows').innerHTML = LAYOUT_SHOW.map(layoutShowRowHtml).join('');
   }
 
   // Options load async — callers must await this before populateForm() sets
@@ -263,7 +324,8 @@
     // Jumu'ah bayan enabled toggle
     const bayanEnabled = !!config.jumuah.bayan;
     $('#bayan-enabled').checked = bayanEnabled;
-    $('#bayan-time').closest('.field').classList.toggle('hidden', !bayanEnabled);
+    $('#bayan-details').classList.toggle('hidden', !bayanEnabled);
+    $('#bayan-date').value = config.jumuah.bayanDate || '';
 
     // Ramadan overrides enabled toggles
     PRAYERS.forEach(p => {
@@ -285,6 +347,7 @@
     // Sliders' live labels
     $('#scale-value').textContent = Number(config.display.scale).toFixed(1);
     $('#brightness-value').textContent = config.night.brightness;
+    refreshLayoutValues();
     // (The Time tab manages #time-status itself — see time.js.)
 
     updateModeVisibility(document);
@@ -331,6 +394,9 @@
 
     // Jumu'ah bayan: null when disabled
     config.jumuah.bayan = $('#bayan-enabled').checked ? inputValueToAmpm($('#bayan-time').value) : null;
+    config.jumuah.bayanSpeaker = String(config.jumuah.bayanSpeaker || '').trim();
+    config.jumuah.bayanTopic = String(config.jumuah.bayanTopic || '').trim();
+    config.jumuah.bayanDate = $('#bayan-date').value || null;
 
     // Ramadan overrides: delete key entirely when disabled (sparse per spec)
     config.ramadan.iqamahOverrides = config.ramadan.iqamahOverrides || {};
@@ -402,6 +468,11 @@
       if (!config.jumuah.iqamah) errors.push("Jumu'ah iqamah time is required when Jumu'ah mode is enabled.");
       if (!(Number(config.jumuah.salahDuration) > 0)) errors.push("Jumu'ah salah duration must be more than 0.");
     }
+    if (config.jumuah.bayanDate) {
+      const d = new Date(config.jumuah.bayanDate + 'T12:00:00');
+      if (isNaN(d.getTime())) errors.push("Bayan date is not a valid date.");
+      else if (d.getDay() !== 5) errors.push("Bayan date must be a Friday (or leave it empty).");
+    }
     if (config.luha.enabled && !(Number(config.luha.waitAfterSunrise) >= 0)) {
       errors.push('Luha wait-after-sunrise must be 0 or more.');
     }
@@ -415,6 +486,13 @@
     const brightness = Number(config.night.brightness);
     if (!(brightness >= 0 && brightness <= 100)) errors.push('Night brightness must be between 0 and 100.');
     if (!(Number(config.rotation.seconds) >= 3)) errors.push('Rotation seconds should be at least 3.');
+
+    LAYOUT_GROUPS.forEach(group => group.items.forEach(item => {
+      const v = Number(getPath(config, layoutPath(group, item.key)));
+      if (!(v >= SBConfig.LAYOUT_MIN && v <= SBConfig.LAYOUT_MAX)) {
+        errors.push(`Advanced → ${group.title} → "${item.label}" size must be between ${SBConfig.LAYOUT_MIN}% and ${SBConfig.LAYOUT_MAX}%.`);
+      }
+    }));
 
     (config.notices || []).forEach((n, i) => {
       const hasText = n.text && Object.values(n.text).some(v => v && String(v).trim());
@@ -492,7 +570,7 @@
     document.addEventListener('change', e => {
       if (e.target.classList.contains('iqamah-mode')) updateModeVisibility(document);
       if (e.target.id === 'bayan-enabled') {
-        $('#bayan-time').closest('.field').classList.toggle('hidden', !e.target.checked);
+        $('#bayan-details').classList.toggle('hidden', !e.target.checked);
       }
       if (e.target.classList.contains('ramadan-override-enabled')) {
         e.target.closest('.subcard').querySelector('.ramadan-override-body').classList.toggle('hidden', !e.target.checked);
@@ -504,6 +582,35 @@
 
     $('#scale-range').addEventListener('input', e => { $('#scale-value').textContent = Number(e.target.value).toFixed(1); });
     $('#brightness-range').addEventListener('input', e => { $('#brightness-value').textContent = e.target.value; });
+
+    // Advanced tab: live % labels, −/+ fine steps, reset.
+    document.addEventListener('input', e => { if (e.target.classList.contains('layout-range')) refreshLayoutValues(); });
+    $('#layout-groups').addEventListener('click', e => {
+      const groupReset = e.target.closest('.layout-group-reset');
+      if (groupReset) {
+        resetLayout(groupReset.closest('.layout-group'));
+        showToast('Screen reset — press Save to apply it to the board.');
+        return;
+      }
+      const btn = e.target.closest('.stepper-btn');
+      if (!btn) return;
+      const range = document.getElementById(btn.dataset.target);
+      const v = Math.max(SBConfig.LAYOUT_MIN, Math.min(SBConfig.LAYOUT_MAX, Number(range.value) + Number(btn.dataset.step)));
+      range.value = v;
+      range.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    // Reset sliders (and show toggles) inside `scope` to the defaults.
+    function resetLayout(scope) {
+      const d = SBConfig.defaults();
+      scope.querySelectorAll('.layout-range').forEach(r => { r.value = getPath(d, r.dataset.path); });
+      scope.querySelectorAll('#layout-show-rows input[type=checkbox]').forEach(cb => { cb.checked = getPath(d, cb.dataset.path) !== false; });
+      refreshLayoutValues();
+      document.dispatchEvent(new CustomEvent('sb-layout-changed'));
+    }
+    $('#layout-reset').addEventListener('click', () => {
+      resetLayout($('#layout-groups'));
+      showToast('All sizes reset — press Save to apply it to the board.');
+    });
 
     $('#add-notice').addEventListener('click', () => {
       notices = readNoticesFromDom();
@@ -558,7 +665,10 @@
   // path, without duplicating that logic. loadConfig() returns the full merged
   // config; persistConfig(config) saves it (board file on the kiosk, else
   // localStorage). validate() lets a feature script reuse the form validator.
-  window.SBAdmin = { loadConfig, persistConfig, validate };
+  // currentFormConfig() = the form's unsaved state as a full config (used by
+  // the Advanced tab's live preview).
+  async function currentFormConfig() { return collectForm(await loadConfig()); }
+  window.SBAdmin = { loadConfig, persistConfig, validate, currentFormConfig };
 
   boot();
 })();

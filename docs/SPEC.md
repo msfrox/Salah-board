@@ -27,15 +27,18 @@ States, in the order they occur around each of the 5 daily prayers:
 | 5 | SALAH | after IQAMAH | +`salahDuration[prayer]` | Near-black screen, tiny clock, "Salah in progress — phones off". Minimum light spill in the hall |
 | 6 | AFTER | after SALAH | +`afterScreen.minutes` (default 10) | Post-salah adhkar rotation (Astaghfirullah ×3, Ayat al-Kursi reminder, tasbih 33/33/34) |
 
-Then back to NORMAL. Special overlay states:
+Then back to NORMAL. After Fajr's AFTER screen the board stays on NORMAL until sunrise (there is no separate sunrise countdown screen — sunrise is already in the timetable strip). Special overlay states:
 
 | State | When | Screen shows |
 |---|---|---|
-| SUNRISE_WAIT | Fajr AFTER ends → sunrise | Countdown to sunrise (ishraq). Note: no salah at the moment of sunrise |
 | LUHA_WAIT | sunrise → +`luha.waitAfterSunrise` (default 20 min) | "Luha prayer in MM:SS" countdown |
 | LUHA_OPEN | wait ends | Brief "Luha (Duha) prayer time has begun" card, then NORMAL |
 | NIGHT | Isha AFTER + `night.afterIshaMinutes` → Fajr − `night.beforeFajrMinutes` | Dimmed (config `night.brightness`), small clock + tomorrow's Fajr time |
 | JUMUAH | Fridays, from `jumuah.bayan` time | See Jumu'ah mode below |
+
+**Per-board fine-tuning:** every element on every screen can be resized (50–250% of the theme size) per board, and parts of the NORMAL screen can be hidden — `config.layout` (admin → Advanced: one section per screen, a live preview that switches to the screen being tuned and warns when elements no longer fit). The element list is `LAYOUT_GROUPS` in `display/js/config.js`; the display generates its zoom rules from it, on top of every theme, so themes don't need to know about it.
+
+**Time always visible:** every full-screen transient state (AZAN, BETWEEN, IQAMAH, AFTER, LUHA_WAIT, LUHA_OPEN, JUMUAH, KHUTBAH) shows a small current-time clock in the top-right corner, in its own row so it never covers the screen's content. NORMAL has the hero clock; SALAH and NIGHT keep their own deliberately dim clock.
 
 Rules:
 - State is a **pure function of (config, timetable, now)** — after reboot or
@@ -66,8 +69,15 @@ editable in the admin panel:
 
 1. From morning, NORMAL shows "Jumu'ah today" with bayan + azan times and
    rotating Jumu'ah etiquette cards (ghusl, early arrival, Surah al-Kahf,
-   salawat, listen silently during khutbah).
-2. `bayan` time → card "Bayan in progress".
+   salawat, listen silently during khutbah). Both stop at that day's Asr
+   azan — Jumu'ah is over by then, so the reminders would only be noise.
+   If the masjid entered the bayan speaker and/or topic, the banner becomes
+   a one-line carousel that crossfades between the Jumu'ah times and
+   "speaker · topic" (6 s each), so it takes no extra height. The speaker/
+   topic slide disappears as soon as Jumu'ah salah ends (no longer relevant). Optional `bayanDate` limits it to one
+   Friday so a previous week's speaker is never shown by mistake.
+2. `bayan` time → card "Bayan in progress", with the speaker and topic
+   underneath when set.
 3. Azan (today's `luhr` time) → AZAN state as usual.
 4. After azan → KHUTBAH state (not BETWEEN): screen shows ONLY "Khutbah in
    progress — remain silent" (talking during khutbah forfeits the reward —

@@ -196,13 +196,10 @@
     const fajrIqamah = computeIqamah(fajrAzan, resolveIqamahRule('fajr', config));
     const fajrSegs = buildCycle('fajr', fajrAzan, fajrIqamah, config, config.screens.salahDuration.fajr);
     segs.push(...fajrSegs);
-    const fajrAfterEnd = fajrSegs.length ? fajrSegs[fajrSegs.length - 1].end : fajrAzan;
 
-    // Sunrise wait + Luha
+    // Luha. (No sunrise countdown: from the end of Fajr's AFTER screen until
+    // sunrise the board stays on NORMAL — sunrise is already in the timetable.)
     const sunrise = at(row.sunrise);
-    if (sunrise && sunrise > fajrAfterEnd) {
-      segs.push({ state: 'SUNRISE_WAIT', start: fajrAfterEnd, end: sunrise, prayer: null, meta: { sunrise } });
-    }
     if (config.luha.enabled && sunrise) {
       const luhaOpenStart = addMinutes(sunrise, config.luha.waitAfterSunrise);
       if (luhaOpenStart > sunrise) {

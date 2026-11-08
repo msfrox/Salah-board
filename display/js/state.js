@@ -9,7 +9,26 @@
   'use strict';
 
   const VALID_STATES = ['NORMAL', 'AZAN', 'BETWEEN', 'IQAMAH', 'SALAH', 'AFTER',
-    'SUNRISE_WAIT', 'LUHA_WAIT', 'LUHA_OPEN', 'NIGHT', 'JUMUAH', 'KHUTBAH'];
+    'LUHA_WAIT', 'LUHA_OPEN', 'NIGHT', 'JUMUAH', 'KHUTBAH'];
+
+  // Bayan speaker/topic for today's Jumu'ah, or null. Shown only while it is
+  // still useful: a bayan is configured, today matches the optional
+  // `bayanDate`, and Jumu'ah salah hasn't finished yet (end of today's
+  // Jumu'ah SALAH segment; if that can't be found, fall back to "not over").
+  function localISO(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  }
+  function resolveBayanInfo(config, timeline, now) {
+    const j = config.jumuah || {};
+    const speaker = String(j.bayanSpeaker || '').trim();
+    const topic = String(j.bayanTopic || '').trim();
+    if (!j.bayan || (!speaker && !topic)) return null;
+    if (j.bayanDate && j.bayanDate !== localISO(timeline.dates.today)) return null;
+    const today = localISO(timeline.dates.today);
+    const salah = timeline.segments.find(s => s.state === 'SALAH' && s.meta && s.meta.jumuah && localISO(s.start) === today);
+    if (salah && now >= salah.end) return null;
+    return { speaker, topic };
+  }
 
   function resolve(config, timeline, now, pack) {
     const E = global.SBEngine;
@@ -22,10 +41,15 @@
     const hijri = E.hijriInfo(now, config, todayMaghrib, pack);
     const isFriday = timeline.dates.today.getDay() === 5;
     const isJumuahDay = isFriday && config.jumuah.enabled;
+    // Jumu'ah reminders (the "Jumu'ah today" banner and the etiquette cards)
+    // are only useful until Jumu'ah is over — they stop once Asr azan arrives.
+    const todayAsr = todayRow ? E.parseTime(todayRow.asr, timeline.dates.today) : null;
+    const jumuahAlerts = isJumuahDay && !(todayAsr && now >= todayAsr);
+    const bayanInfo = jumuahAlerts ? resolveBayanInfo(config, timeline, now) : null;
     const ramadan = (config.ramadan.enabled && todayRow) ? E.ramadanTimes(todayRow, timeline.dates.today, config) : null;
 
     const base = {
-      now, hijri, isJumuahDay, ramadan,
+      now, hijri, isJumuahDay, jumuahAlerts, bayanInfo, ramadan,
       nextAzan: next, prevAzan: prev,
       rows: timeline.rows, dates: timeline.dates,
     };
@@ -45,12 +69,12 @@
   // Debug-only (?state=) override for styling/QA without time-travel.
   // Fabricates a plausible ~5 min window around `now` so countdowns
   // render sensibly; never used outside ?state= debug mode.
-  function forceState(result, stateParam) {
+  function forceState(result, stateParam, config) {
     const E = global.SBEngine;
     const key = String(stateParam).toUpperCase().replace(/-/g, '_');
     if (!VALID_STATES.includes(key)) return result;
     const now = result.now;
-    const overlay = ['SUNRISE_WAIT', 'LUHA_WAIT', 'LUHA_OPEN', 'NIGHT'].includes(key);
+    const overlay = ['LUHA_WAIT', 'LUHA_OPEN', 'NIGHT'].includes(key);
     const prayer = overlay ? null : (result.prayer || (result.nextAzan && result.nextAzan.prayer) || 'luhr');
     const fakeStart = E.addMinutes(now, -1);
     const fakeEnd = E.addMinutes(now, 4);
@@ -59,7 +83,16 @@
     else if (key === 'NIGHT') meta = { nextFajr: fakeEnd };
     else if (key === 'AZAN' && prayer === 'luhr' && result.isJumuahDay) meta = { jumuah: true };
     else if (key === 'JUMUAH') meta = { phase: 'bayan' };
+    // Previewing the bayan / Jumu'ah screens on any weekday should still show
+    // the configured speaker & topic, so the caretaker can check them.
+    let bayanInfo = result.bayanInfo;
+    if (!bayanInfo && key === 'JUMUAH' && config && config.jumuah) {
+      const speaker = String(config.jumuah.bayanSpeaker || '').trim();
+      const topic = String(config.jumuah.bayanTopic || '').trim();
+      if (config.jumuah.bayan && (speaker || topic)) bayanInfo = { speaker, topic };
+    }
     return Object.assign({}, result, {
+      bayanInfo,
       state: key,
       prayer,
       meta,
