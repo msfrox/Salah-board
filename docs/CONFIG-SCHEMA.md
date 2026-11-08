@@ -43,6 +43,7 @@ breaking change via `configVersion`.
   },
 
   "luha": { "enabled": true, "waitAfterSunrise": 20 },   // minutes
+                                      // (no sunrise countdown: NORMAL runs until sunrise)
 
   "ramadan": {
     "enabled": false,                 // manual toggle only (moon sighting)
@@ -73,6 +74,26 @@ breaking change via `configVersion`.
   "rotation": {                       // NORMAL-state card rotation
     "seconds": 20,
     "cards": ["timetable", "notices", "jumuah-etiquette"]
+  },
+
+  "layout": {                         // per-board fine-tuning of the NORMAL screen
+    "normal": {                       // (admin → Advanced tab, live preview)
+      "sizes": {                      // percent of the theme's own size, 50–250
+        "masjidName": 100, "dates": 100, "clock": 100,
+        "nextLabel": 100,             // "NEXT PRAYER"
+        "nextName": 100,              // e.g. "ZUHR"
+        "timeLabels": 100,            // "AZAN" / "IQAMAH"
+        "prayerTimes": 100,           // the big azan + iqamah numbers
+        "countdown": 100,             // countdown to azan
+        "ttLabels": 100, "ttTimes": 100,  // timetable strip names / times
+        "banners": 100,               // Jumu'ah, pinned notice, Ramadan banners
+        "cards": 100                  // rotating notice / etiquette cards
+      },
+      "show": {                       // false hides the element
+        "masjidName": true, "dates": true, "nextLabel": true,
+        "countdown": true, "timetable": true, "cards": true
+      }
+    }
   },
 
   "time": {                           // display renders now() + offsetMs

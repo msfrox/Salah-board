@@ -70,6 +70,23 @@
         cards: ['timetable', 'notices', 'jumuah-etiquette'],
       },
 
+      // Per-board fine-tuning of the NORMAL screen (admin → Advanced).
+      // sizes: percent of the theme's own size (100 = unchanged), 50–250.
+      // show: false hides that element.
+      layout: {
+        normal: {
+          sizes: {
+            masjidName: 100, dates: 100, clock: 100,
+            nextLabel: 100, nextName: 100, timeLabels: 100, prayerTimes: 100, countdown: 100,
+            ttLabels: 100, ttTimes: 100, banners: 100, cards: 100,
+          },
+          show: {
+            masjidName: true, dates: true, nextLabel: true, countdown: true,
+            timetable: true, cards: true,
+          },
+        },
+      },
+
       time: {
         offsetMs: 0,
         ntpEnabled: true,
@@ -136,6 +153,15 @@
     return Number.isFinite(n) ? Math.max(0.2, Math.min(5.0, n)) : 1.0;
   }
 
+  // Layout size percents → multipliers, clamped so a typo can't blow the
+  // screen up or make an element vanish (hiding is the `show` toggle's job).
+  const LAYOUT_MIN = 50, LAYOUT_MAX = 250;
+  function layoutFactor(pct) {
+    const n = Number(pct);
+    if (!Number.isFinite(n)) return 1;
+    return Math.max(LAYOUT_MIN, Math.min(LAYOUT_MAX, n)) / 100;
+  }
+
   function applyOverrides(merged) {
     merged.display = merged.display || {};
     merged.display.scale = clampScale(merged.display.scale);
@@ -173,6 +199,7 @@
     return applyOverrides(deepMerge(defaults(), await getStoredAsync()));
   }
 
-  global.SBConfig = { defaults, deepMerge, getConfig, getConfigAsync, getStoredAsync, save, debugParams, STORAGE_KEY };
+  global.SBConfig = { defaults, deepMerge, getConfig, getConfigAsync, getStoredAsync, save, debugParams,
+    applyOverrides, layoutFactor, LAYOUT_MIN, LAYOUT_MAX, STORAGE_KEY };
 
 })(window);

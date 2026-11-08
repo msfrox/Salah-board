@@ -9,7 +9,7 @@
   'use strict';
 
   const VALID_STATES = ['NORMAL', 'AZAN', 'BETWEEN', 'IQAMAH', 'SALAH', 'AFTER',
-    'SUNRISE_WAIT', 'LUHA_WAIT', 'LUHA_OPEN', 'NIGHT', 'JUMUAH', 'KHUTBAH'];
+    'LUHA_WAIT', 'LUHA_OPEN', 'NIGHT', 'JUMUAH', 'KHUTBAH'];
 
   function resolve(config, timeline, now, pack) {
     const E = global.SBEngine;
@@ -22,10 +22,14 @@
     const hijri = E.hijriInfo(now, config, todayMaghrib, pack);
     const isFriday = timeline.dates.today.getDay() === 5;
     const isJumuahDay = isFriday && config.jumuah.enabled;
+    // Jumu'ah reminders (the "Jumu'ah today" banner and the etiquette cards)
+    // are only useful until Jumu'ah is over — they stop once Asr azan arrives.
+    const todayAsr = todayRow ? E.parseTime(todayRow.asr, timeline.dates.today) : null;
+    const jumuahAlerts = isJumuahDay && !(todayAsr && now >= todayAsr);
     const ramadan = (config.ramadan.enabled && todayRow) ? E.ramadanTimes(todayRow, timeline.dates.today, config) : null;
 
     const base = {
-      now, hijri, isJumuahDay, ramadan,
+      now, hijri, isJumuahDay, jumuahAlerts, ramadan,
       nextAzan: next, prevAzan: prev,
       rows: timeline.rows, dates: timeline.dates,
     };
@@ -50,7 +54,7 @@
     const key = String(stateParam).toUpperCase().replace(/-/g, '_');
     if (!VALID_STATES.includes(key)) return result;
     const now = result.now;
-    const overlay = ['SUNRISE_WAIT', 'LUHA_WAIT', 'LUHA_OPEN', 'NIGHT'].includes(key);
+    const overlay = ['LUHA_WAIT', 'LUHA_OPEN', 'NIGHT'].includes(key);
     const prayer = overlay ? null : (result.prayer || (result.nextAzan && result.nextAzan.prayer) || 'luhr');
     const fakeStart = E.addMinutes(now, -1);
     const fakeEnd = E.addMinutes(now, 4);

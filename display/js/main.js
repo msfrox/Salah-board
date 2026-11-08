@@ -63,6 +63,21 @@
     document.documentElement.style.setProperty('--sb-font-ui', f);
   }
 
+  // Per-board fine-tuning of the NORMAL screen (config.layout.normal, set in
+  // admin → Advanced). Sizes become CSS variables read by css/layout.css;
+  // hidden elements are listed on <html data-sb-hide>. Cheap and idempotent.
+  function applyLayout() {
+    const html = document.documentElement;
+    const n = (config.layout && config.layout.normal) || {};
+    const sizes = n.sizes || {};
+    for (const key of Object.keys(sizes)) {
+      if (key === 'masjidName') continue; // scaled by ui.js (auto-fit measures it)
+      html.style.setProperty(`--sb-z-${key}`, String(SBConfig.layoutFactor(sizes[key])));
+    }
+    const show = n.show || {};
+    html.dataset.sbHide = Object.keys(show).filter(k => show[k] === false).join(' ');
+  }
+
   // Themes are plain CSS folders (docs/MILESTONES.md M5) — swapping the
   // stylesheet href is the entire mechanism, no JS per theme. 'highcontrast'
   // was renamed to 'default'; keep old saved configs working transparently.
@@ -97,11 +112,12 @@
     timelineDateKey = key;
   }
 
-  async function reloadConfig() {
-    config = await SBConfig.getConfigAsync();
+  async function reloadConfig(cfg) {
+    config = cfg || await SBConfig.getConfigAsync();
     applyScale();
     applyFont();
     applyTheme();
+    applyLayout();
     timeline = null;
     timelineDateKey = null;
     await Promise.all([loadContent(), ensureTimeline(now())]);
@@ -110,7 +126,7 @@
   // Admin panel (M2) writes localStorage in another tab; `storage`
   // fires here so the display updates live without a manual reload.
   window.addEventListener('storage', e => {
-    if (e.key === SBConfig.STORAGE_KEY) reloadConfig();
+    if (e.key === SBConfig.STORAGE_KEY && !framePreview) reloadConfig();
   });
 
   // Server-backed config (Linux kiosk / Android shell): a save from a *phone*
@@ -120,6 +136,7 @@
   // localStorage read on a plain dev server, so this is harmless there too.
   let lastConfigJson = null;
   async function pollConfig() {
+    if (framePreview) return; // admin preview frame shows the unsaved form instead
     try {
       const stored = await SBConfig.getStoredAsync();
       const json = JSON.stringify(stored);
@@ -146,6 +163,46 @@
     } catch (e) { /* not on the board / transient — leave current preview state */ }
   }
 
+  // Admin → Advanced shows this page in a preview frame and posts the
+  // *unsaved* form config here, so caretakers see each slider move live
+  // before saving. Same-origin only, and only when actually embedded.
+  let framePreview = false;
+  if (window.self !== window.top) {
+    window.addEventListener('message', async e => {
+      if (e.origin !== location.origin || !e.data || e.data.type !== 'sb-preview-config') return;
+      framePreview = true;
+      const next = SBConfig.applyOverrides(SBConfig.deepMerge(SBConfig.defaults(), e.data.config || {}));
+      // Only layout changed (the common case while dragging a slider)? Then
+      // skip reloading content packs and the timetable.
+      const strip = c => JSON.stringify(Object.assign({}, c, { layout: null }));
+      if (strip(next) === strip(config)) {
+        config = next;
+        applyLayout();
+      } else {
+        await reloadConfig(next);
+      }
+      await tick();
+      reportFit();
+    });
+  }
+
+  // Tell the admin preview whether the NORMAL screen still fits at the chosen
+  // sizes. Two failure modes: a section's content taller than the room it has
+  // (it then overlaps its neighbour), or anything running off the screen edge.
+  // (Spilling into the TV-safe side margin is fine — still on screen.)
+  function reportFit() {
+    const screen = root.querySelector('.screen--normal');
+    if (!screen) return;
+    const tooTall = el => el.scrollHeight > el.clientHeight + 2;
+    const W = window.innerWidth, H = window.innerHeight;
+    const offEdge = Array.from(screen.querySelectorAll('*')).some(el => {
+      const r = el.getBoundingClientRect();
+      return r.width && (r.left < -1 || r.right > W + 1 || r.bottom > H + 1);
+    });
+    const fits = !offEdge && !tooTall(screen) && Array.from(screen.children).every(c => !tooTall(c));
+    window.parent.postMessage({ type: 'sb-preview-fit', fits }, location.origin);
+  }
+
   let ticking = false;
   async function tick() {
     if (ticking) return; // guard against overlapping async ticks at a date rollover
@@ -169,6 +226,7 @@
     applyScale();
     applyFont();
     applyTheme();
+    applyLayout();
     await Promise.all([loadContent(), ensureTimeline(now())]);
     await tick();
     lastConfigJson = JSON.stringify(await SBConfig.getStoredAsync());

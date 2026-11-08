@@ -21,8 +21,8 @@
   // Shrink the masjid name to fit its row on one line (long names like
   // "Athurugiriya Jumma Masjidh" otherwise wrapped and broke the layout).
   // Cheap: only measures/adjusts when the name or available width changed.
-  let _fitCache = { name: null, avail: 0 };
-  function fitMasjidName(root) {
+  let _fitCache = { name: null, avail: 0, factor: 1 };
+  function fitMasjidName(root, config) {
     const el = root.querySelector('.masjid-name');
     if (!el) return;
     const topbar = el.closest('.topbar') || el.parentElement;
@@ -31,17 +31,25 @@
       ? topbar.clientWidth - (dates ? dates.getBoundingClientRect().width : 0) - 32
       : el.clientWidth;
     const name = el.textContent;
-    if (_fitCache.name === name && Math.abs(_fitCache.avail - avail) < 2) return;
-    _fitCache = { name, avail };
+    // Admin → Advanced "Masjid name" size, as a multiplier on the theme size.
+    const sizes = config && config.layout && config.layout.normal && config.layout.normal.sizes;
+    const factor = global.SBConfig.layoutFactor(sizes ? sizes.masjidName : 100);
+    if (_fitCache.name === name && _fitCache.factor === factor && Math.abs(_fitCache.avail - avail) < 2) {
+      if (_fitCache.size) el.style.fontSize = _fitCache.size; // fresh element after re-render
+      return;
+    }
     el.style.fontSize = '';                 // reset to the theme's default
-    if (avail <= 0) return;
-    const base = parseFloat(getComputedStyle(el).fontSize);
+    const base = parseFloat(getComputedStyle(el).fontSize) * factor;
     let size = base;
+    el.style.fontSize = size + 'px';
+    _fitCache = { name, avail, factor, size: el.style.fontSize };
+    if (avail <= 0) return;
     // Reduce until it fits, but never below 55% of the theme size.
     for (let i = 0; i < 24 && el.scrollWidth > avail && size > base * 0.55; i++) {
       size *= 0.96;
       el.style.fontSize = size + 'px';
     }
+    _fitCache.size = el.style.fontSize;
   }
 
   function escapeHtml(s) {
@@ -157,7 +165,7 @@
   // rotates the genuinely rotating cards (notices, Jumu'ah etiquette).
   function rotationCardHtml(content, config, result) {
     let cards = (config.rotation.cards || []).filter(c => c !== 'timetable');
-    if (!result.isJumuahDay) cards = cards.filter(c => c !== 'jumuah-etiquette');
+    if (!result.jumuahAlerts) cards = cards.filter(c => c !== 'jumuah-etiquette');
     if (!cards.length) return '';
     const idx = rotationIndex(result.now, config.rotation.seconds, cards.length);
     const card = cards[idx];
@@ -213,7 +221,7 @@
     const nextName = next ? prayerLabel(content, next.prayer, next.jumuah) : '—';
 
     let jumuahBanner = '';
-    if (result.isJumuahDay) {
+    if (result.jumuahAlerts) {
       const todayRow = result.rows.today;
       const bayanPart = config.jumuah.bayan
         ? ` · ${escapeHtml(label(content, 'bayan'))} ${escapeHtml(E.formatTime(E.parseTime(config.jumuah.bayan, result.dates.today), config))}`
@@ -339,17 +347,6 @@
       </div>`;
   }
 
-  function renderSunriseWait(config, result, contentByLang) {
-    const content = primaryContent(contentByLang, config);
-    const E = global.SBEngine;
-    const countdown = E.fmtCountdown(result.segEnd - result.now);
-    return `
-      <div class="screen screen--sunrise-wait">
-        <div class="countdown-label">${escapeHtml(label(content, 'sunrise'))}</div>
-        <div class="countdown">${countdown}</div>
-      </div>`;
-  }
-
   function renderLuhaWait(config, result, contentByLang) {
     const content = primaryContent(contentByLang, config);
     const E = global.SBEngine;
@@ -397,13 +394,13 @@
       </div>`;
   }
 
-  // Transient screens (azan, iqamah countdown, sunrise/luha timers, Jumu'ah…)
+  // Transient screens (azan, iqamah countdown, luha timer, Jumu'ah…)
   // take over the whole board, which used to hide the time. A small corner
   // clock keeps "what time is it now?" answerable on every screen. NORMAL
   // already has the big hero clock; SALAH and NIGHT already show their own
   // (deliberately dim) clock, so they are left as they are.
   const CORNER_CLOCK_STATES = ['AZAN', 'BETWEEN', 'IQAMAH', 'AFTER',
-    'SUNRISE_WAIT', 'LUHA_WAIT', 'LUHA_OPEN', 'JUMUAH', 'KHUTBAH'];
+    'LUHA_WAIT', 'LUHA_OPEN', 'JUMUAH', 'KHUTBAH'];
 
   function cornerClockHtml(config, result) {
     if (!CORNER_CLOCK_STATES.includes(result.state)) return '';
@@ -417,7 +414,6 @@
     IQAMAH: renderIqamah,
     SALAH: renderSalah,
     AFTER: renderAfter,
-    SUNRISE_WAIT: renderSunriseWait,
     LUHA_WAIT: renderLuhaWait,
     LUHA_OPEN: renderLuhaOpen,
     NIGHT: renderNight,
@@ -429,7 +425,7 @@
     const fn = RENDERERS[result.state] || renderNormal;
     container.innerHTML = cornerClockHtml(config, result) + fn(config, result, contentByLang);
     container.className = `screen-root theme-${config.theme} state-${result.state.toLowerCase()}`;
-    if (result.state === 'NORMAL') fitMasjidName(container);
+    if (result.state === 'NORMAL') fitMasjidName(container, config);
   }
 
   function applyNightDim(overlayEl, active, brightnessPercent) {

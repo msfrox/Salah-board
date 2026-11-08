@@ -76,7 +76,7 @@ PREVIEW_MAX_SECONDS = 3600
 # forceState() uppercases + underscores them (see display/js/state.js).
 VALID_PREVIEW_STATES = {
     "normal", "azan", "between", "iqamah", "salah", "after",
-    "sunrise-wait", "luha-wait", "luha-open", "night", "jumuah", "khutbah",
+    "luha-wait", "luha-open", "night", "jumuah", "khutbah",
 }
 
 CONFIG_PATH = os.environ.get("SALAHBOARD_CONFIG") or os.path.join(

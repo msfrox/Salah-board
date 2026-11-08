@@ -147,8 +147,8 @@ html, body {
 /* ── AFTER ────────────────────────────────────────────────── */
 .screen--after { justify-content: center; align-items: center; text-align: center; }
 
-/* ── SUNRISE_WAIT / LUHA_WAIT / LUHA_OPEN ───────────────────── */
-.screen--sunrise-wait, .screen--luha-wait { justify-content: center; align-items: center; text-align: center; gap: 2rem; }
+/* ── LUHA_WAIT / LUHA_OPEN ─────────────────────────────── */
+.screen--luha-wait { justify-content: center; align-items: center; text-align: center; gap: 2rem; }
 .countdown-label { font-size: 4rem; color: var(--sb-fg-dim); text-transform: uppercase; letter-spacing: .08em; }
 .countdown { font-size: 16rem; font-weight: 800; font-variant-numeric: tabular-nums; }
 .screen--luha-open { justify-content: center; align-items: center; text-align: center; }
@@ -204,7 +204,7 @@ html, body {
 }
 
 /* ── Corner clock — the time stays visible on every transient
-   screen (azan, iqamah countdown, sunrise/luha timers, Jumu'ah).
+   screen (azan, iqamah countdown, luha timer, Jumu'ah).
    It sits in its own row at the top-right (in normal flow, not
    floating), so it can never cover the screen's content; the
    screen below simply takes the remaining height. ──────────── */

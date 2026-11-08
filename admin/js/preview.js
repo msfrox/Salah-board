@@ -1,7 +1,7 @@
 /* ============================================================
    Salah Board — preview.js  (admin Preview tab: dev/test states)
 
-   Two ways to eyeball any of the 12 states without waiting for that time
+   Two ways to eyeball any of the display states without waiting for that time
    of day:
      • New tab (default): opens the display with the existing ?state= / ?t=
        debug params — good for a phone/dev browser.
@@ -21,7 +21,6 @@
     ['iqamah', 'Iqamah (straighten rows)'],
     ['salah', 'Salah in progress'],
     ['after', 'After salah (adhkar)'],
-    ['sunrise-wait', 'Sunrise wait'],
     ['luha-wait', 'Luha wait'],
     ['luha-open', 'Luha open'],
     ['night', 'Night'],

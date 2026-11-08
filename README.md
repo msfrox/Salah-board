@@ -23,12 +23,14 @@ any HDMI screen.
   "straighten the rows" → phones-off blackout during salah → adhkar after
 - **Jumu'ah mode** (bayan/khutbah timings, etiquette, silence during khutbah)
 - **Ramadan mode** (iqamah overrides, imsak/iftar)
-- Sunrise (ishraq) countdown and **Luha** wait timer (configurable, default 20 min)
+- **Luha** wait timer after sunrise (configurable, default 20 min)
 - Night dim/blackout between Isha and Fajr
 - Rotating notices & announcements (Eid times, events)
 - Hijri date with ±1 day adjustment (ACJU follows local moon sighting)
 - Multi-language content: Tamil, Sinhala, English, Arabic
 - Themes are plain HTML/CSS folders — anyone can contribute one
+- Per-board fine-tuning: resize or hide each element of the main screen,
+  with a live preview in the admin panel
 - Admin from any phone browser — the box serves its own settings panel
   over WiFi, or via its own local hotspot when the masjid has no network
 - Survives power cuts on boxes with no clock battery (time-offset model)
