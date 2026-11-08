@@ -284,3 +284,20 @@ html, body {
   .azan-reminder, .azan-dua, .between-reminder, .dua-card { max-width: 88vw; }
   .iqamah-lines { font-size: 1.7rem; }
 }
+
+/* ── Corner clock — the time stays visible on every transient
+   screen (azan, iqamah countdown, sunrise/luha timers, Jumu'ah).
+   It sits in its own row at the top-right (in normal flow, not
+   floating), so it can never cover the screen's content; the
+   screen below simply takes the remaining height. ──────────── */
+.corner-clock {
+  position: relative; z-index: 1; flex: none; align-self: flex-end;
+  margin-top: -1.5vh;
+  font-size: 2.45rem; font-weight: 700; line-height: 1;
+  font-variant-numeric: tabular-nums; letter-spacing: .02em;
+  color: var(--sb-fg-dim); pointer-events: none;
+}
+.corner-clock + .screen { height: auto; flex: 1; min-height: 0; }
+/* The Azan screen is the densest one; give back the clock row's height by
+   tightening its spacing only (gaps), so nothing is pushed off-screen. */
+.corner-clock + .screen--azan { gap: .5rem; }

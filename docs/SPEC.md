@@ -37,6 +37,8 @@ Then back to NORMAL. Special overlay states:
 | NIGHT | Isha AFTER + `night.afterIshaMinutes` → Fajr − `night.beforeFajrMinutes` | Dimmed (config `night.brightness`), small clock + tomorrow's Fajr time |
 | JUMUAH | Fridays, from `jumuah.bayan` time | See Jumu'ah mode below |
 
+**Time always visible:** every full-screen transient state (AZAN, BETWEEN, IQAMAH, AFTER, SUNRISE_WAIT, LUHA_WAIT, LUHA_OPEN, JUMUAH, KHUTBAH) shows a small current-time clock in the top-right corner, in its own row so it never covers the screen's content. NORMAL has the hero clock; SALAH and NIGHT keep their own deliberately dim clock.
+
 Rules:
 - State is a **pure function of (config, timetable, now)** — after reboot or
   power cut the display recomputes the correct state. No stored state.

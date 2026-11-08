@@ -214,3 +214,18 @@ html, body {
 }
 .pinned-banner { text-shadow: none; } /* solid amber fill already reads clearly */
 .salah-clock { color: #0c2013; text-shadow: none; } /* SALAH stays near-dark, not lit */
+
+/* ── Corner clock — the time stays visible on every transient
+   screen (azan, iqamah countdown, sunrise/luha timers, Jumu'ah).
+   It sits in its own row at the top-right (in normal flow, not
+   floating), so it can never cover the screen's content; the
+   screen below simply takes the remaining height. ──────────── */
+.corner-clock {
+  position: relative; z-index: 1; flex: none; align-self: flex-end;
+  margin-top: -1.5vh;
+  font-size: 5rem; font-weight: 700; line-height: 1;
+  font-variant-numeric: tabular-nums; letter-spacing: .02em;
+  color: var(--sb-fg-dim); pointer-events: none;
+}
+.corner-clock + .screen { height: auto; flex: 1; min-height: 0; }
+.corner-clock { font-family: var(--sb-font-digits); color: var(--sb-accent); text-shadow: var(--sb-glow); }

@@ -397,6 +397,19 @@
       </div>`;
   }
 
+  // Transient screens (azan, iqamah countdown, sunrise/luha timers, Jumu'ah…)
+  // take over the whole board, which used to hide the time. A small corner
+  // clock keeps "what time is it now?" answerable on every screen. NORMAL
+  // already has the big hero clock; SALAH and NIGHT already show their own
+  // (deliberately dim) clock, so they are left as they are.
+  const CORNER_CLOCK_STATES = ['AZAN', 'BETWEEN', 'IQAMAH', 'AFTER',
+    'SUNRISE_WAIT', 'LUHA_WAIT', 'LUHA_OPEN', 'JUMUAH', 'KHUTBAH'];
+
+  function cornerClockHtml(config, result) {
+    if (!CORNER_CLOCK_STATES.includes(result.state)) return '';
+    return `<div class="corner-clock">${escapeHtml(global.SBEngine.formatClock(result.now, config))}</div>`;
+  }
+
   const RENDERERS = {
     NORMAL: renderNormal,
     AZAN: renderAzan,
@@ -414,7 +427,7 @@
 
   function render(container, result, config, contentByLang) {
     const fn = RENDERERS[result.state] || renderNormal;
-    container.innerHTML = fn(config, result, contentByLang);
+    container.innerHTML = cornerClockHtml(config, result) + fn(config, result, contentByLang);
     container.className = `screen-root theme-${config.theme} state-${result.state.toLowerCase()}`;
     if (result.state === 'NORMAL') fitMasjidName(container);
   }
