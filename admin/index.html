@@ -385,12 +385,14 @@
     <!-- ══ ADVANCED ═════════════════════════════════════════ -->
     <div class="tab-panel" data-panel="advanced" hidden>
       <section class="card">
-        <h2>Normal screen — fine-tune</h2>
-        <p class="hint">Every TV shows the board a little differently. Adjust each element's size here (100% = the theme's normal size), or hide the ones you don't need. The preview below updates as you go; press <strong>Save</strong> to send it to the board — check the real screen, since that is what the congregation sees.</p>
+        <h2>Fine-tune every screen</h2>
+        <p class="hint">Every TV shows the board a little differently. Adjust the size of any element on any screen (100% = the theme's normal size), or hide parts of the normal screen you don't need. Open a screen's section below and the preview switches to it. Press <strong>Save</strong> to send it to the board — check the real screen, since that is what the congregation sees.</p>
 
         <div class="layout-preview">
           <div class="layout-preview-toolbar">
-            <span>Preview</span>
+            <label class="layout-preview-pick">Preview
+              <select id="layout-preview-state" aria-label="Screen to preview"></select>
+            </label>
             <div class="seg" role="group" aria-label="Preview shape">
               <button type="button" class="seg-btn active" data-preview-shape="landscape">Landscape TV</button>
               <button type="button" class="seg-btn" data-preview-shape="portrait">Portrait TV</button>
@@ -402,13 +404,9 @@
           <p class="layout-fit-warning" id="layout-fit-warning" hidden>Some elements no longer fit on the screen at these sizes — they overlap or run off the edge. Make something smaller, or hide an element you don't need.</p>
         </div>
 
-        <h3>Sizes</h3>
-        <div id="layout-size-rows"></div>
+        <div id="layout-groups"></div>
 
-        <h3>Show on the normal screen</h3>
-        <div id="layout-show-rows" class="checkbox-col"></div>
-
-        <button type="button" class="btn btn--secondary" id="layout-reset">Reset to theme defaults</button>
+        <button type="button" class="btn btn--secondary" id="layout-reset">Reset every screen to theme defaults</button>
       </section>
     </div>
 

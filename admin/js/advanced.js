@@ -17,11 +17,30 @@
   let loaded = false;
   let timer = null;
 
+  // Screen picker: one entry per screen in SBConfig.LAYOUT_GROUPS.
+  const pick = $('#layout-preview-state');
+  if (pick && window.SBConfig) {
+    const seen = new Set();
+    pick.innerHTML = SBConfig.LAYOUT_GROUPS
+      .filter(g => g.id !== 'clock' && !seen.has(g.state) && seen.add(g.state))
+      .map(g => `<option value="${g.state}">${g.title}</option>`).join('');
+    pick.addEventListener('change', schedule);
+  }
+  const previewState = () => (pick && pick.value) || 'normal';
+
+  // Opening a screen's section switches the preview to that screen.
+  document.addEventListener('toggle', e => {
+    const d = e.target;
+    if (!d.classList || !d.classList.contains('layout-group') || !d.open) return;
+    if (pick && d.dataset.state) pick.value = d.dataset.state;
+    schedule();
+  }, true);
+
   async function push() {
     if (!loaded || !window.SBAdmin || !frame.contentWindow) return;
     try {
       const config = await window.SBAdmin.currentFormConfig();
-      frame.contentWindow.postMessage({ type: 'sb-preview-config', config }, location.origin);
+      frame.contentWindow.postMessage({ type: 'sb-preview-config', config, state: previewState() }, location.origin);
     } catch (e) { /* form mid-build — next change will retry */ }
   }
   // Debounced: a slider drag fires many input events.

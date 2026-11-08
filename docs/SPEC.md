@@ -36,7 +36,7 @@ Then back to NORMAL. After Fajr's AFTER screen the board stays on NORMAL until s
 | NIGHT | Isha AFTER + `night.afterIshaMinutes` → Fajr − `night.beforeFajrMinutes` | Dimmed (config `night.brightness`), small clock + tomorrow's Fajr time |
 | JUMUAH | Fridays, from `jumuah.bayan` time | See Jumu'ah mode below |
 
-**NORMAL fine-tuning:** each NORMAL-screen element can be resized (50–250% of the theme size) or hidden per board, via `config.layout.normal` (admin → Advanced, with a live preview that warns when elements no longer fit). This lives in `display/css/layout.css` on top of every theme, so themes don't need to know about it.
+**Per-board fine-tuning:** every element on every screen can be resized (50–250% of the theme size) per board, and parts of the NORMAL screen can be hidden — `config.layout` (admin → Advanced: one section per screen, a live preview that switches to the screen being tuned and warns when elements no longer fit). The element list is `LAYOUT_GROUPS` in `display/js/config.js`; the display generates its zoom rules from it, on top of every theme, so themes don't need to know about it.
 
 **Time always visible:** every full-screen transient state (AZAN, BETWEEN, IQAMAH, AFTER, LUHA_WAIT, LUHA_OPEN, JUMUAH, KHUTBAH) shows a small current-time clock in the top-right corner, in its own row so it never covers the screen's content. NORMAL has the hero clock; SALAH and NIGHT keep their own deliberately dim clock.
 

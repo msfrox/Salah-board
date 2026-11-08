@@ -1,35 +1,20 @@
 /* ============================================================
    Salah Board — layout.css
-   Per-board fine-tuning of the NORMAL screen, driven by
-   config.layout.normal (admin → Advanced tab). Loaded AFTER the theme,
-   so it works on top of every theme without touching theme files.
+   Per-board fine-tuning, driven by config.layout (admin → Advanced tab).
+   Loaded AFTER the theme, so it works on top of every theme without
+   touching theme files.
 
    Sizes: main.js sets one CSS variable per element (--sb-z-<key>, a
-   multiplier, 1 = the theme's own size) and each element is scaled with
-   `zoom`, which — unlike transform — also resizes the space it takes, so
-   the layout re-flows around the bigger/smaller element.
-   The masjid name is the exception: ui.js scales its font-size in JS
-   because its auto-fit-to-one-line logic measures it.
+   multiplier, 1 = the theme's own size) and injects one rule per element
+   from SBConfig.LAYOUT_GROUPS (config.js): `selector { zoom: var(...) }`.
+   `zoom` — unlike transform — also resizes the space an element takes, so
+   the layout re-flows around it. The masjid name is the exception: ui.js
+   scales its font-size in JS because its auto-fit logic measures it.
 
    Visibility: main.js lists hidden elements in <html data-sb-hide="...">.
 
    Also holds small theme-independent structural rules (end of file).
    ============================================================ */
-
-.screen--normal .dates             { zoom: var(--sb-z-dates, 1); }
-.screen--normal .clock-big         { zoom: var(--sb-z-clock, 1); }
-.screen--normal .np-label          { zoom: var(--sb-z-nextLabel, 1); }
-.screen--normal .np-name           { zoom: var(--sb-z-nextName, 1); }
-.screen--normal .np-time-label     { zoom: var(--sb-z-timeLabels, 1); }
-.screen--normal .np-time           { zoom: var(--sb-z-prayerTimes, 1); }
-.screen--normal .np-countdown      { zoom: var(--sb-z-countdown, 1); }
-.screen--normal .tt-label          { zoom: var(--sb-z-ttLabels, 1); }
-.screen--normal .tt-time           { zoom: var(--sb-z-ttTimes, 1); }
-.screen--normal .jumuah-day-banner,
-.screen--normal .pinned-banner,
-.screen--normal .ramadan-block     { zoom: var(--sb-z-banners, 1); }
-.screen--normal .card--notice,
-.screen--normal .card--etiquette   { zoom: var(--sb-z-cards, 1); }
 
 html[data-sb-hide~="masjidName"] .screen--normal .masjid-name,
 html[data-sb-hide~="dates"]      .screen--normal .dates,
@@ -61,3 +46,9 @@ html[data-sb-hide~="cards"]      .screen--normal .card--etiquette { display: non
   100%  { opacity: 0; }
 }
 .jumuah-day-banner .jdb-sep { opacity: .6; }
+
+/* ── Transient screens under the corner clock ───────────────────
+   If a screen's content is ever taller than the room left (e.g. very
+   large custom sizes), `safe center` lets it overflow at the BOTTOM
+   instead of sliding up underneath the clock. */
+.corner-clock + .screen { justify-content: safe center; }

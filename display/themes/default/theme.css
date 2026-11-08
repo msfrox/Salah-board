@@ -352,11 +352,12 @@ html, body {
    screen (azan, iqamah countdown, luha timer, Jumu'ah).
    It sits in its own row at the top-right (in normal flow, not
    floating), so it can never cover the screen's content; the
-   screen below simply takes the remaining height. ──────────── */
+   screen below simply takes the remaining height. Enlarged ~45% after
+   board feedback (hard to read across the hall). ─────────────────── */
 .corner-clock {
   position: relative; z-index: 1; flex: none; align-self: flex-end;
   margin-top: -1.5vh;
-  font-size: 2.45rem; font-weight: 700; line-height: 1;
+  font-size: 3.6rem; font-weight: 700; line-height: 1;
   font-variant-numeric: tabular-nums; letter-spacing: .02em;
   color: var(--sb-fg-dim); pointer-events: none;
 }
@@ -364,3 +365,20 @@ html, body {
 /* The Azan screen is the densest one; give back the clock row's height by
    tightening its spacing only (gaps), so nothing is pushed off-screen. */
 .corner-clock + .screen--azan { gap: .5rem; }
+/* Landscape: with the larger corner clock the Azan screen's content was
+   taller than the room left under it (it slid up under the clock at
+   1366x768 and ran off the bottom at 1080p). Win the height back from
+   spacing, the dua box padding and a slightly smaller title — the Arabic
+   and translations keep their size. */
+@media (orientation: landscape) {
+  .corner-clock + .screen--azan { gap: .3rem; }
+  .screen--azan .azan-banner { font-size: 5rem; }
+  .screen--azan .azan-reminder { gap: .2rem; }
+  .screen--azan .azan-dua { padding: .7rem 2rem; gap: .3rem; }
+  .screen--azan .arabic { line-height: 1.28; }
+}
+@media (max-height: 620px) and (orientation: landscape) {
+  .screen--azan .azan-banner { font-size: 4.4rem; }
+  .screen--azan .arabic { line-height: 1.2; }
+  .screen--azan .azan-dua { padding: .5rem 2rem; }
+}

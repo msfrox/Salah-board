@@ -273,3 +273,26 @@ html, body {
   margin: .5rem 0 0; padding: .55rem .7rem; border-radius: 8px; font-size: .85rem;
   background: var(--a-danger-dim); color: var(--a-danger); border: 1px solid var(--a-danger);
 }
+
+/* Advanced tab: one collapsible section per screen. */
+.layout-group { border: 1px solid var(--a-border); border-radius: var(--a-radius); margin-bottom: .6rem; background: #fbfcfd; }
+.layout-group > summary {
+  cursor: pointer; padding: .75rem .9rem; font-weight: 700; font-size: .95rem; list-style: none;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.layout-group > summary::-webkit-details-marker { display: none; }
+.layout-group > summary::after { content: '+'; color: var(--a-accent); font-size: 1.2rem; line-height: 1; }
+.layout-group[open] > summary::after { content: '−'; }
+.layout-group[open] > summary { border-bottom: 1px solid var(--a-border); }
+.layout-group-body { padding: .75rem .9rem .9rem; }
+.layout-group-body h4 { margin: .75rem 0 .5rem; font-size: .88rem; color: var(--a-fg-dim); }
+.layout-preview-pick { display: flex; align-items: center; gap: .4rem; }
+.layout-preview-pick select {
+  font: inherit; font-size: .82rem; padding: .3rem .4rem; border: 1px solid var(--a-border);
+  border-radius: 8px; background: #fff; color: var(--a-fg); max-width: 11rem;
+}
+#layout-reset { margin-top: .4rem; }
+.layout-preview-toolbar { flex-wrap: wrap; row-gap: .4rem; }
+.layout-preview-pick { flex: 1 1 12rem; }
+.layout-preview-pick select { flex: 1; max-width: none; }
+.seg-btn { white-space: nowrap; }

@@ -237,11 +237,12 @@ html, body {
    screen (azan, iqamah countdown, luha timer, Jumu'ah).
    It sits in its own row at the top-right (in normal flow, not
    floating), so it can never cover the screen's content; the
-   screen below simply takes the remaining height. ──────────── */
+   screen below simply takes the remaining height. Enlarged ~45% after
+   board feedback (hard to read across the hall). ─────────────────── */
 .corner-clock {
   position: relative; z-index: 1; flex: none; align-self: flex-end;
   margin-top: -1.5vh;
-  font-size: 5rem; font-weight: 700; line-height: 1;
+  font-size: 7rem; font-weight: 700; line-height: 1;
   font-variant-numeric: tabular-nums; letter-spacing: .02em;
   color: var(--sb-fg-dim); pointer-events: none;
 }

@@ -66,10 +66,24 @@
   // Per-board fine-tuning of the NORMAL screen (config.layout.normal, set in
   // admin → Advanced). Sizes become CSS variables read by css/layout.css;
   // hidden elements are listed on <html data-sb-hide>. Cheap and idempotent.
+  // The zoom rules themselves are generated once from SBConfig.LAYOUT_GROUPS
+  // (one list drives defaults, admin sliders and these rules).
+  (function injectLayoutRules() {
+    const css = SBConfig.LAYOUT_GROUPS.flatMap(g => g.items)
+      .filter(i => i.selector)
+      .map(i => `:is(${i.selector}) { zoom: var(--sb-z-${i.key}, 1); }`)
+      .join('\n');
+    const style = document.createElement('style');
+    style.id = 'sb-layout-rules';
+    style.textContent = css;
+    document.head.appendChild(style);
+  })();
+
   function applyLayout() {
     const html = document.documentElement;
-    const n = (config.layout && config.layout.normal) || {};
-    const sizes = n.sizes || {};
+    const layout = config.layout || {};
+    const n = layout.normal || {};
+    const sizes = Object.assign({}, (layout.screens && layout.screens.sizes) || {}, n.sizes || {});
     for (const key of Object.keys(sizes)) {
       if (key === 'masjidName') continue; // scaled by ui.js (auto-fit measures it)
       html.style.setProperty(`--sb-z-${key}`, String(SBConfig.layoutFactor(sizes[key])));
@@ -167,10 +181,12 @@
   // *unsaved* form config here, so caretakers see each slider move live
   // before saving. Same-origin only, and only when actually embedded.
   let framePreview = false;
+  let framePreviewState = null; // which screen the admin preview wants shown
   if (window.self !== window.top) {
     window.addEventListener('message', async e => {
       if (e.origin !== location.origin || !e.data || e.data.type !== 'sb-preview-config') return;
       framePreview = true;
+      if (e.data.state) framePreviewState = e.data.state;
       const next = SBConfig.applyOverrides(SBConfig.deepMerge(SBConfig.defaults(), e.data.config || {}));
       // Only layout changed (the common case while dragging a slider)? Then
       // skip reloading content packs and the timetable.
@@ -186,18 +202,18 @@
     });
   }
 
-  // Tell the admin preview whether the NORMAL screen still fits at the chosen
+  // Tell the admin preview whether the shown screen still fits at the chosen
   // sizes. Two failure modes: a section's content taller than the room it has
   // (it then overlaps its neighbour), or anything running off the screen edge.
   // (Spilling into the TV-safe side margin is fine — still on screen.)
   function reportFit() {
-    const screen = root.querySelector('.screen--normal');
+    const screen = root.querySelector('.screen');
     if (!screen) return;
     const tooTall = el => el.scrollHeight > el.clientHeight + 2;
     const W = window.innerWidth, H = window.innerHeight;
-    const offEdge = Array.from(screen.querySelectorAll('*')).some(el => {
+    const offEdge = Array.from(root.querySelectorAll('*')).some(el => {
       const r = el.getBoundingClientRect();
-      return r.width && (r.left < -1 || r.right > W + 1 || r.bottom > H + 1);
+      return r.width && (r.left < -1 || r.right > W + 1 || r.top < -1 || r.bottom > H + 1);
     });
     const fits = !offEdge && !tooTall(screen) && Array.from(screen.children).every(c => !tooTall(c));
     window.parent.postMessage({ type: 'sb-preview-fit', fits }, location.origin);
@@ -212,7 +228,7 @@
       await ensureTimeline(n);
       let result = SBState.resolve(config, timeline, n, contentPack);
       // A live preview (board) or ?state= (dev URL) forces the shown state.
-      const forced = (preview && preview.state) || dbg.state;
+      const forced = (preview && preview.state) || framePreviewState || dbg.state;
       if (forced) result = SBState.forceState(result, forced, config);
       SBUi.render(root, result, config, contentByLang);
       SBUi.applyNightDim(nightOverlay, result.state === 'NIGHT' && config.night.dim, config.night.brightness);

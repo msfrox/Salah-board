@@ -25,23 +25,11 @@
   ];
   const ROUND_OPTIONS = [0, 5, 10, 15];
 
-  // Advanced tab — NORMAL-screen elements that can be resized / hidden.
-  // Keys match config.layout.normal (docs/CONFIG-SCHEMA.md) and
-  // display/css/layout.css.
-  const LAYOUT_SIZES = [
-    { key: 'masjidName', label: 'Masjid name' },
-    { key: 'dates', label: 'Dates (Gregorian · Hijri)' },
-    { key: 'clock', label: 'Clock' },
-    { key: 'nextLabel', label: '"Next prayer" label' },
-    { key: 'nextName', label: 'Next prayer name' },
-    { key: 'timeLabels', label: '"Azan" / "Iqamah" labels' },
-    { key: 'prayerTimes', label: 'Azan & iqamah times (big numbers)' },
-    { key: 'countdown', label: 'Countdown to azan' },
-    { key: 'ttLabels', label: 'Timetable — prayer names' },
-    { key: 'ttTimes', label: 'Timetable — times' },
-    { key: 'banners', label: "Banners (Jumu'ah, pinned notice, Ramadan)" },
-    { key: 'cards', label: 'Rotating notice cards' },
-  ];
+  // Advanced tab — every resizable element, grouped by screen. The list
+  // lives in display/js/config.js (SBConfig.LAYOUT_GROUPS) so the admin,
+  // the config defaults and the display's zoom rules can never disagree.
+  const LAYOUT_GROUPS = SBConfig.LAYOUT_GROUPS;
+  const layoutPath = (group, key) => `layout.${group.store}.sizes.${key}`;
   const LAYOUT_SHOW = [
     { key: 'masjidName', label: 'Masjid name' },
     { key: 'dates', label: 'Dates' },
@@ -146,7 +134,7 @@
       </label>`;
   }
 
-  function layoutSizeRowHtml(item) {
+  function layoutSizeRowHtml(item, group) {
     const id = `layout-size-${item.key}`;
     return `
       <div class="field layout-size">
@@ -154,7 +142,7 @@
         <div class="stepper">
           <button type="button" class="btn btn--secondary stepper-btn" data-step="-5" data-target="${id}" aria-label="Smaller">−</button>
           <input type="range" id="${id}" class="layout-range" min="${SBConfig.LAYOUT_MIN}" max="${SBConfig.LAYOUT_MAX}" step="5"
-                 data-path="layout.normal.sizes.${item.key}" data-number>
+                 data-path="${layoutPath(group, item.key)}" data-number>
           <button type="button" class="btn btn--secondary stepper-btn" data-step="5" data-target="${id}" aria-label="Bigger">+</button>
         </div>
       </div>`;
@@ -166,6 +154,22 @@
         <input type="checkbox" data-path="layout.normal.show.${item.key}">
         <span>${item.label}</span>
       </label>`;
+  }
+
+  // One collapsible section per screen. Opening a section switches the live
+  // preview to that screen (advanced.js listens for the toggle).
+  function layoutGroupHtml(group) {
+    const showRows = group.id === 'normal'
+      ? `<h4>Show on the normal screen</h4><div id="layout-show-rows" class="checkbox-col"></div>` : '';
+    return `
+      <details class="layout-group" data-group="${group.id}" data-state="${group.state}"${group.id === 'normal' ? ' open' : ''}>
+        <summary>${group.title}</summary>
+        <div class="layout-group-body">
+          ${group.items.map(item => layoutSizeRowHtml(item, group)).join('')}
+          ${showRows}
+          <button type="button" class="btn btn--secondary layout-group-reset">Reset this screen</button>
+        </div>
+      </details>`;
   }
 
   function refreshLayoutValues() {
@@ -265,7 +269,7 @@
     $('#salah-duration-rows').innerHTML = PRAYERS.map(salahDurationRowHtml).join('');
     $('#ramadan-override-rows').innerHTML = PRAYERS.map(ramadanOverrideRowHtml).join('');
     $('#taraweeh-note-rows').innerHTML = LANGS.map(taraweehNoteRowHtml).join('');
-    $('#layout-size-rows').innerHTML = LAYOUT_SIZES.map(layoutSizeRowHtml).join('');
+    $('#layout-groups').innerHTML = LAYOUT_GROUPS.map(layoutGroupHtml).join('');
     $('#layout-show-rows').innerHTML = LAYOUT_SHOW.map(layoutShowRowHtml).join('');
   }
 
@@ -483,13 +487,12 @@
     if (!(brightness >= 0 && brightness <= 100)) errors.push('Night brightness must be between 0 and 100.');
     if (!(Number(config.rotation.seconds) >= 3)) errors.push('Rotation seconds should be at least 3.');
 
-    const sizes = (config.layout && config.layout.normal && config.layout.normal.sizes) || {};
-    LAYOUT_SIZES.forEach(item => {
-      const v = Number(sizes[item.key]);
+    LAYOUT_GROUPS.forEach(group => group.items.forEach(item => {
+      const v = Number(getPath(config, layoutPath(group, item.key)));
       if (!(v >= SBConfig.LAYOUT_MIN && v <= SBConfig.LAYOUT_MAX)) {
-        errors.push(`Advanced → "${item.label}" size must be between ${SBConfig.LAYOUT_MIN}% and ${SBConfig.LAYOUT_MAX}%.`);
+        errors.push(`Advanced → ${group.title} → "${item.label}" size must be between ${SBConfig.LAYOUT_MIN}% and ${SBConfig.LAYOUT_MAX}%.`);
       }
-    });
+    }));
 
     (config.notices || []).forEach((n, i) => {
       const hasText = n.text && Object.values(n.text).some(v => v && String(v).trim());
@@ -582,7 +585,13 @@
 
     // Advanced tab: live % labels, −/+ fine steps, reset.
     document.addEventListener('input', e => { if (e.target.classList.contains('layout-range')) refreshLayoutValues(); });
-    $('#layout-size-rows').addEventListener('click', e => {
+    $('#layout-groups').addEventListener('click', e => {
+      const groupReset = e.target.closest('.layout-group-reset');
+      if (groupReset) {
+        resetLayout(groupReset.closest('.layout-group'));
+        showToast('Screen reset — press Save to apply it to the board.');
+        return;
+      }
       const btn = e.target.closest('.stepper-btn');
       if (!btn) return;
       const range = document.getElementById(btn.dataset.target);
@@ -590,13 +599,17 @@
       range.value = v;
       range.dispatchEvent(new Event('input', { bubbles: true }));
     });
-    $('#layout-reset').addEventListener('click', () => {
-      const d = SBConfig.defaults().layout.normal;
-      $$('.layout-range').forEach(r => { r.value = d.sizes[r.dataset.path.split('.').pop()]; });
-      $$('#layout-show-rows input[type=checkbox]').forEach(cb => { cb.checked = d.show[cb.dataset.path.split('.').pop()] !== false; });
+    // Reset sliders (and show toggles) inside `scope` to the defaults.
+    function resetLayout(scope) {
+      const d = SBConfig.defaults();
+      scope.querySelectorAll('.layout-range').forEach(r => { r.value = getPath(d, r.dataset.path); });
+      scope.querySelectorAll('#layout-show-rows input[type=checkbox]').forEach(cb => { cb.checked = getPath(d, cb.dataset.path) !== false; });
       refreshLayoutValues();
       document.dispatchEvent(new CustomEvent('sb-layout-changed'));
-      showToast('Reset — press Save to apply it to the board.');
+    }
+    $('#layout-reset').addEventListener('click', () => {
+      resetLayout($('#layout-groups'));
+      showToast('All sizes reset — press Save to apply it to the board.');
     });
 
     $('#add-notice').addEventListener('click', () => {

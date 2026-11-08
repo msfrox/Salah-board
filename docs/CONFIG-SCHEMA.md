@@ -83,9 +83,13 @@ breaking change via `configVersion`.
     "cards": ["timetable", "notices", "jumuah-etiquette"]
   },
 
-  "layout": {                         // per-board fine-tuning of the NORMAL screen
-    "normal": {                       // (admin → Advanced tab, live preview)
-      "sizes": {                      // percent of the theme's own size, 50–250
+  "layout": {                         // per-board fine-tuning (admin → Advanced tab,
+                                      // live preview). Every size is a percent of the
+                                      // theme's own size, 50–250. The full element list
+                                      // (keys, labels, CSS selectors) is LAYOUT_GROUPS
+                                      // in display/js/config.js — the single source.
+    "normal": {                       // NORMAL screen
+      "sizes": {
         "masjidName": 100, "dates": 100, "clock": 100,
         "nextLabel": 100,             // "NEXT PRAYER"
         "nextName": 100,              // e.g. "ZUHR"
@@ -93,12 +97,29 @@ breaking change via `configVersion`.
         "prayerTimes": 100,           // the big azan + iqamah numbers
         "countdown": 100,             // countdown to azan
         "ttLabels": 100, "ttTimes": 100,  // timetable strip names / times
-        "banners": 100,               // Jumu'ah, pinned notice, Ramadan banners
+        "jumuahBanner": 100, "pinnedBanner": 100, "ramadanBlock": 100,
         "cards": 100                  // rotating notice / etiquette cards
+        // (older configs' single "banners" size is migrated to the three above)
       },
       "show": {                       // false hides the element
         "masjidName": true, "dates": true, "nextLabel": true,
         "countdown": true, "timetable": true, "cards": true
+      }
+    },
+    "screens": {                      // every other screen
+      "sizes": {
+        "cornerClock": 100,           // time on all transient screens
+        "azanTitle": 100, "azanReply": 100, "azanArabic": 100,
+        "azanTranslation": 100, "azanDuaTitle": 100, "azanIcon": 100,
+        "iqamahLabel": 100, "iqamahCountdown": 100, "betweenReminder": 100,
+        "betweenArabic": 100, "betweenTranslation": 100, "sunnahReminder": 100,
+        "iqamahTitle": 100, "iqamahLines": 100,       // "straighten the rows"
+        "salahClock": 100, "salahLine": 100,
+        "afterArabic": 100, "afterText": 100,
+        "luhaLabel": 100, "luhaCountdown": 100, "luhaOpen": 100,
+        "nightClock": 100, "nightFajr": 100,
+        "bayanTitle": 100, "bayanSpeaker": 100, "bayanTopic": 100, "bayanEtiquette": 100,
+        "khutbahLine": 100
       }
     }
   },
