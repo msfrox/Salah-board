@@ -17,14 +17,16 @@ Why: README, CLAUDE.md and MILESTONES describe an Android product; a Linux kiosk
 runs (ADR 0001). The next session would otherwise start in the wrong place.
 Context to read: `decisions/0001-…`, `README.md`, `CLAUDE.md`, `docs/MILESTONES.md`,
 `deploy/README.md`, `deploy/linux/INSTALL-DEBIAN.md`, `PLAN.md`.
-Do: apply ADR 0001 point 3. In `HANDOFF.md`, remove the board's address and password
-(point 6) and tell Shehan in `SHEHAN-TODO.md` to store them in his password manager. Mark
-`PLAN.md` as finished history with a pointer to `ROADMAP.md`.
-Done when: `grep -rn "12345678" .` finds nothing outside `.git`; README's status line and
+Do: apply ADR 0001 point 3. (Point 6 is already done: the planning session took the board's
+address and password out of `HANDOFF.md` on 2026-11-16, and `PLAN.md` and `MILESTONES.md`
+already carry a pointer to `ROADMAP.md`.) Check no other file names the board's address or
+login.
+Done when: a search of the tree for the board's LAN address and for `pw ` finds no
+credentials outside `.git`; README's status line and
 "runs on" text match ADR 0001; `CLAUDE.md` "How to work" points to `ROADMAP.md` and
 `TASKS.md`; M3 and M4 are marked parked with the ADR number.
-Don't: delete `android/` or any doc. The password stays in git history; say so in
-`SHEHAN-TODO.md` and recommend he change it on the board (rewriting history is not done).
+Don't: delete `android/` or any doc. Don't rewrite git history to remove the old password;
+`SHEHAN-TODO.md` already asks Shehan to change it on the board.
 
 ### SB-2 — `tools/sync-data.py`                            [Sonnet] · effort medium · ~1.5 h
 Why: the sync tool is PowerShell with a Windows path and no integrity check (ADR 0002).
