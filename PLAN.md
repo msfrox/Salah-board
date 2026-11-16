@@ -1,5 +1,8 @@
 # Salah Board — work plan (display/admin/deploy overhaul)
 
+> **Finished (P0–P8 all done).** Kept as the record of why the kiosk works the way it does.
+> The live tracker is `ROADMAP.md`; the next cards are in `TASKS.md` (2026-11-16).
+
 Running target: **Linux Debian kiosk** (`deploy/serve.py` served by systemd as the
 kiosk user, Chromium `--kiosk`). The Acer tablet runs this same Linux kiosk. The
 Android shell (`android/`) is a separate future path — not touched here.

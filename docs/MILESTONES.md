@@ -1,5 +1,9 @@
 # Milestones — build order for Claude Code (Sonnet)
 
+> **2026-11-16:** the live tracker is `ROADMAP.md` and the next cards are in `TASKS.md`.
+> `decisions/0001-linux-kiosk-is-v1-android-is-parked.md` (proposed) makes the Linux kiosk
+> v1.0 and parks M3 and M4. This file keeps the milestone specs.
+
 Work top to bottom. One milestone (or one sub-step) per session. Each is
 independently useful. Tick checkboxes as acceptance criteria pass. Read only
 the docs each milestone lists — keep sessions token-light.
