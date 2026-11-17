@@ -73,6 +73,17 @@
     _npFit = { key, size: el.style.fontSize };
   }
 
+  // Both fits above cache their result. If a web font (e.g. Tamil) finishes
+  // loading after the first fit, the text was measured in a narrower fallback
+  // font and would stay clipped — so forget the cached fits whenever fonts
+  // finish loading; the next render (≤ 1 s) measures again with real fonts.
+  if (global.document && document.fonts && document.fonts.addEventListener) {
+    document.fonts.addEventListener('loadingdone', () => {
+      _fitCache = { name: null, avail: 0, factor: 1 };
+      _npFit = { key: null, size: '' };
+    });
+  }
+
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',

@@ -259,9 +259,9 @@ html, body {
 @media (orientation: landscape) {
   .hero-row {
     display: grid;
-    /* The name gets all the room up to the clock (minmax(0,1fr): never wider
-       than that — ui.js fitNextName shrinks it instead). Times and countdown
-       span the full width, so they stay centred on the screen. */
+    /* Head on the left, clock on the right (the head's own box is capped
+       in .np-head below; ui.js fitNextName shrinks a name that's too long).
+       Times and countdown span the full width, so they stay centred. */
     grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
       "head  clock"
@@ -282,7 +282,11 @@ html, body {
   .np-head {
     grid-area: head; justify-self: start; align-self: center; margin-bottom: .5rem;
     display: flex; align-items: center; gap: .9rem;
-    min-width: 0; max-width: 100%; overflow: hidden;
+    /* A fixed box, not all the room up to the clock: short names (Isha, Asr,
+       Zuhr) fill it at full size; long ones (Maghrib, Jumu'ah) shrink to fit
+       it rather than stretching across (board feedback). rem, so it scales
+       with the screen like everything else. */
+    min-width: 0; max-width: min(100%, 30rem); overflow: hidden;
   }
   .np-label { width: min-content; white-space: normal; line-height: 1.25; text-align: left; }
   .np-name { white-space: nowrap; line-height: .9; text-align: left; }
