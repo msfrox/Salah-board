@@ -90,6 +90,13 @@ Last updated: November 2026.
 - Everything sizes itself to the real screen (the hero measures its space);
   always check at **1366×768**, all states, with banners on.
 - Long text never wraps a banner onto two lines (it shrinks, then "…").
+- **Landscape is the main design** (boards are mounted landscape); portrait
+  only needs a tidy fallback.
+- **Background pattern** (the masjid's rosette): the same motif on every
+  screen but **composed differently per screen** to suit its meaning (not one
+  layout copied everywhere); must be visible on a real TV; tinted (default
+  gold). Calm/near-dark screens (sunnah, bayan, khutbah, salah, night) keep it
+  subtle. Colour, and visibility + size per screen, are in Advanced.
 
 ## 5. Settings / admin preferences
 

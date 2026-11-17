@@ -90,6 +90,22 @@
     }
     const show = n.show || {};
     html.dataset.sbHide = Object.keys(show).filter(k => show[k] === false).join(' ');
+    applyPattern(html, layout.pattern || {});
+  }
+
+  // Background pattern → CSS variables the theme uses (default theme:
+  // #screen-root::before). Colour once; alpha + size per screen.
+  function applyPattern(html, p) {
+    const D = SBConfig.PATTERN_DEFAULTS;
+    const clamp = (v, lo, hi, d) => { const n = Number(v); return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : d; };
+    html.style.setProperty('--sb-pat-hue', String(clamp(p.hue, 0, 360, D.hue)));
+    html.style.setProperty('--sb-pat-sat', clamp(p.saturation, 0, 100, D.saturation) + '%');
+    const pages = p.pages || {};
+    for (const id of Object.keys(D.pages)) {
+      const pg = Object.assign({}, D.pages[id], pages[id] || {});
+      html.style.setProperty(`--sb-pat-a-${id}`, String(clamp(pg.visibility, 0, 100, 0) / 100 * SBConfig.PATTERN_MAX_ALPHA));
+      html.style.setProperty(`--sb-pat-s-${id}`, String(clamp(pg.size, 50, 200, 100) / 100));
+    }
   }
 
   // Themes are plain CSS folders (docs/MILESTONES.md M5) — swapping the

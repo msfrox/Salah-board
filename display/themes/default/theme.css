@@ -11,8 +11,8 @@
    and re-weights the NORMAL hero; it does not add markup.
 
    Background motif: the masjid's own girih rosette (assets/rosette.png,
-   white-on-transparent, from assets/rosette-source.svg), rendered as a
-   faint oversized watermark. assets/crescent-star.svg is unused by
+   white-on-transparent, from assets/rosette-source.svg), used as a mask
+   filled with the board's pattern colour (see "Background pattern" below). assets/crescent-star.svg is unused by
    this stylesheet (no markup hook renders it yet) but is bundled here
    for a future Jumu'ah icon.
 
@@ -73,27 +73,187 @@ html, body {
   background: #000;
 }
 
-/* Rosette watermark — faint, oversized, never competes with the numbers. */
+/* ── Background pattern: the masjid's rosette ─────────────────────────
+   One motif, composed differently on each screen to suit what it's for.
+   The PNG (white on transparent) is a STENCIL filled with the board's
+   pattern colour, so it can take any hue. Admin → Advanced: colour once for
+   the board; visibility + size per screen (main.js sets --sb-pat-hue/-sat,
+   --sb-pat-a-<screen>, --sb-pat-s-<screen>). Designed for LANDSCAPE, the
+   way boards are mounted; sizes are in vmin so portrait stays sensible.
+   Strength defaults (config.js PATTERN_DEFAULTS): clear on the main and
+   information screens, faint on the calm Jumu'ah ones, barely there on
+   salah and night. */
 #screen-root::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-image: url('./assets/rosette.png');
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: 62vmin 62vmin;
-  opacity: .05;
+  background-color: hsl(var(--sb-pat-hue, 40), var(--sb-pat-sat, 55%), 62%);
+  -webkit-mask-image: none;
+          mask-image: none;
+  opacity: var(--pat-a, 0);
 }
-/* NORMAL/JUMUAH/etc data screens push the medallion off to the side so it
-   never sits under the timetable strip or the hero numbers. */
+/* Main screen — one large medallion half off the right edge, clear of the
+   hero numbers and the timetable. */
 #screen-root.state-normal::before {
-  background-position: 115% center;
-  background-size: 78vmin 78vmin;
+  --pat-a: var(--sb-pat-a-normal); --pat-s: var(--sb-pat-s-normal, 1);
+  --d: calc(80vmin * var(--pat-s));
+  -webkit-mask-image: url('./assets/rosette.png');
+          mask-image: url('./assets/rosette.png');
+  -webkit-mask-size: var(--d) var(--d);
+          mask-size: var(--d) var(--d);
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: calc(100% + var(--d) * .32) 50%;
+          mask-position: calc(100% + var(--d) * .32) 50%;
 }
-#screen-root.state-salah::before { opacity: 0; } /* near-black, minimal light spill */
-#screen-root.state-night::before { opacity: .025; background-size: 50vmin 50vmin; }
+/* Azan — ornaments rising from the two bottom corners; the top stays clear
+   for the title and the clock. */
+#screen-root.state-azan::before {
+  --pat-a: var(--sb-pat-a-azan); --pat-s: var(--sb-pat-s-azan, 1);
+  --d: calc(48vmin * var(--pat-s));
+  -webkit-mask-image: url('./assets/rosette.png'), url('./assets/rosette.png');
+          mask-image: url('./assets/rosette.png'), url('./assets/rosette.png');
+  -webkit-mask-size: var(--d) var(--d);
+          mask-size: var(--d) var(--d);
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: calc(var(--d) * -.36) calc(100% + var(--d) * .36), calc(100% + var(--d) * .36) calc(100% + var(--d) * .36);
+          mask-position: calc(var(--d) * -.36) calc(100% + var(--d) * .36), calc(100% + var(--d) * .36) calc(100% + var(--d) * .36);
+}
+/* Iqamah countdown — one halo centred behind the minutes. */
+#screen-root.state-between::before {
+  --pat-a: var(--sb-pat-a-between); --pat-s: var(--sb-pat-s-between, 1);
+  --d: calc(88vmin * var(--pat-s));
+  -webkit-mask-image: url('./assets/rosette.png');
+          mask-image: url('./assets/rosette.png');
+  -webkit-mask-size: var(--d) var(--d);
+          mask-size: var(--d) var(--d);
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: 50% 46%;
+          mask-position: 50% 46%;
+}
+/* Straighten the rows — a row of small rosettes along the bottom edge,
+   half sunk: the saff. */
+#screen-root.state-iqamah::before {
+  --pat-a: var(--sb-pat-a-iqamah); --pat-s: var(--sb-pat-s-iqamah, 1);
+  --d: calc(24vmin * var(--pat-s));
+  -webkit-mask-image: url('./assets/rosette.png');
+          mask-image: url('./assets/rosette.png');
+  -webkit-mask-size: var(--d) var(--d);
+          mask-size: var(--d) var(--d);
+  -webkit-mask-repeat: repeat-x;
+          mask-repeat: repeat-x;
+  -webkit-mask-position: 50% calc(100% + var(--d) * .08);
+          mask-position: 50% calc(100% + var(--d) * .08);
+}
+/* Salah — one small rosette, half sunk at the bottom centre; near-dark. */
+#screen-root.state-salah::before {
+  --pat-a: var(--sb-pat-a-salah); --pat-s: var(--sb-pat-s-salah, 1);
+  --d: calc(30vmin * var(--pat-s));
+  -webkit-mask-image: url('./assets/rosette.png');
+          mask-image: url('./assets/rosette.png');
+  -webkit-mask-size: var(--d) var(--d);
+          mask-size: var(--d) var(--d);
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: 50% calc(100% + var(--d) * .45);
+          mask-position: 50% calc(100% + var(--d) * .45);
+}
+/* After salah (adhkar) — four corner ornaments framing the dhikr. */
+#screen-root.state-after::before {
+  --pat-a: var(--sb-pat-a-after); --pat-s: var(--sb-pat-s-after, 1);
+  --d: calc(40vmin * var(--pat-s));
+  -webkit-mask-image: url('./assets/rosette.png'), url('./assets/rosette.png'), url('./assets/rosette.png'), url('./assets/rosette.png');
+          mask-image: url('./assets/rosette.png'), url('./assets/rosette.png'), url('./assets/rosette.png'), url('./assets/rosette.png');
+  -webkit-mask-size: var(--d) var(--d);
+          mask-size: var(--d) var(--d);
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: calc(var(--d) * -.42) calc(var(--d) * -.42), calc(100% + var(--d) * .42) calc(var(--d) * -.42), calc(var(--d) * -.42) calc(100% + var(--d) * .42), calc(100% + var(--d) * .42) calc(100% + var(--d) * .42);
+          mask-position: calc(var(--d) * -.42) calc(var(--d) * -.42), calc(100% + var(--d) * .42) calc(var(--d) * -.42), calc(var(--d) * -.42) calc(100% + var(--d) * .42), calc(100% + var(--d) * .42) calc(100% + var(--d) * .42);
+}
+/* Luha countdown — a large medallion rising from the bottom, like the sun. */
+#screen-root.state-luha_wait::before {
+  --pat-a: var(--sb-pat-a-luha); --pat-s: var(--sb-pat-s-luha, 1);
+  --d: calc(96vmin * var(--pat-s));
+  -webkit-mask-image: url('./assets/rosette.png');
+          mask-image: url('./assets/rosette.png');
+  -webkit-mask-size: var(--d) var(--d);
+          mask-size: var(--d) var(--d);
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: 50% calc(100% + var(--d) * .56);
+          mask-position: 50% calc(100% + var(--d) * .56);
+}
+/* Luha has begun — the same "sun", risen. */
+#screen-root.state-luha_open::before {
+  --pat-a: var(--sb-pat-a-luhaOpen); --pat-s: var(--sb-pat-s-luhaOpen, 1);
+  --d: calc(96vmin * var(--pat-s));
+  -webkit-mask-image: url('./assets/rosette.png');
+          mask-image: url('./assets/rosette.png');
+  -webkit-mask-size: var(--d) var(--d);
+          mask-size: var(--d) var(--d);
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: 50% calc(100% + var(--d) * .22);
+          mask-position: 50% calc(100% + var(--d) * .22);
+}
+/* Night — one small rosette high on the left, like the moon. */
+#screen-root.state-night::before {
+  --pat-a: var(--sb-pat-a-night); --pat-s: var(--sb-pat-s-night, 1);
+  --d: calc(24vmin * var(--pat-s));
+  -webkit-mask-image: url('./assets/rosette.png');
+          mask-image: url('./assets/rosette.png');
+  -webkit-mask-size: var(--d) var(--d);
+          mask-size: var(--d) var(--d);
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: 9% 14%;
+          mask-position: 9% 14%;
+}
+/* Jumu'ah sunnah — a calm pair framing the left and right edges. */
+#screen-root.state-jumuah.phase-sunnah::before {
+  --pat-a: var(--sb-pat-a-jumuah); --pat-s: var(--sb-pat-s-jumuah, 1);
+  --d: calc(66vmin * var(--pat-s));
+  -webkit-mask-image: url('./assets/rosette.png'), url('./assets/rosette.png');
+          mask-image: url('./assets/rosette.png'), url('./assets/rosette.png');
+  -webkit-mask-size: var(--d) var(--d);
+          mask-size: var(--d) var(--d);
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: calc(var(--d) * -.44) 50%, calc(100% + var(--d) * .44) 50%;
+          mask-position: calc(var(--d) * -.44) 50%, calc(100% + var(--d) * .44) 50%;
+}
+/* Bayan — one large medallion off the LEFT edge (the main screen's mirror);
+   the centre stays clear for the speaker. */
+#screen-root.state-jumuah.phase-bayan::before {
+  --pat-a: var(--sb-pat-a-jumuah); --pat-s: var(--sb-pat-s-jumuah, 1);
+  --d: calc(80vmin * var(--pat-s));
+  -webkit-mask-image: url('./assets/rosette.png');
+          mask-image: url('./assets/rosette.png');
+  -webkit-mask-size: var(--d) var(--d);
+          mask-size: var(--d) var(--d);
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: calc(var(--d) * -.32) 50%;
+          mask-position: calc(var(--d) * -.32) 50%;
+}
+/* Khutbah — one very faint, large medallion centred behind "Remain silent". */
+#screen-root.state-khutbah::before {
+  --pat-a: var(--sb-pat-a-khutbah); --pat-s: var(--sb-pat-s-khutbah, 1);
+  --d: calc(92vmin * var(--pat-s));
+  -webkit-mask-image: url('./assets/rosette.png');
+          mask-image: url('./assets/rosette.png');
+  -webkit-mask-size: var(--d) var(--d);
+          mask-size: var(--d) var(--d);
+  -webkit-mask-repeat: no-repeat;
+          mask-repeat: no-repeat;
+  -webkit-mask-position: 50% 50%;
+          mask-position: 50% 50%;
+}
 
 #night-overlay {
   position: fixed;
@@ -207,7 +367,7 @@ html, body {
 /* ── IQAMAH — "straighten the rows", gold, never red ─────────── */
 .screen--iqamah {
   justify-content: center; align-items: center; text-align: center; gap: 2rem;
-  background: radial-gradient(ellipse at center, #191408 0%, var(--sb-bg) 74%);
+  background: radial-gradient(ellipse at center, rgba(25, 20, 8, .9) 0%, rgba(0, 0, 0, 0) 74%); /* fades to transparent so the pattern shows */
 }
 .iqamah-title { font-size: 7rem; font-weight: 800; color: var(--sb-danger); margin: 0; letter-spacing: .02em; }
 .iqamah-lines { list-style: none; padding: 0; margin: 0; font-size: 2rem; font-weight: 600; color: #c9ced6; display: flex; flex-direction: column; gap: .8rem; }
@@ -257,7 +417,7 @@ html, body {
 }
 .jm-quiet--stack { border-radius: 1.4rem; padding: .7rem 2rem .7rem 1.4rem; }
 .screen--khutbah {
-  background: radial-gradient(ellipse at center, #231a05 0%, var(--sb-bg) 74%);
+  background: radial-gradient(ellipse at center, rgba(35, 26, 5, .9) 0%, rgba(0, 0, 0, 0) 74%); /* fades to transparent so the pattern shows */
 }
 .khutbah-title { font-size: 3rem; font-weight: 600; color: var(--sb-fg-dim); letter-spacing: .02em; }
 .khutbah-line { font-size: 7rem; font-weight: 800; line-height: 1.05; color: var(--sb-danger); }

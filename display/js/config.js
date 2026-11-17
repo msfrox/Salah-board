@@ -90,6 +90,33 @@
     ] },
   ];
 
+  // ── Background pattern (the masjid's rosette, default theme) ──────────
+  // One colour for the whole board (hue + richness), and per screen its
+  // visibility (0–100) and size (50–200 %). Keys = LAYOUT_GROUPS ids.
+  // Defaults follow the design: clearly visible on the main screen, framing
+  // the information screens, faint on the calm ones (sunnah, bayan,
+  // khutbah) and barely there on the near-dark ones (salah, night).
+  const PATTERN_DEFAULTS = {
+    hue: 40,          // gold — traditional, and doesn't clash with the green highlights
+    saturation: 55,   // colour richness: 0 = grey … 100 = full colour
+    pages: {
+      normal:   { visibility: 45, size: 100 },
+      azan:     { visibility: 35, size: 100 },
+      between:  { visibility: 35, size: 100 },
+      iqamah:   { visibility: 35, size: 100 },
+      salah:    { visibility: 5,  size: 100 },
+      after:    { visibility: 35, size: 100 },
+      luha:     { visibility: 35, size: 100 },
+      luhaOpen: { visibility: 35, size: 100 },
+      night:    { visibility: 10, size: 100 },
+      jumuah:   { visibility: 15, size: 100 },
+      khutbah:  { visibility: 10, size: 100 },
+    },
+  };
+  // Pattern alpha at visibility 100 (a full-strength stencil would compete
+  // with the text; 100 is "as strong as it should ever get").
+  const PATTERN_MAX_ALPHA = 0.5;
+
   function layoutSizeDefaults(store) {
     const out = {};
     LAYOUT_GROUPS.filter(g => g.store === store).forEach(g => g.items.forEach(i => { out[i.key] = 100; }));
@@ -224,6 +251,7 @@
             timetable: true, cards: true,
           },
         },
+        pattern: JSON.parse(JSON.stringify(PATTERN_DEFAULTS)),
       },
 
       time: {
@@ -339,6 +367,7 @@
   }
 
   global.SBConfig = { defaults, deepMerge, getConfig, getConfigAsync, getStoredAsync, save, debugParams,
-    applyOverrides, layoutFactor, LAYOUT_MIN, LAYOUT_MAX, LAYOUT_GROUPS, STORAGE_KEY };
+    applyOverrides, layoutFactor, LAYOUT_MIN, LAYOUT_MAX, LAYOUT_GROUPS, STORAGE_KEY,
+    PATTERN_DEFAULTS, PATTERN_MAX_ALPHA };
 
 })(window);

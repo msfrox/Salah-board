@@ -148,6 +148,44 @@
       </div>`;
   }
 
+  // Generic slider row (pattern controls). data-unit: what to show after the value.
+  function rangeRowHtml(id, labelText, path, min, max, step, unit, cls = '') {
+    return `
+      <div class="field layout-size">
+        <span><label for="${id}">${labelText}</label> <strong class="layout-size-value" data-for="${id}"></strong></span>
+        <div class="stepper">
+          <button type="button" class="btn btn--secondary stepper-btn" data-step="-${step}" data-target="${id}" aria-label="Less">−</button>
+          <input type="range" id="${id}" class="layout-range ${cls}" min="${min}" max="${max}" step="${step}"
+                 data-path="${path}" data-unit="${unit}" data-number>
+          <button type="button" class="btn btn--secondary stepper-btn" data-step="${step}" data-target="${id}" aria-label="More">+</button>
+        </div>
+      </div>`;
+  }
+
+  // Per-screen background pattern controls (default theme's rosette).
+  function patternRowsHtml(group) {
+    if (!SBConfig.PATTERN_DEFAULTS.pages[group.id]) return '';
+    const base = `layout.pattern.pages.${group.id}`;
+    return `<h4>Background pattern</h4>` +
+      rangeRowHtml(`pattern-vis-${group.id}`, 'Visibility', `${base}.visibility`, 0, 100, 5, '%') +
+      rangeRowHtml(`pattern-size-${group.id}`, 'Size', `${base}.size`, 50, 200, 10, '%');
+  }
+
+  // Pattern colour for the whole board: one section above the screens.
+  function patternColourHtml() {
+    return `
+      <details class="layout-group" data-group="pattern" data-state="normal" open>
+        <summary>Background pattern colour (whole board)</summary>
+        <div class="layout-group-body">
+          <p class="hint">The masjid's rosette pattern behind every screen (default theme). Pick one colour here; set how visible and how big it is on each screen in that screen's section below.</p>
+          <div class="pattern-swatch" id="pattern-swatch" aria-hidden="true"></div>
+          ${rangeRowHtml('pattern-hue', 'Colour (hue)', 'layout.pattern.hue', 0, 360, 5, '°', 'pattern-hue')}
+          ${rangeRowHtml('pattern-sat', 'Colour richness (0 = grey)', 'layout.pattern.saturation', 0, 100, 5, '%')}
+          <button type="button" class="btn btn--secondary layout-group-reset">Reset colour</button>
+        </div>
+      </details>`;
+  }
+
   function layoutShowRowHtml(item) {
     return `
       <label class="field checkbox-field">
@@ -167,6 +205,7 @@
         <div class="layout-group-body">
           ${group.items.map(item => layoutSizeRowHtml(item, group)).join('')}
           ${showRows}
+          ${patternRowsHtml(group)}
           <button type="button" class="btn btn--secondary layout-group-reset">Reset this screen</button>
         </div>
       </details>`;
@@ -175,8 +214,10 @@
   function refreshLayoutValues() {
     $$('.layout-range').forEach(r => {
       const out = document.querySelector(`.layout-size-value[data-for="${r.id}"]`);
-      if (out) out.textContent = `${r.value}%`;
+      if (out) out.textContent = `${r.value}${r.dataset.unit || '%'}`;
     });
+    const sw = $('#pattern-swatch'), hue = $('#pattern-hue'), sat = $('#pattern-sat');
+    if (sw && hue && sat) sw.style.background = `hsl(${hue.value}, ${sat.value}%, 62%)`;
   }
 
   function ramadanOverrideRowHtml(prayer) {
@@ -269,7 +310,7 @@
     $('#salah-duration-rows').innerHTML = PRAYERS.map(salahDurationRowHtml).join('');
     $('#ramadan-override-rows').innerHTML = PRAYERS.map(ramadanOverrideRowHtml).join('');
     $('#taraweeh-note-rows').innerHTML = LANGS.map(taraweehNoteRowHtml).join('');
-    $('#layout-groups').innerHTML = LAYOUT_GROUPS.map(layoutGroupHtml).join('');
+    $('#layout-groups').innerHTML = patternColourHtml() + LAYOUT_GROUPS.map(layoutGroupHtml).join('');
     $('#layout-show-rows').innerHTML = LAYOUT_SHOW.map(layoutShowRowHtml).join('');
   }
 
@@ -678,7 +719,7 @@
       const btn = e.target.closest('.stepper-btn');
       if (!btn) return;
       const range = document.getElementById(btn.dataset.target);
-      const v = Math.max(SBConfig.LAYOUT_MIN, Math.min(SBConfig.LAYOUT_MAX, Number(range.value) + Number(btn.dataset.step)));
+      const v = Math.max(Number(range.min), Math.min(Number(range.max), Number(range.value) + Number(btn.dataset.step)));
       range.value = v;
       range.dispatchEvent(new Event('input', { bubbles: true }));
     });
@@ -692,7 +733,7 @@
     }
     $('#layout-reset').addEventListener('click', () => {
       resetLayout($('#layout-groups'));
-      showToast('All sizes reset — press Save to apply it to the board.');
+      showToast('All sizes and the pattern reset — press Save to apply it to the board.');
     });
 
     $('#add-notice').addEventListener('click', () => {

@@ -144,6 +144,31 @@ breaking change via `configVersion`.
         "jumuahQuiet": 100,                           // phones/silence footer (sunnah, bayan)
         "khutbahTitle": 100, "khutbahLine": 100, "khutbahQuiet": 100
       }
+    },
+    "pattern": {                      // background rosette (default theme), admin →
+                                      // Advanced. Defaults: config.js PATTERN_DEFAULTS
+      "hue": 40,                      // 0–360, one colour for the whole board (40 = gold)
+      "saturation": 55,               // colour richness 0 (grey) – 100
+      "pages": {                      // per screen; keys = LAYOUT_GROUPS ids
+        "normal":  { "visibility": 45, "size": 100 },  // visibility 0–100 (100 = alpha
+        "azan":    { "visibility": 35, "size": 100 },  // PATTERN_MAX_ALPHA 0.5), size
+        "between": { "visibility": 35, "size": 100 },  // 50–200 %
+        "iqamah":  { "visibility": 35, "size": 100 },
+        "salah":   { "visibility": 5,  "size": 100 },
+        "after":   { "visibility": 35, "size": 100 },
+        "luha":    { "visibility": 35, "size": 100 },
+        "luhaOpen":{ "visibility": 35, "size": 100 },
+        "night":   { "visibility": 10, "size": 100 },
+        "jumuah":  { "visibility": 15, "size": 100 },  // sunnah + bayan
+        "khutbah": { "visibility": 10, "size": 100 }
+      }
+      // Each screen composes the rosette its own way (themes/default
+      // theme.css "Background pattern"): main = medallion off the right
+      // edge; azan = bottom corners; iqamah countdown = centred halo;
+      // straighten rows = a row along the bottom (the saff); salah = small,
+      // half sunk; after = four corners; Luha = rising / risen sun; night =
+      // small "moon"; sunnah = left+right pair; bayan = off the left edge;
+      // khutbah = faint centred.
     }
   },
 

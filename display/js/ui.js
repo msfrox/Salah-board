@@ -735,7 +735,9 @@
       // wraps away from the name it follows ("Muhammad" / "ﷺ" on two lines).
       .replace(/[ \u00A0]?([\uFDF0-\uFDFF])/g, '&nbsp;<span class="honorific">$1</span>');
     container.innerHTML = html;
-    container.className = `screen-root theme-${config.theme} state-${result.state.toLowerCase()}`;
+    // phase-*: lets a theme tell Jumu'ah sunnah and bayan apart (both JUMUAH).
+    const phase = result.meta && result.meta.phase ? ` phase-${result.meta.phase}` : '';
+    container.className = `screen-root theme-${config.theme} state-${result.state.toLowerCase()}${phase}`;
     if (result.state === 'NORMAL') { fitMasjidName(container, config); fitNextName(container); fitBannerSlides(container); fitHero(container); }
     if (result.state === 'JUMUAH' || result.state === 'KHUTBAH') fitQuiet(container);
   }
