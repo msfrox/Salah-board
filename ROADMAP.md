@@ -23,9 +23,9 @@ One line per item. Full cards are in `TASKS.md`. The original milestone specs (M
 
 | ID | What | Model | Status |
 |---|---|---|---|
-| SB-1 | Docs match the project; board password out of HANDOFF | Sonnet | ready |
-| SB-2 | `tools/sync-data.py`, manifest and checksums | Sonnet | ready |
-| SB-3 | Vendor `pt-core.js`; engine as an extension; engine tests | Sonnet | tests ready; swap after PT-3 |
+| SB-1 | Docs match the project; board password out of HANDOFF | Sonnet | done 2026-11-18 |
+| SB-2 | `tools/sync-data.py`, manifest and checksums | Sonnet | done 2026-11-18 |
+| SB-3 | Vendor `pt-core.js`; engine as an extension; engine tests | Sonnet | tests done 2026-11-18 (`node --test tests/*.test.mjs`); swap pending |
 | SB-4 | Caretaker PIN on the settings API | Opus | ready |
 | SB-5 | On-board timetable refresh and rollback | Opus | after PT-1 is live, SB-2, SB-4 |
 | SB-6 | Content review sheets (en, ta, si; duas) | Sonnet | after Sakina SK-1 |
