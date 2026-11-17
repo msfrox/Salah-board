@@ -52,6 +52,27 @@
     _fitCache.size = el.style.fontSize;
   }
 
+  // Shrink the next-prayer name until the label + name row fits its half of
+  // the hero, for themes that put them on one row (default, landscape:
+  // .np-head is a flex row). Elsewhere .np-head is display:contents — skip.
+  let _npFit = { key: null, size: '' };
+  function fitNextName(root) {
+    const head = root.querySelector('.np-head');
+    const el = head && head.querySelector('.np-name');
+    if (!el || getComputedStyle(head).display !== 'flex') return;
+    const key = `${el.textContent}|${head.clientWidth}|${root.querySelector('.screen').className}`;
+    if (_npFit.key === key) { if (_npFit.size) el.style.fontSize = _npFit.size; return; }
+    el.style.fontSize = '';                 // theme size first
+    const base = parseFloat(getComputedStyle(el).fontSize);
+    let size = base;
+    // Never below 50% of the theme size.
+    for (let i = 0; i < 30 && head.scrollWidth > head.clientWidth + 1 && size > base * 0.5; i++) {
+      size *= 0.95;
+      el.style.fontSize = size + 'px';
+    }
+    _npFit = { key, size: el.style.fontSize };
+  }
+
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -285,8 +306,10 @@
             <div class="clock-big">${clockStr}</div>
           </div>
           <div class="card hero-next">
-            <span class="np-label">${escapeHtml(label(content, 'nextPrayer'))}</span>
-            <span class="np-name">${escapeHtml(nextName)}</span>
+            <div class="np-head">
+              <span class="np-label">${escapeHtml(label(content, 'nextPrayer'))}</span>
+              <span class="np-name">${escapeHtml(nextName)}</span>
+            </div>
             <div class="np-times">
               <div class="np-time-col">
                 <span class="np-time-label">${escapeHtml(leftLabel)}</span>
@@ -486,7 +509,7 @@
     const fn = RENDERERS[result.state] || renderNormal;
     container.innerHTML = cornerClockHtml(config, result) + fn(config, result, contentByLang);
     container.className = `screen-root theme-${config.theme} state-${result.state.toLowerCase()}`;
-    if (result.state === 'NORMAL') fitMasjidName(container, config);
+    if (result.state === 'NORMAL') { fitMasjidName(container, config); fitNextName(container); }
   }
 
   function applyNightDim(overlayEl, active, brightnessPercent) {

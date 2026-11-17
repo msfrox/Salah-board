@@ -47,6 +47,12 @@ html[data-sb-hide~="cards"]      .screen--normal .card--etiquette { display: non
 }
 .jumuah-day-banner .jdb-sep { opacity: .6; }
 
+/* ── "Next prayer" head ──────────────────────────────────────────
+   Wraps the label + name. By default it's invisible to layout (its children
+   behave exactly as before); a theme opts in by styling .np-head itself —
+   :where() keeps this at zero specificity so any theme rule wins. */
+:where(.np-head) { display: contents; }
+
 /* ── Transient screens under the corner clock ───────────────────
    If a screen's content is ever taller than the room left (e.g. very
    large custom sizes), `safe center` lets it overflow at the BOTTOM

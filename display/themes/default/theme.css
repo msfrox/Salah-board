@@ -259,12 +259,14 @@ html, body {
 @media (orientation: landscape) {
   .hero-row {
     display: grid;
-    grid-template-columns: 1fr auto 1fr;
+    /* The name gets all the room up to the clock (minmax(0,1fr): never wider
+       than that — ui.js fitNextName shrinks it instead). Times and countdown
+       span the full width, so they stay centred on the screen. */
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      "label .     clock"
-      "name  .     clock"
-      "times times times"
-      ".     cd    .";
+      "head  clock"
+      "times times"
+      "cd    cd";
     align-content: center;
     justify-items: center;
     row-gap: .3rem;
@@ -273,20 +275,27 @@ html, body {
   }
   .hero-next { display: contents; }
   .hero-clock { grid-area: clock; justify-self: end; align-self: center; margin-bottom: .5rem; }
-  /* One line, left-aligned: longer names (e.g. Tamil) used to wrap
-     and centre onto two lines, pushing the big numbers down. */
-  .np-label { grid-area: label; justify-self: start; text-align: left; white-space: nowrap; }
-  .np-name { grid-area: name; justify-self: start; text-align: left; white-space: nowrap; }
+  /* "NEXT PRAYER" + name share ONE row, mirroring the clock: the label is a
+     small two-word caption beside a big name (board feedback: the stacked
+     label + small name left an empty gap next to the clock). The name never
+     wraps; ui.js fitNextName shrinks it if a long one would overflow. */
+  .np-head {
+    grid-area: head; justify-self: start; align-self: center; margin-bottom: .5rem;
+    display: flex; align-items: center; gap: .9rem;
+    min-width: 0; max-width: 100%; overflow: hidden;
+  }
+  .np-label { width: min-content; white-space: normal; line-height: 1.25; text-align: left; }
+  .np-name { white-space: nowrap; line-height: .9; text-align: left; }
   .np-times { grid-area: times; }
   .np-countdown { grid-area: cd; }
 
   /* Landscape sizes, tuned on a real 1366x768 board viewed across the hall
      (were the base sizes x clock 120%, name 190%, countdown 150%,
      timetable names 115%, times 120% in admin -> Advanced). The prayer
-     name is big enough to balance the clock opposite it. Portrait keeps
-     the base sizes above. */
+     name is about as tall as the clock opposite it (was 3.4rem on a second
+     line). Portrait keeps the base sizes above. */
   .clock-big { font-size: 7.2rem; }
-  .np-name { font-size: 3.4rem; }
+  .np-name { font-size: 5.6rem; }
   .np-countdown { font-size: 4.8rem; }
   .tt-label { font-size: 1.25rem; }
   .tt-time { font-size: 4.1rem; }
@@ -332,7 +341,7 @@ html, body {
       .screen--normal:has(.pinned-banner):has(.ramadan-block)) .clock-big { font-size: 5rem; }
   :is(.screen--normal:has(.jumuah-day-banner):has(.pinned-banner),
       .screen--normal:has(.jumuah-day-banner):has(.ramadan-block),
-      .screen--normal:has(.pinned-banner):has(.ramadan-block)) .np-name { font-size: 2.4rem; }
+      .screen--normal:has(.pinned-banner):has(.ramadan-block)) .np-name { font-size: 4rem; }
   :is(.screen--normal:has(.jumuah-day-banner):has(.pinned-banner),
       .screen--normal:has(.jumuah-day-banner):has(.ramadan-block),
       .screen--normal:has(.pinned-banner):has(.ramadan-block)) .np-countdown { font-size: 3.4rem; }
@@ -356,6 +365,7 @@ html, body {
 @media (max-height: 560px) and (orientation: landscape) {
   .np-time { font-size: max(5rem, min(11rem, calc(125cqh - 20.5rem), calc((100cqw - 4rem) / 6.4))); }
   .clock-big { font-size: 4.6rem; }
+  .np-name { font-size: 3.8rem; }
 }
 
 /* ── Portrait 9:16 — hero stacks vertically (clock above the split,
