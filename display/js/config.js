@@ -112,13 +112,18 @@
       ['jumuahBanner', 'pinnedBanner', 'ramadanBlock'].forEach(k => { if (s[k] === undefined) s[k] = s.banners; });
       delete s.banners;
     }
-    // Jumu'ah settings: the bayan used to be a TIME (before azan) → now on/off.
+    // Jumu'ah settings history (keep old saved configs working):
     // For a short while (Nov 2026) the khutbah START was stored instead of the
     // iqamah; iqamah is the fixed time again → iqamah = khutbah + length, so a
     // masjid's iqamah never moves on upgrade.
     const j = stored && stored.jumuah;
     if (j) {
-      if (typeof j.bayan === 'string' || j.bayan === null) j.bayan = !!j.bayan;
+      // The bayan is a fixed TIME again (it was on/off for a few days):
+      // on → the default 12:15 PM, off → null (no bayan). The sunnah screen
+      // now simply fills the time from the azan to the bayan.
+      if (j.bayan === true) j.bayan = '12:15 PM';
+      else if (j.bayan === false) j.bayan = null;
+      delete j.sunnahMinutes;
       if (typeof j.khutbah === 'string') {
         if (typeof j.iqamah !== 'string') {
           const len = Number(j.khutbahMinutes) > 0 ? Number(j.khutbahMinutes) : 7;
@@ -160,16 +165,14 @@
       },
 
       // Friday sequence: azan (that Friday's luhr time) → azan screen →
-      // sunnah reminder (sunnahMinutes) → bayan → khutbah (khutbahMinutes,
-      // ending at the fixed iqamah) → iqamah. So bayan starts at azan +
-      // screens.azan + sunnahMinutes, and the khutbah starts at iqamah −
-      // khutbahMinutes — neither is set separately.
+      // sunnah reminder until the fixed bayan time → bayan → khutbah
+      // (khutbahMinutes, ending at the fixed iqamah) → iqamah. The khutbah
+      // start is iqamah − khutbahMinutes; it isn't set separately.
       jumuah: {
         enabled: true,
-        bayan: true,             // show a bayan between the sunnah reminder and the khutbah
+        bayan: '12:15 PM',       // fixed bayan start time; null = no bayan
         iqamah: '1:00 PM',       // fixed set time
         khutbahMinutes: 7,       // khutbah length → khutbah starts at iqamah − this
-        sunnahMinutes: 5,        // "pray the sunnah" screen after the azan screen
         salahDuration: 15,
         // Who gives the bayan and on what — shown in the "Jumu'ah today"
         // banner and on the bayan screen, until Jumu'ah salah ends.

@@ -162,14 +162,19 @@
   }
 
   // Jumu'ah timings for one Friday. Azan is Zuhr's own azan time that day
-  // (no separate Jumu'ah azan clock). Then, per masjid practice:
-  //   azan screen → sunnah reminder (sunnahMinutes) → bayan → khutbah
-  //   (khutbahMinutes) → the fixed iqamah time.
-  // So bayan = azan + screens.azan + sunnahMinutes and khutbah = iqamah −
-  // khutbahMinutes; neither is set separately. Sanity: iqamah must be after
-  // the azan screen (else azan + 10 min, the regular-iqamah rule), the
-  // khutbah can't start before the azan screen ends, and the bayan never
-  // starts after the khutbah.
+  // (no separate Jumu'ah azan clock). The masjid fixes two times: the bayan
+  // start (`bayan`, null = no bayan) and the iqamah; the khutbah lasts
+  // khutbahMinutes and ends at the iqamah. Normally:
+  //   azan → azan screen → sunnah reminder until the bayan → bayan → khutbah
+  //   → iqamah.
+  // The azan moves through the year (zone 01: 11:56–12:26) while the bayan
+  // time is fixed, so on Fridays where the bayan time comes before the azan
+  // screen ends there's no sunnah screen: the bayan screen starts at its time
+  // (even before the azan), the azan screen interrupts it, and the bayan
+  // screen carries on until the khutbah. No bayan → the sunnah reminder runs
+  // until the khutbah. Sanity: iqamah must be after the azan screen (else
+  // azan + 10 min, the regular-iqamah rule) and the khutbah can't start
+  // before the azan screen ends.
   function jumuahPlan(dateObj, row, config) {
     const azan = row ? parseTime(row.luhr, dateObj) : null;
     if (!azan) return null;
@@ -179,29 +184,36 @@
     const len = Number(j.khutbahMinutes) > 0 ? Number(j.khutbahMinutes) : 7;
     let khutbah = addMinutes(iqamah, -len);
     if (khutbah < azanEnd) khutbah = azanEnd;
-    const sunnahEnd = addMinutes(azanEnd, Math.max(0, Number(j.sunnahMinutes) || 0));
-    const bayanStart = sunnahEnd < khutbah ? sunnahEnd : khutbah;
-    return { azan, azanEnd, bayanStart, khutbah, iqamah, bayan: j.bayan !== false };
+    let bayan = j.bayan ? parseTime(j.bayan, dateObj) : null;
+    if (bayan && bayan > khutbah) bayan = khutbah;        // bayan never starts after the khutbah
+    // When the sunnah screen hands over to the bayan (or the khutbah).
+    const sunnahEnd = bayan ? (bayan > azanEnd ? bayan : azanEnd) : khutbah;
+    return { azan, azanEnd, bayan, sunnahEnd, khutbah, iqamah };
   }
 
   function buildJumuahCycle(dateObj, row, config) {
     const plan = jumuahPlan(dateObj, row, config);
     if (!plan) return [];
-    const { azan, azanEnd, bayanStart, khutbah, iqamah } = plan;
+    const { azan, azanEnd, bayan, sunnahEnd, khutbah, iqamah } = plan;
     const iqamahWarnEnd = addMinutes(iqamah, config.screens.iqamahWarning);
     const salahEnd = addMinutes(iqamahWarnEnd, config.jumuah.salahDuration);
     const afterEnd = addMinutes(salahEnd, config.screens.after);
-    const jm = { jumuah: true, iqamahTime: iqamah, bayanStart, khutbah, bayan: plan.bayan };
-    const segs = [
+    // bayanStart: when the bayan screen next begins (for "Bayan in N min").
+    const jm = { jumuah: true, iqamahTime: iqamah, bayanStart: bayan ? sunnahEnd : null, khutbah, bayan: !!bayan };
+    const phase = p => Object.assign({ phase: p }, jm);
+    const segs = [];
+    if (bayan && bayan < azan) segs.push({ state: 'JUMUAH', start: bayan, end: azan, prayer: 'luhr', meta: phase('bayan') });
+    segs.push(
       { state: 'AZAN', start: azan, end: azanEnd, prayer: 'luhr', meta: jm },
-      { state: 'JUMUAH', start: azanEnd, end: bayanStart, prayer: 'luhr', meta: Object.assign({ phase: 'sunnah' }, jm) },
-      // Bayan off: same window, same quiet screen without the bayan title.
-      { state: 'JUMUAH', start: bayanStart, end: khutbah, prayer: 'luhr', meta: Object.assign({ phase: plan.bayan ? 'bayan' : 'wait' }, jm) },
+      { state: 'JUMUAH', start: azanEnd, end: sunnahEnd, prayer: 'luhr', meta: phase('sunnah') },
+    );
+    if (bayan) segs.push({ state: 'JUMUAH', start: sunnahEnd, end: khutbah, prayer: 'luhr', meta: phase('bayan') });
+    segs.push(
       { state: 'KHUTBAH', start: khutbah, end: iqamah, prayer: 'luhr', meta: jm },
       { state: 'IQAMAH', start: iqamah, end: iqamahWarnEnd, prayer: 'luhr', meta: jm },
       { state: 'SALAH', start: iqamahWarnEnd, end: salahEnd, prayer: 'luhr', meta: jm },
       { state: 'AFTER', start: salahEnd, end: afterEnd, prayer: 'luhr', meta: jm },
-    ];
+    );
     return segs.filter(s => s.end > s.start);
   }
 

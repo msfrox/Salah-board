@@ -111,9 +111,10 @@
     else if (key === 'JUMUAH' || key === 'KHUTBAH') {
       // Show this Friday's real times when we have them, else plausible ones.
       const p = result.jumuahPlan || E.jumuahPlan(result.dates.today, result.rows && result.rows.today, config) || {};
-      meta = { jumuah: true, phase: sunnahPreview ? 'sunnah' : 'bayan',
-        bayanStart: p.bayanStart || E.addMinutes(now, 4), khutbah: p.khutbah || E.addMinutes(now, 30),
-        iqamahTime: p.iqamah || E.addMinutes(now, 37) };
+      const hasBayan = !!(config && config.jumuah && config.jumuah.bayan);
+      meta = { jumuah: true, phase: sunnahPreview ? 'sunnah' : 'bayan', bayan: hasBayan,
+        bayanStart: hasBayan ? (p.sunnahEnd || E.addMinutes(now, 4)) : null,
+        khutbah: p.khutbah || E.addMinutes(now, 30), iqamahTime: p.iqamah || E.addMinutes(now, 37) };
     }
     // Previewing the bayan / Jumu'ah screens on any weekday should still show
     // the configured speaker & topic, so the caretaker can check them.

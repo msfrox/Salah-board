@@ -322,6 +322,8 @@
     refreshPrimaryLangOptions(langs);
 
     // Jumu'ah bayan enabled toggle
+    $('#bayan-enabled').checked = !!config.jumuah.bayan;
+    if (!config.jumuah.bayan) $('#bayan-time').value = '12:15';   // ready if they switch it on
     $('#bayan-details').classList.toggle('hidden', !$('#bayan-enabled').checked);
     updateJumuahSummary();
     $('#bayan-date').value = config.jumuah.bayanDate || '';
@@ -400,7 +402,8 @@
       ? [primary, ...enabled.filter(l => l !== primary)]
       : ['en'];
 
-    config.jumuah.bayan = !!config.jumuah.bayan;
+    // Bayan: its fixed start time, or null when switched off.
+    config.jumuah.bayan = $('#bayan-enabled').checked ? (inputValueToAmpm($('#bayan-time').value) || null) : null;
     config.jumuah.bayanSpeaker = String(config.jumuah.bayanSpeaker || '').trim();
     config.jumuah.bayanTopic = String(config.jumuah.bayanTopic || '').trim();
     config.jumuah.bayanDate = $('#bayan-date').value || null;
@@ -482,7 +485,7 @@
     if (config.jumuah.enabled) {
       if (!config.jumuah.iqamah) errors.push("Jumu'ah iqamah time is required when Jumu'ah mode is enabled.");
       if (!(Number(config.jumuah.khutbahMinutes) > 0)) errors.push("Khutbah length must be more than 0 minutes.");
-      if (!(Number(config.jumuah.sunnahMinutes) >= 0)) errors.push("Sunnah reminder must be 0 minutes or more.");
+      if ($('#bayan-enabled').checked && !config.jumuah.bayan) errors.push("Bayan start time is required when the bayan is switched on.");
       if (!(Number(config.jumuah.salahDuration) > 0)) errors.push("Jumu'ah salah duration must be more than 0.");
     }
     if (config.jumuah.bayanDate) {
@@ -550,7 +553,10 @@
     const [h, m] = v.split(':').map(Number);
     const t = ((h * 60 + m - len) % 1440 + 1440) % 1440;
     const fmt = (H, M) => `${H % 12 === 0 ? 12 : H % 12}:${String(M).padStart(2, '0')} ${H < 12 ? 'AM' : 'PM'}`;
-    el.textContent = `Khutbah starts: ${fmt(Math.floor(t / 60), t % 60)} (iqamah ${fmt(h, m)} − ${len} min). The bayan starts after the azan screen and the sunnah reminder, and runs until the khutbah.`;
+    const bayanOn = $('#bayan-enabled').checked && $('#bayan-time').value;
+    el.textContent = `Khutbah starts: ${fmt(Math.floor(t / 60), t % 60)} (iqamah ${fmt(h, m)} − ${len} min). ` + (bayanOn
+      ? 'After the azan the sunnah reminder shows until the bayan. On Fridays when the azan is later than the bayan time, the bayan screen starts at its time and the azan interrupts it.'
+      : 'After the azan the sunnah reminder shows until the khutbah.');
   }
   // Today if it's Friday and Jumu'ah isn't over yet, otherwise next Friday.
   function comingFriday(config, now = new Date()) {
@@ -642,7 +648,7 @@
       if (e.target.id === 'bayan-enabled') {
         $('#bayan-details').classList.toggle('hidden', !e.target.checked);
       }
-      if (e.target.id === 'jumuah-iqamah-time' || e.target.id === 'khutbah-minutes') updateJumuahSummary();
+      if (['jumuah-iqamah-time', 'khutbah-minutes', 'bayan-time', 'bayan-enabled'].includes(e.target.id)) updateJumuahSummary();
       if (e.target.classList.contains('ramadan-override-enabled')) {
         e.target.closest('.subcard').querySelector('.ramadan-override-body').classList.toggle('hidden', !e.target.checked);
       }
@@ -658,7 +664,7 @@
     document.addEventListener('input', e => { if (e.target.classList.contains('layout-range')) refreshLayoutValues(); });
     document.addEventListener('input', e => {
       if (e.target.matches('[data-path="jumuah.bayanSpeaker"], [data-path="jumuah.bayanTopic"], #bayan-date')) updateBayanDateNote();
-      if (e.target.id === 'jumuah-iqamah-time' || e.target.id === 'khutbah-minutes') updateJumuahSummary();
+      if (['jumuah-iqamah-time', 'khutbah-minutes', 'bayan-time', 'bayan-enabled'].includes(e.target.id)) updateJumuahSummary();
     });
     $('#layout-groups').addEventListener('click', e => {
       const groupReset = e.target.closest('.layout-group-reset');

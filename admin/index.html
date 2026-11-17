@@ -164,16 +164,16 @@
           <input type="checkbox" data-path="jumuah.enabled">
           <span>Enable Jumu'ah mode on Fridays</span>
         </label>
-        <p class="hint">Order on Fridays: azan → sunnah prayer reminder → bayan → khutbah → iqamah. The azan is always that Friday's Zuhr azan time from the timetable.</p>
-        <label class="field">
-          <span>Sunnah prayer reminder after the azan (minutes)</span>
-          <input type="number" min="0" step="1" data-path="jumuah.sunnahMinutes" data-number>
-        </label>
+        <p class="hint">Order on Fridays: azan → sunnah prayer reminder → bayan → khutbah → iqamah. The azan is always that Friday's Zuhr azan time from the timetable; the sunnah reminder fills the time from the azan to the bayan.</p>
         <label class="field checkbox-field">
-          <input type="checkbox" id="bayan-enabled" data-path="jumuah.bayan">
-          <span>Show a bayan (from after the sunnah reminder until the khutbah)</span>
+          <input type="checkbox" id="bayan-enabled">
+          <span>Show a bayan</span>
         </label>
         <div id="bayan-details">
+          <label class="field">
+            <span>Bayan starts at (fixed)</span>
+            <input type="time" id="bayan-time" data-path="jumuah.bayan" data-time="ampm">
+          </label>
           <label class="field">
             <span>Bayan by (speaker's name — optional)</span>
             <input type="text" data-path="jumuah.bayanSpeaker" placeholder="e.g. Moulavi Ahmed Rizwan">

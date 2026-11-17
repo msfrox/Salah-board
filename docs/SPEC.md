@@ -64,13 +64,17 @@ Rules:
 Timeline driven by `config.jumuah`. Jumu'ah azan is **not** separately
 configured — it's that Friday's own `luhr` azan time from the zone data
 (masjids don't ring a distinct Jumu'ah clock). The masjid sets a fixed
-`iqamah` time and the khutbah length (`khutbahMinutes`, default 7);
-everything else follows: azan → azan screen → sunnah reminder
-(`sunnahMinutes`, default 5) → bayan → khutbah (starts at iqamah − length)
-→ iqamah.
+`bayan` start time (default 12:15 PM; null = no bayan), a fixed `iqamah`
+time and the khutbah length (`khutbahMinutes`, default 7): azan → azan
+screen → sunnah reminder until the bayan → bayan → khutbah (starts at
+iqamah − length) → iqamah. The azan moves through the year (zone 01:
+11:56–12:26) while the bayan time is fixed; on Fridays where the bayan
+time comes before the azan screen ends, there is no sunnah screen — the
+bayan screen starts at its time, the azan screen interrupts it, and the
+bayan screen carries on until the khutbah.
 
-1. From morning, NORMAL shows "Jumu'ah today · Azan · Bayan" (bayan = the
-   time the bayan starts) and rotating Jumu'ah etiquette cards (ghusl,
+1. From morning, NORMAL shows "Jumu'ah today · Azan · Bayan" (in time
+   order) and rotating Jumu'ah etiquette cards (ghusl,
    Surah al-Kahf, salawat, silence during khutbah). Once Luha has begun the
    big numbers already show the Jumu'ah azan, so the banner shows what
    comes next instead: "Jumu'ah today · Bayan · Khutbah". Banner and cards
@@ -83,14 +87,13 @@ everything else follows: azan → azan screen → sunnah reminder
    themselves after that Jumu'ah, so a previous week's speaker is never
    shown by mistake.
 2. Azan (today's `luhr` time) → AZAN state as usual.
-3. Azan screen ends → JUMUAH (phase `sunnah`) for `sunnahMinutes`: "Sunnah
+3. Azan screen ends → JUMUAH (phase `sunnah`) until the bayan: "Sunnah
    prayer" with the sourced reminder (Bukhari 627) and the bayan time +
-   minutes until it.
+   minutes until it (no bayan: until the khutbah, showing its time).
 4. → JUMUAH (phase `bayan`) until the khutbah: "Bayan in progress", speaker
    and topic, one dim line "Khutbah · Iqamah" times and "Khutbah in N min".
    Deliberately calm: no rotating cards, minutes not seconds, and the corner
-   clock drops its seconds. With `bayan: false` the same window shows the
-   quiet screen without the bayan title (phase `wait`).
+   clock drops its seconds.
 5. Khutbah start (iqamah − `khutbahMinutes`) → KHUTBAH state: ONLY "Khutbah in progress — remain silent"
    (talking during khutbah forfeits the reward — Bukhari 934) and the
    corner clock without seconds. No countdowns, no rotation.

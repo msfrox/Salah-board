@@ -387,10 +387,14 @@
       const luhaStart = sunrise ? E.addMinutes(sunrise, Math.max(0, Number(config.luha && config.luha.waitAfterSunrise) || 0)) : null;
       const afterLuha = luhaStart && result.now >= luhaStart;
       const azanDate = todayRow ? E.parseTime(todayRow.luhr, result.dates.today) : null;
-      const bayanPart = plan && plan.bayan ? part('bayan', plan.bayanStart) : '';
+      const bayanPart = plan && plan.bayan ? part('bayan', plan.bayan) : '';
+      // Morning: azan and bayan in time order (in some months the fixed
+      // bayan time comes before the azan).
       const parts = afterLuha
         ? bayanPart + part('khutbah', plan && plan.khutbah)
-        : part('azan', azanDate) + bayanPart;
+        : (plan && plan.bayan && azanDate && plan.bayan < azanDate
+          ? bayanPart + part('azan', azanDate)
+          : part('azan', azanDate) + bayanPart);
       const mainLine = `<span class="jdb-main">${escapeHtml(label(content, 'jumuahToday'))}${parts}</span>`;
       jumuahBanner = result.bayanInfo
         ? jumuahCarouselHtml([mainLine, bayanInfoLine(result.bayanInfo)], result.now)
