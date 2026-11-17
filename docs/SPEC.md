@@ -64,10 +64,10 @@ Rules:
 Timeline driven by `config.jumuah`. Jumu'ah azan is **not** separately
 configured — it's that Friday's own `luhr` azan time from the zone data
 (masjids don't ring a distinct Jumu'ah clock). The masjid sets a fixed
-`khutbah` start time and the khutbah length (`khutbahMinutes`, default 7);
+`iqamah` time and the khutbah length (`khutbahMinutes`, default 7);
 everything else follows: azan → azan screen → sunnah reminder
-(`sunnahMinutes`, default 5) → bayan until the khutbah → khutbah → iqamah
-(= khutbah + length).
+(`sunnahMinutes`, default 5) → bayan → khutbah (starts at iqamah − length)
+→ iqamah.
 
 1. From morning, NORMAL shows "Jumu'ah today · Azan · Bayan" (bayan = the
    time the bayan starts) and rotating Jumu'ah etiquette cards (ghusl,
@@ -91,12 +91,13 @@ everything else follows: azan → azan screen → sunnah reminder
    Deliberately calm: no rotating cards, minutes not seconds, and the corner
    clock drops its seconds. With `bayan: false` the same window shows the
    quiet screen without the bayan title (phase `wait`).
-5. `khutbah` → KHUTBAH state: ONLY "Khutbah in progress — remain silent"
+5. Khutbah start (iqamah − `khutbahMinutes`) → KHUTBAH state: ONLY "Khutbah in progress — remain silent"
    (talking during khutbah forfeits the reward — Bukhari 934) and the
    corner clock without seconds. No countdowns, no rotation.
-6. Iqamah (`khutbah` + `khutbahMinutes`) → IQAMAH → SALAH → AFTER as normal.
-   Sanity: the khutbah can't start before the azan screen ends (it's moved
-   to that moment), and the bayan never starts after the khutbah.
+6. `iqamah` → IQAMAH → SALAH → AFTER as normal. Sanity: if `iqamah` ≤
+   azan + `screens.azan`, fall back to azan + 10 min (same rule as regular
+   iqamah); the khutbah can't start before the azan screen ends, and the
+   bayan never starts after the khutbah.
 7. Women's/second Jumu'ah variations are out of scope for v1.
 
 ## Ramadan mode (`config.ramadan.enabled`)

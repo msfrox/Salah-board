@@ -163,22 +163,24 @@
 
   // Jumu'ah timings for one Friday. Azan is Zuhr's own azan time that day
   // (no separate Jumu'ah azan clock). Then, per masjid practice:
-  //   azan screen → sunnah reminder (sunnahMinutes) → bayan until the fixed
-  //   khutbah time → khutbah (khutbahMinutes) → iqamah.
-  // So bayan = azan + screens.azan + sunnahMinutes and iqamah = khutbah +
-  // khutbahMinutes; neither is set separately. Sanity: the khutbah can't
-  // start before the azan screen ends, and the bayan never starts after it.
+  //   azan screen → sunnah reminder (sunnahMinutes) → bayan → khutbah
+  //   (khutbahMinutes) → the fixed iqamah time.
+  // So bayan = azan + screens.azan + sunnahMinutes and khutbah = iqamah −
+  // khutbahMinutes; neither is set separately. Sanity: iqamah must be after
+  // the azan screen (else azan + 10 min, the regular-iqamah rule), the
+  // khutbah can't start before the azan screen ends, and the bayan never
+  // starts after the khutbah.
   function jumuahPlan(dateObj, row, config) {
     const azan = row ? parseTime(row.luhr, dateObj) : null;
     if (!azan) return null;
     const j = config.jumuah || {};
     const azanEnd = addMinutes(azan, config.screens.azan);
-    let khutbah = parseTime(j.khutbah, dateObj);
-    if (!khutbah || khutbah < azanEnd) khutbah = azanEnd;
+    const iqamah = computeIqamah(azanEnd, { mode: 'fixed', time: j.iqamah });
+    const len = Number(j.khutbahMinutes) > 0 ? Number(j.khutbahMinutes) : 7;
+    let khutbah = addMinutes(iqamah, -len);
+    if (khutbah < azanEnd) khutbah = azanEnd;
     const sunnahEnd = addMinutes(azanEnd, Math.max(0, Number(j.sunnahMinutes) || 0));
     const bayanStart = sunnahEnd < khutbah ? sunnahEnd : khutbah;
-    const len = Number(j.khutbahMinutes) > 0 ? Number(j.khutbahMinutes) : 7;
-    const iqamah = addMinutes(khutbah, len);
     return { azan, azanEnd, bayanStart, khutbah, iqamah, bayan: j.bayan !== false };
   }
 

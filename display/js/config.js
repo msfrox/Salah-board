@@ -112,18 +112,21 @@
       ['jumuahBanner', 'pinnedBanner', 'ramadanBlock'].forEach(k => { if (s[k] === undefined) s[k] = s.banners; });
       delete s.banners;
     }
-    // Jumu'ah used to have a fixed bayan TIME (before azan) and a fixed iqamah
-    // TIME. Now: bayan on/off, and a khutbah start time + length. Keep the
-    // masjid's iqamah exactly where it was: khutbah = old iqamah − length.
+    // Jumu'ah settings: the bayan used to be a TIME (before azan) → now on/off.
+    // For a short while (Nov 2026) the khutbah START was stored instead of the
+    // iqamah; iqamah is the fixed time again → iqamah = khutbah + length, so a
+    // masjid's iqamah never moves on upgrade.
     const j = stored && stored.jumuah;
     if (j) {
       if (typeof j.bayan === 'string' || j.bayan === null) j.bayan = !!j.bayan;
-      if (j.khutbah === undefined && typeof j.iqamah === 'string') {
-        const len = Number(j.khutbahMinutes) > 0 ? Number(j.khutbahMinutes) : 7;
-        const k = shiftAmpm(j.iqamah, -len);
-        if (k) { j.khutbah = k; j.khutbahMinutes = len; }
+      if (typeof j.khutbah === 'string') {
+        if (typeof j.iqamah !== 'string') {
+          const len = Number(j.khutbahMinutes) > 0 ? Number(j.khutbahMinutes) : 7;
+          const iq = shiftAmpm(j.khutbah, len);
+          if (iq) { j.iqamah = iq; j.khutbahMinutes = len; }
+        }
+        delete j.khutbah;
       }
-      delete j.iqamah;
     }
     return stored;
   }
@@ -157,15 +160,15 @@
       },
 
       // Friday sequence: azan (that Friday's luhr time) → azan screen →
-      // sunnah reminder (sunnahMinutes) → bayan until `khutbah` → khutbah
-      // (khutbahMinutes) → iqamah. So bayan starts at azan + screens.azan +
-      // sunnahMinutes, and iqamah = khutbah + khutbahMinutes — neither is
-      // set separately.
+      // sunnah reminder (sunnahMinutes) → bayan → khutbah (khutbahMinutes,
+      // ending at the fixed iqamah) → iqamah. So bayan starts at azan +
+      // screens.azan + sunnahMinutes, and the khutbah starts at iqamah −
+      // khutbahMinutes — neither is set separately.
       jumuah: {
         enabled: true,
         bayan: true,             // show a bayan between the sunnah reminder and the khutbah
-        khutbah: '12:45 PM',     // fixed set time the khutbah starts
-        khutbahMinutes: 7,       // khutbah length → iqamah = khutbah + this
+        iqamah: '1:00 PM',       // fixed set time
+        khutbahMinutes: 7,       // khutbah length → khutbah starts at iqamah − this
         sunnahMinutes: 5,        // "pray the sunnah" screen after the azan screen
         salahDuration: 15,
         // Who gives the bayan and on what — shown in the "Jumu'ah today"
