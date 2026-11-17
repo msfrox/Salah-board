@@ -247,19 +247,22 @@ html, body {
 .khutbah-line { font-size: 5rem; font-weight: 800; color: var(--sb-danger); }
 
 /* ── Landscape hero layout ─────────────────────────────────────
-   The clock sits in the right-hand column, level with "NEXT PRAYER /
-   name", instead of taking a row of its own (that cost ~6rem of height
+   "NEXT PRAYER / name" sits in the left-hand column (left-aligned, under
+   the masjid name) and the clock in the right-hand column, so the two
+   mirror each other across the top of the hero (board feedback: the
+   centred label looked lopsided next to the right-aligned clock). The
+   clock shares those rows instead of taking a row of its own (that cost ~6rem of height
    and made banners push the countdown into the timetable). Being a grid
    column — not position:absolute — it still can never overlap the
-   centred text, however large the caretaker makes it.
+   label, however large the caretaker makes it.
    hero-next uses display:contents so its children join the grid. */
 @media (orientation: landscape) {
   .hero-row {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
     grid-template-areas:
-      ".     label clock"
-      ".     name  clock"
+      "label .     clock"
+      "name  .     clock"
       "times times times"
       ".     cd    .";
     align-content: center;
@@ -270,8 +273,8 @@ html, body {
   }
   .hero-next { display: contents; }
   .hero-clock { grid-area: clock; justify-self: end; align-self: center; margin-bottom: .5rem; }
-  .np-label { grid-area: label; }
-  .np-name { grid-area: name; }
+  .np-label { grid-area: label; justify-self: start; }
+  .np-name { grid-area: name; justify-self: start; }
   .np-times { grid-area: times; }
   .np-countdown { grid-area: cd; }
   /* The big azan/iqamah numbers keep their full 13rem whenever there is
