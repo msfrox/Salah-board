@@ -90,6 +90,81 @@
     });
   }
 
+  // Size the big azan/iqamah numbers to the room the hero ACTUALLY has
+  // (default theme, landscape grid). The CSS formula guesses the height the
+  // rest of the hero takes; any change to it (admin size sliders, a taller
+  // banner, another screen) made the guess wrong — numbers smaller than
+  // needed with a gap above the timetable, or overlap. This measures and
+  // fills the space exactly, within the same limits as the CSS: at most
+  // 13rem, at most the width cap, at least 5rem. The CSS stays as fallback.
+  let _heroFit = { key: null, size: '', compact: false };
+  // Prayer times must stay clearly the biggest text: if they'd come out less
+  // than this many times the clock's height, the clock, name and countdown
+  // step back to compact sizes (theme.css .hero-compact) and we fit again.
+  const HERO_MIN_RATIO = 1.4;
+  function fitHero(root) {
+    const row = root.querySelector('.hero-row');
+    if (!row || getComputedStyle(row).display !== 'grid') return;
+    const times = Array.from(row.querySelectorAll('.np-time'));
+    const screen = root.querySelector('.screen');
+    if (!times.length || !screen) return;
+    const key = [row.clientWidth, row.clientHeight, screen.className,
+      document.documentElement.style.cssText, times.map(t => t.textContent).join('|'),
+      (row.querySelector('.np-name') || {}).textContent].join('/');
+    const apply = v => times.forEach(t => { t.style.fontSize = v; });
+    if (_heroFit.key === key) {
+      screen.classList.toggle('hero-compact', _heroFit.compact);
+      apply(_heroFit.size);
+      return;
+    }
+
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const maxF = Math.min(13 * rem, (row.clientWidth - 4 * rem) / 6.4);
+    const minF = 5 * rem;
+    const items = Array.from(row.querySelectorAll('.np-head, .hero-clock, .np-times, .np-countdown'));
+    const used = () => {
+      let top = Infinity, bottom = -Infinity;
+      items.forEach(el => { const r = el.getBoundingClientRect(); if (r.height) { top = Math.min(top, r.top); bottom = Math.max(bottom, r.bottom); } });
+      return bottom - top;
+    };
+    const fit = () => {
+      const target = row.clientHeight - 0.3 * rem;        // small safety margin
+      let f = maxF;
+      apply(f + 'px');
+      let h = used();
+      if (h > target) {
+        // Height grows linearly with the font size: measure the slope once,
+        // jump straight to the size that fits, then nudge down if needed.
+        const f2 = Math.max(minF, f * 0.8);
+        apply(f2 + 'px');
+        const h2 = used();
+        const slope = (h - h2) / (f - f2) || 0.8;
+        f = Math.max(minF, Math.min(maxF, f2 - (h2 - target) / slope));
+        apply(f + 'px');
+        for (let i = 0; i < 6 && used() > target && f > minF; i++) {
+          f = Math.max(minF, f * 0.97);
+          apply(f + 'px');
+        }
+      }
+      return f;
+    };
+    const ratio = () => {
+      const c = row.querySelector('.clock-big');
+      const ch = c ? c.getBoundingClientRect().height : 0;
+      return ch ? times[0].getBoundingClientRect().height / ch : Infinity;
+    };
+    screen.classList.remove('hero-compact');
+    let f = fit();
+    let compact = false;
+    if (ratio() < HERO_MIN_RATIO) {
+      screen.classList.add('hero-compact');
+      const fc = fit();
+      if (fc > f) { f = fc; compact = true; }
+      else { screen.classList.remove('hero-compact'); apply(f + 'px'); }
+    }
+    _heroFit = { key, size: f + 'px', compact };
+  }
+
   // All fits above cache their result. If a web font (e.g. Tamil) finishes
   // loading after the first fit, the text was measured in a narrower fallback
   // font and would stay clipped — so forget the cached fits whenever fonts
@@ -99,6 +174,7 @@
       _fitCache = { name: null, avail: 0, factor: 1 };
       _npFit = { key: null, size: '' };
       _slideFit = {};
+      _heroFit = { key: null, size: '', compact: false };
     });
   }
 
@@ -277,9 +353,9 @@
     const lang = langs(config)[0];
     const clockStr = E.formatClock(result.now, config);
     // Small AM/PM after the main clock (12-hour only): "4:06" alone could be
-    // morning or afternoon. Latin AM/PM in every language, like the digits.
-    const ampm = config.clock && config.clock.format === '24h' ? ''
-      : `<span class="clock-ampm">${result.now.getHours() < 12 ? 'AM' : 'PM'}</span>`;
+    // morning or afternoon.
+    const period = ampmOf(config, result.now);
+    const ampm = period ? `<span class="clock-ampm">${period}</span>` : '';
     const next = result.nextAzan;
     let azanTime = next ? E.formatTime(next.time, config) : '--:--';
     let iqamahTime = next && next.iqamahTime ? E.formatTime(next.iqamahTime, config) : '--:--';
@@ -519,9 +595,20 @@
   const CORNER_CLOCK_STATES = ['AZAN', 'BETWEEN', 'IQAMAH', 'AFTER',
     'LUHA_WAIT', 'LUHA_OPEN', 'JUMUAH', 'KHUTBAH'];
 
+  // "AM"/"PM" for 12-hour clocks, '' for 24-hour. Latin in every language,
+  // like the digits.
+  function ampmOf(config, now) {
+    if (config.clock && config.clock.format === '24h') return '';
+    return now.getHours() < 12 ? 'AM' : 'PM';
+  }
+
   function cornerClockHtml(config, result) {
     if (!CORNER_CLOCK_STATES.includes(result.state)) return '';
-    return `<div class="corner-clock">${escapeHtml(global.SBEngine.formatClock(result.now, config))}</div>`;
+    // AM/PM at the clock's own size here (board feedback) — the corner clock
+    // is small already, so a reduced suffix would be hard to read.
+    const period = ampmOf(config, result.now);
+    return `<div class="corner-clock">${escapeHtml(global.SBEngine.formatClock(result.now, config))}` +
+      (period ? `<span class="corner-ampm">${period}</span>` : '') + `</div>`;
   }
 
   const RENDERERS = {
@@ -550,7 +637,7 @@
       .replace(/[ \u00A0]?([\uFDF0-\uFDFF])/g, '&nbsp;<span class="honorific">$1</span>');
     container.innerHTML = html;
     container.className = `screen-root theme-${config.theme} state-${result.state.toLowerCase()}`;
-    if (result.state === 'NORMAL') { fitMasjidName(container, config); fitNextName(container); fitBannerSlides(container); }
+    if (result.state === 'NORMAL') { fitMasjidName(container, config); fitNextName(container); fitBannerSlides(container); fitHero(container); }
   }
 
   function applyNightDim(overlayEl, active, brightnessPercent) {

@@ -339,7 +339,13 @@ html, body {
      their 5rem floor, below the clock, and still overflowed). The prayer
      times must stay the largest text, so the secondary items step back
      towards their base sizes instead. ~15.5rem = the smaller rest-of-hero. */
-  /* (Plain selectors, not CSS nesting — old Android box WebViews lack it.) */
+  /* (Plain selectors, not CSS nesting — old Android box WebViews lack it.)
+     .hero-compact: the same step-back, switched on by ui.js fitHero whenever
+     the measured fit would leave the prayer times not clearly bigger than
+     the clock (e.g. one tall banner, or enlarged admin sizes). */
+  .screen--normal.hero-compact .clock-big { font-size: 5rem; }
+  .screen--normal.hero-compact .np-name { font-size: 4rem; }
+  .screen--normal.hero-compact .np-countdown { font-size: 3.4rem; }
   :is(.screen--normal:has(.jumuah-day-banner):has(.pinned-banner),
       .screen--normal:has(.jumuah-day-banner):has(.ramadan-block),
       .screen--normal:has(.pinned-banner):has(.ramadan-block)) .clock-big { font-size: 5rem; }
