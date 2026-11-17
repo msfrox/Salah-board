@@ -84,8 +84,14 @@
     return showSec ? `${h}:${m}:${s}` : `${h}:${m}`;
   }
 
+  // Remaining time rounds UP to the whole second. The clock shows the current
+  // whole second (rounded down), so rounding the countdown down as well left
+  // them one second apart: clock 4:06:01 + countdown 1:44:58 = 5:50:59, not
+  // the 5:51:00 azan. Rounding up keeps clock + countdown == target exactly,
+  // and the countdown reads 00:01 (never a stale 00:00) in its last second.
   function fmtCountdown(ms) {
     if (ms < 0) ms = 0;
+    ms = Math.ceil(ms / 1000) * 1000;
     const h = Math.floor(ms / 3600000);
     const m = Math.floor((ms % 3600000) / 60000);
     const s = Math.floor((ms % 60000) / 1000);
