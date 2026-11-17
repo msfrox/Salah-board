@@ -73,23 +73,52 @@ html, body {
   background: #000;
 }
 
+/* ── Page colour + glow ───────────────────────────────────────────────
+   Each screen's colour = its own headline/accent text colour, so the
+   pattern and the glow belong to the page (gold on iqamah/khutbah, amber
+   on azan, green on countdowns/bayan, light gold on sunnah, dim on the
+   near-dark ones). Admin → Advanced can override it per screen
+   (--sb-pat-c-<screen>). The glow is the khutbah screen's look — a soft
+   radial glow of that colour behind the content — on every screen, with
+   its own strength per screen (--sb-glow-a-<screen>; 0 = off). */
+#screen-root { --page-c: var(--sb-fg-dim); --glow-a: 0; --glow-pos: 50% 50%; }
+#screen-root.state-normal    { --page-c: var(--sb-pat-c-normal, var(--sb-accent));   --glow-a: var(--sb-glow-a-normal, .045); --glow-pos: 50% 46%; }
+#screen-root.state-azan      { --page-c: var(--sb-pat-c-azan, var(--sb-warn));       --glow-a: var(--sb-glow-a-azan, .11);    --glow-pos: 50% 30%; }
+#screen-root.state-between   { --page-c: var(--sb-pat-c-between, var(--sb-accent));  --glow-a: var(--sb-glow-a-between, .14); --glow-pos: 50% 30%; }
+#screen-root.state-iqamah    { --page-c: var(--sb-pat-c-iqamah, var(--sb-danger));   --glow-a: var(--sb-glow-a-iqamah, .16); }
+#screen-root.state-salah     { --page-c: var(--sb-pat-c-salah, #3a3a3a);             --glow-a: var(--sb-glow-a-salah, 0); }
+#screen-root.state-after     { --page-c: var(--sb-pat-c-after, var(--sb-accent));    --glow-a: var(--sb-glow-a-after, .11); }
+#screen-root.state-luha_wait { --page-c: var(--sb-pat-c-luha, var(--sb-accent));     --glow-a: var(--sb-glow-a-luha, .14); }
+#screen-root.state-luha_open { --page-c: var(--sb-pat-c-luhaOpen, var(--sb-accent)); --glow-a: var(--sb-glow-a-luhaOpen, .16); }
+#screen-root.state-night     { --page-c: var(--sb-pat-c-night, var(--sb-fg-dimmer)); --glow-a: var(--sb-glow-a-night, 0); }
+#screen-root.state-jumuah    { --page-c: var(--sb-pat-c-jumuah, var(--sb-accent));   --glow-a: var(--sb-glow-a-jumuah, .11); --glow-pos: 50% 42%; }
+#screen-root.state-jumuah.phase-sunnah { --page-c: var(--sb-pat-c-jumuah, var(--sb-gold-2)); }
+#screen-root.state-khutbah   { --page-c: var(--sb-pat-c-khutbah, var(--sb-danger));  --glow-a: var(--sb-glow-a-khutbah, .18); }
+#screen-root::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse 62% 58% at var(--glow-pos), var(--page-c) 0%, rgba(0, 0, 0, 0) 100%);
+  opacity: var(--glow-a);
+}
+
 /* ── Background pattern: the masjid's rosette ─────────────────────────
    One motif, composed differently on each screen to suit what it's for.
-   The PNG (white on transparent) is a STENCIL filled with the board's
-   pattern colour, so it can take any hue. Admin → Advanced: colour once for
-   the board; visibility + size per screen (main.js sets --sb-pat-hue/-sat,
-   --sb-pat-a-<screen>, --sb-pat-s-<screen>). Designed for LANDSCAPE, the
-   way boards are mounted; sizes are in vmin so portrait stays sensible.
-   Strength defaults (config.js PATTERN_DEFAULTS): clear on the main and
-   information screens, faint on the calm Jumu'ah ones, barely there on
-   salah and night. */
+   The PNG (white on transparent) is a STENCIL filled with the screen's
+   colour (--page-c, above), so it always matches the page. Admin →
+   Advanced, per screen: visibility, size, glow, optional custom colour
+   (main.js sets --sb-pat-a-/-s-/-c-<screen>, --sb-glow-a-<screen>).
+   Designed for LANDSCAPE, the way boards are mounted; sizes are in vmin
+   so portrait stays sensible. */
 #screen-root::before {
   content: '';
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-color: hsl(var(--sb-pat-hue, 40), var(--sb-pat-sat, 55%), 62%);
+  background-color: var(--page-c);
   -webkit-mask-image: none;
           mask-image: none;
   opacity: var(--pat-a, 0);
@@ -367,7 +396,6 @@ html, body {
 /* ── IQAMAH — "straighten the rows", gold, never red ─────────── */
 .screen--iqamah {
   justify-content: center; align-items: center; text-align: center; gap: 2rem;
-  background: radial-gradient(ellipse at center, rgba(25, 20, 8, .9) 0%, rgba(0, 0, 0, 0) 74%); /* fades to transparent so the pattern shows */
 }
 .iqamah-title { font-size: 7rem; font-weight: 800; color: var(--sb-danger); margin: 0; letter-spacing: .02em; }
 .iqamah-lines { list-style: none; padding: 0; margin: 0; font-size: 2rem; font-weight: 600; color: #c9ced6; display: flex; flex-direction: column; gap: .8rem; }
@@ -416,9 +444,6 @@ html, body {
   border: 1px solid var(--sb-border); border-radius: 999px; padding: .55rem 1.6rem .55rem 1.2rem;
 }
 .jm-quiet--stack { border-radius: 1.4rem; padding: .7rem 2rem .7rem 1.4rem; }
-.screen--khutbah {
-  background: radial-gradient(ellipse at center, rgba(35, 26, 5, .9) 0%, rgba(0, 0, 0, 0) 74%); /* fades to transparent so the pattern shows */
-}
 .khutbah-title { font-size: 3rem; font-weight: 600; color: var(--sb-fg-dim); letter-spacing: .02em; }
 .khutbah-line { font-size: 7rem; font-weight: 800; line-height: 1.05; color: var(--sb-danger); }
 .screen--khutbah .jm-quiet { border-color: rgba(230, 180, 85, .3); color: #b99a5c; }

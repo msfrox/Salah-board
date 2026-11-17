@@ -145,22 +145,22 @@ breaking change via `configVersion`.
         "khutbahTitle": 100, "khutbahLine": 100, "khutbahQuiet": 100
       }
     },
-    "pattern": {                      // background rosette (default theme), admin →
-                                      // Advanced. Defaults: config.js PATTERN_DEFAULTS
-      "hue": 40,                      // 0–360, one colour for the whole board (40 = gold)
-      "saturation": 55,               // colour richness 0 (grey) – 100
-      "pages": {                      // per screen; keys = LAYOUT_GROUPS ids
-        "normal":  { "visibility": 45, "size": 100 },  // visibility 0–100 (100 = alpha
-        "azan":    { "visibility": 35, "size": 100 },  // PATTERN_MAX_ALPHA 0.5), size
-        "between": { "visibility": 35, "size": 100 },  // 50–200 %
-        "iqamah":  { "visibility": 35, "size": 100 },
-        "salah":   { "visibility": 5,  "size": 100 },
-        "after":   { "visibility": 35, "size": 100 },
-        "luha":    { "visibility": 35, "size": 100 },
-        "luhaOpen":{ "visibility": 35, "size": 100 },
-        "night":   { "visibility": 10, "size": 100 },
-        "jumuah":  { "visibility": 15, "size": 100 },  // sunnah + bayan
-        "khutbah": { "visibility": 10, "size": 100 }
+    "pattern": {                      // background rosette + glow (default theme),
+                                      // admin → Advanced, in each screen's section.
+                                      // Defaults: config.js PATTERN_DEFAULTS
+      "pages": {                      // per screen; keys = LAYOUT_GROUPS ids:
+                                      // normal azan between iqamah salah after luha
+                                      // luhaOpen night jumuah (sunnah+bayan) khutbah
+        "khutbah": {
+          "visibility": 10,           // pattern 0–100 (100 = alpha PATTERN_MAX_ALPHA 0.5)
+          "size": 100,                // pattern 50–200 %
+          "glow": 40,                 // soft radial glow of the screen's colour behind
+                                      // its content, 0–100 (100 = GLOW_MAX_ALPHA 0.45)
+          "custom": false,            // false: pattern + glow use the screen's own
+                                      // text colour (theme.css --page-c);
+          "hue": 40, "saturation": 55 // true: this colour instead (hsl, 62% light)
+        }
+        // … one entry like this per screen
       }
       // Each screen composes the rosette its own way (themes/default
       // theme.css "Background pattern"): main = medallion off the right
@@ -168,7 +168,7 @@ breaking change via `configVersion`.
       // straighten rows = a row along the bottom (the saff); salah = small,
       // half sunk; after = four corners; Luha = rising / risen sun; night =
       // small "moon"; sunnah = left+right pair; bayan = off the left edge;
-      // khutbah = faint centred.
+      // khutbah = faint, centred.
     }
   },
 

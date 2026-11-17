@@ -90,32 +90,35 @@
     ] },
   ];
 
-  // ── Background pattern (the masjid's rosette, default theme) ──────────
-  // One colour for the whole board (hue + richness), and per screen its
-  // visibility (0–100) and size (50–200 %). Keys = LAYOUT_GROUPS ids.
-  // Defaults follow the design: clearly visible on the main screen, framing
-  // the information screens, faint on the calm ones (sunnah, bayan,
-  // khutbah) and barely there on the near-dark ones (salah, night).
+  // ── Background pattern + glow (default theme) ─────────────────────────
+  // Per screen (keys = LAYOUT_GROUPS ids):
+  //   visibility 0–100, size 50–200 % — the masjid's rosette;
+  //   glow 0–100 — a soft glow of the screen's colour behind its content
+  //     (the khutbah screen's look, available on every screen);
+  //   custom false → pattern + glow use the screen's own text colour
+  //     (theme.css), true → hue 0–360 + saturation 0–100 instead.
+  // Defaults follow the design: clear on the main and information screens,
+  // faint on the calm Jumu'ah ones, barely there on salah and night.
+  const pg = (visibility, glow) => ({ visibility, size: 100, glow, custom: false, hue: 40, saturation: 55 });
   const PATTERN_DEFAULTS = {
-    hue: 40,          // gold — traditional, and doesn't clash with the green highlights
-    saturation: 55,   // colour richness: 0 = grey … 100 = full colour
     pages: {
-      normal:   { visibility: 45, size: 100 },
-      azan:     { visibility: 35, size: 100 },
-      between:  { visibility: 35, size: 100 },
-      iqamah:   { visibility: 35, size: 100 },
-      salah:    { visibility: 5,  size: 100 },
-      after:    { visibility: 35, size: 100 },
-      luha:     { visibility: 35, size: 100 },
-      luhaOpen: { visibility: 35, size: 100 },
-      night:    { visibility: 10, size: 100 },
-      jumuah:   { visibility: 15, size: 100 },
-      khutbah:  { visibility: 10, size: 100 },
+      normal:   pg(45, 10),
+      azan:     pg(35, 25),
+      between:  pg(35, 30),
+      iqamah:   pg(35, 35),
+      salah:    pg(5, 0),
+      after:    pg(35, 25),
+      luha:     pg(35, 30),
+      luhaOpen: pg(35, 35),
+      night:    pg(10, 0),
+      jumuah:   pg(15, 25),
+      khutbah:  pg(10, 40),
     },
   };
-  // Pattern alpha at visibility 100 (a full-strength stencil would compete
-  // with the text; 100 is "as strong as it should ever get").
+  // Alpha at 100 — "as strong as it should ever get" (a full-strength
+  // stencil or glow would compete with the text).
   const PATTERN_MAX_ALPHA = 0.5;
+  const GLOW_MAX_ALPHA = 0.45;
 
   function layoutSizeDefaults(store) {
     const out = {};
@@ -368,6 +371,6 @@
 
   global.SBConfig = { defaults, deepMerge, getConfig, getConfigAsync, getStoredAsync, save, debugParams,
     applyOverrides, layoutFactor, LAYOUT_MIN, LAYOUT_MAX, LAYOUT_GROUPS, STORAGE_KEY,
-    PATTERN_DEFAULTS, PATTERN_MAX_ALPHA };
+    PATTERN_DEFAULTS, PATTERN_MAX_ALPHA, GLOW_MAX_ALPHA };
 
 })(window);

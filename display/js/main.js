@@ -93,18 +93,21 @@
     applyPattern(html, layout.pattern || {});
   }
 
-  // Background pattern → CSS variables the theme uses (default theme:
-  // #screen-root::before). Colour once; alpha + size per screen.
+  // Background pattern + glow → CSS variables the theme uses (default
+  // theme: #screen-root::before / ::after). Per screen: alpha, size, glow,
+  // and a colour only when overridden — otherwise the theme uses the
+  // screen's own text colour.
   function applyPattern(html, p) {
     const D = SBConfig.PATTERN_DEFAULTS;
     const clamp = (v, lo, hi, d) => { const n = Number(v); return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : d; };
-    html.style.setProperty('--sb-pat-hue', String(clamp(p.hue, 0, 360, D.hue)));
-    html.style.setProperty('--sb-pat-sat', clamp(p.saturation, 0, 100, D.saturation) + '%');
     const pages = p.pages || {};
     for (const id of Object.keys(D.pages)) {
       const pg = Object.assign({}, D.pages[id], pages[id] || {});
       html.style.setProperty(`--sb-pat-a-${id}`, String(clamp(pg.visibility, 0, 100, 0) / 100 * SBConfig.PATTERN_MAX_ALPHA));
       html.style.setProperty(`--sb-pat-s-${id}`, String(clamp(pg.size, 50, 200, 100) / 100));
+      html.style.setProperty(`--sb-glow-a-${id}`, String(clamp(pg.glow, 0, 100, 0) / 100 * SBConfig.GLOW_MAX_ALPHA));
+      if (pg.custom) html.style.setProperty(`--sb-pat-c-${id}`, `hsl(${clamp(pg.hue, 0, 360, 40)}, ${clamp(pg.saturation, 0, 100, 55)}%, 62%)`);
+      else html.style.removeProperty(`--sb-pat-c-${id}`);
     }
   }
 

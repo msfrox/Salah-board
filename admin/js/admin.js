@@ -162,28 +162,24 @@
       </div>`;
   }
 
-  // Per-screen background pattern controls (default theme's rosette).
+  // Per-screen pattern + glow controls (default theme). Colour: the screen's
+  // own text colour unless "Custom colour" is ticked.
   function patternRowsHtml(group) {
     if (!SBConfig.PATTERN_DEFAULTS.pages[group.id]) return '';
-    const base = `layout.pattern.pages.${group.id}`;
-    return `<h4>Background pattern</h4>` +
-      rangeRowHtml(`pattern-vis-${group.id}`, 'Visibility', `${base}.visibility`, 0, 100, 5, '%') +
-      rangeRowHtml(`pattern-size-${group.id}`, 'Size', `${base}.size`, 50, 200, 10, '%');
-  }
-
-  // Pattern colour for the whole board: one section above the screens.
-  function patternColourHtml() {
-    return `
-      <details class="layout-group" data-group="pattern" data-state="normal" open>
-        <summary>Background pattern colour (whole board)</summary>
-        <div class="layout-group-body">
-          <p class="hint">The masjid's rosette pattern behind every screen (default theme). Pick one colour here; set how visible and how big it is on each screen in that screen's section below.</p>
-          <div class="pattern-swatch" id="pattern-swatch" aria-hidden="true"></div>
-          ${rangeRowHtml('pattern-hue', 'Colour (hue)', 'layout.pattern.hue', 0, 360, 5, '°', 'pattern-hue')}
-          ${rangeRowHtml('pattern-sat', 'Colour richness (0 = grey)', 'layout.pattern.saturation', 0, 100, 5, '%')}
-          <button type="button" class="btn btn--secondary layout-group-reset">Reset colour</button>
-        </div>
-      </details>`;
+    const id = group.id, base = `layout.pattern.pages.${id}`;
+    return `<h4>Background pattern &amp; glow</h4>` +
+      rangeRowHtml(`pattern-vis-${id}`, 'Pattern visibility', `${base}.visibility`, 0, 100, 5, '%') +
+      rangeRowHtml(`pattern-size-${id}`, 'Pattern size', `${base}.size`, 50, 200, 10, '%') +
+      rangeRowHtml(`pattern-glow-${id}`, 'Glow', `${base}.glow`, 0, 100, 5, '%') + `
+      <label class="field checkbox-field">
+        <input type="checkbox" class="pattern-custom-toggle" data-page="${id}" data-path="${base}.custom">
+        <span>Custom colour (instead of this screen's own text colour)</span>
+      </label>
+      <div class="pattern-custom" data-page="${id}">
+        <div class="pattern-swatch" data-page="${id}" aria-hidden="true"></div>
+        ${rangeRowHtml(`pattern-hue-${id}`, 'Colour (hue)', `${base}.hue`, 0, 360, 5, '°', 'pattern-hue')}
+        ${rangeRowHtml(`pattern-sat-${id}`, 'Colour richness (0 = grey)', `${base}.saturation`, 0, 100, 5, '%')}
+      </div>`;
   }
 
   function layoutShowRowHtml(item) {
@@ -216,8 +212,15 @@
       const out = document.querySelector(`.layout-size-value[data-for="${r.id}"]`);
       if (out) out.textContent = `${r.value}${r.dataset.unit || '%'}`;
     });
-    const sw = $('#pattern-swatch'), hue = $('#pattern-hue'), sat = $('#pattern-sat');
-    if (sw && hue && sat) sw.style.background = `hsl(${hue.value}, ${sat.value}%, 62%)`;
+    // Per-screen custom colour: show its sliders only when ticked; live swatch.
+    $$('.pattern-custom-toggle').forEach(cb => {
+      const id = cb.dataset.page;
+      const box = document.querySelector(`.pattern-custom[data-page="${id}"]`);
+      if (box) box.hidden = !cb.checked;
+      const sw = document.querySelector(`.pattern-swatch[data-page="${id}"]`);
+      const hue = document.getElementById(`pattern-hue-${id}`), sat = document.getElementById(`pattern-sat-${id}`);
+      if (sw && hue && sat) sw.style.background = `hsl(${hue.value}, ${sat.value}%, 62%)`;
+    });
   }
 
   function ramadanOverrideRowHtml(prayer) {
@@ -310,7 +313,7 @@
     $('#salah-duration-rows').innerHTML = PRAYERS.map(salahDurationRowHtml).join('');
     $('#ramadan-override-rows').innerHTML = PRAYERS.map(ramadanOverrideRowHtml).join('');
     $('#taraweeh-note-rows').innerHTML = LANGS.map(taraweehNoteRowHtml).join('');
-    $('#layout-groups').innerHTML = patternColourHtml() + LAYOUT_GROUPS.map(layoutGroupHtml).join('');
+    $('#layout-groups').innerHTML = LAYOUT_GROUPS.map(layoutGroupHtml).join('');
     $('#layout-show-rows').innerHTML = LAYOUT_SHOW.map(layoutShowRowHtml).join('');
   }
 
@@ -705,6 +708,7 @@
 
     // Advanced tab: live % labels, −/+ fine steps, reset.
     document.addEventListener('input', e => { if (e.target.classList.contains('layout-range')) refreshLayoutValues(); });
+    document.addEventListener('change', e => { if (e.target.classList.contains('pattern-custom-toggle')) refreshLayoutValues(); });
     document.addEventListener('input', e => {
       if (e.target.matches('[data-path="jumuah.bayanSpeaker"], [data-path="jumuah.bayanTopic"], #bayan-date')) updateBayanDateNote();
       if (['jumuah-iqamah-time', 'khutbah-minutes', 'bayan-time', 'bayan-enabled', 'sunnah-minutes'].includes(e.target.id)) updateJumuahSummary();
@@ -728,6 +732,7 @@
       const d = SBConfig.defaults();
       scope.querySelectorAll('.layout-range').forEach(r => { r.value = getPath(d, r.dataset.path); });
       scope.querySelectorAll('#layout-show-rows input[type=checkbox]').forEach(cb => { cb.checked = getPath(d, cb.dataset.path) !== false; });
+      scope.querySelectorAll('.pattern-custom-toggle').forEach(cb => { cb.checked = !!getPath(d, cb.dataset.path); });
       refreshLayoutValues();
       document.dispatchEvent(new CustomEvent('sb-layout-changed'));
     }
