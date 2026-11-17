@@ -30,6 +30,25 @@
     return { speaker, topic };
   }
 
+  // Sunrise + Luha for the main screen's hero, or null. From today's Fajr
+  // azan until Luha begins (sunrise + luha.waitAfterSunrise) the next thing
+  // the congregation waits for is Luha, not Zuhr — so, when enabled, NORMAL
+  // shows "Next prayer: Luha" with Sunrise | Luha in place of Azan | Iqamah.
+  function resolveLuhaNext(config, timeline, now) {
+    const E = global.SBEngine;
+    const luha = config.luha || {};
+    const row = timeline.rows.today;
+    if (!luha.showOnMain || !row) return null;
+    const day = timeline.dates.today;
+    const fajr = E.parseTime(row.fajr, day);
+    const sunrise = E.parseTime(row.sunrise, day);
+    if (!fajr || !sunrise) return null;
+    const wait = Math.max(0, Number(luha.waitAfterSunrise) || 0);
+    const luhaTime = E.addMinutes(sunrise, wait);
+    if (now < fajr || now >= luhaTime) return null;
+    return { sunrise, luha: luhaTime };
+  }
+
   function resolve(config, timeline, now, pack) {
     const E = global.SBEngine;
     const seg = E.resolveSegment(now, timeline);
@@ -48,8 +67,10 @@
     const bayanInfo = jumuahAlerts ? resolveBayanInfo(config, timeline, now) : null;
     const ramadan = (config.ramadan.enabled && todayRow) ? E.ramadanTimes(todayRow, timeline.dates.today, config) : null;
 
+    const luhaNext = resolveLuhaNext(config, timeline, now);
+
     const base = {
-      now, hijri, isJumuahDay, jumuahAlerts, bayanInfo, ramadan,
+      now, hijri, isJumuahDay, jumuahAlerts, bayanInfo, ramadan, luhaNext,
       nextAzan: next, prevAzan: prev,
       rows: timeline.rows, dates: timeline.dates,
     };

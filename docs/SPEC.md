@@ -11,7 +11,7 @@ All times below are display-time (see Time Correction in ARCHITECTURE.md).
 | Iqamah | Second call, immediately before congregation starts |
 | Jumu'ah | Friday congregational prayer (replaces Luhr on Fridays) |
 | Bayan | Pre-khutbah talk on Fridays (Sri Lanka convention) |
-| Ishraq / Luha | Sunrise; Luha (Duha) prayer becomes valid ~20 min after sunrise |
+| Ishraq / Luha | Sunrise; Luha prayer becomes valid ~20 min after sunrise |
 | Imsak | End of suhoor in Ramadan (ACJU: 2 min before Fajr) |
 
 ## Display state machine
@@ -27,12 +27,12 @@ States, in the order they occur around each of the 5 daily prayers:
 | 5 | SALAH | after IQAMAH | +`salahDuration[prayer]` | Near-black screen, tiny clock, "Salah in progress — phones off". Minimum light spill in the hall |
 | 6 | AFTER | after SALAH | +`afterScreen.minutes` (default 10) | Post-salah adhkar rotation (Astaghfirullah ×3, Ayat al-Kursi reminder, tasbih 33/33/34) |
 
-Then back to NORMAL. After Fajr's AFTER screen the board stays on NORMAL until sunrise (there is no separate sunrise countdown screen — sunrise is already in the timetable strip). Special overlay states:
+Then back to NORMAL. After Fajr's AFTER screen the board stays on NORMAL until sunrise (there is no separate sunrise countdown screen). With `luha.showOnMain` (default on), NORMAL's hero shows **Next prayer: Luha** from Fajr azan until Luha begins, with **Sunrise | Luha** (sunrise + `luha.waitAfterSunrise`) as the two big times in place of Azan | Iqamah, counting down to sunrise and then to Luha; the timetable highlights Sunrise. Special overlay states:
 
 | State | When | Screen shows |
 |---|---|---|
 | LUHA_WAIT | sunrise → +`luha.waitAfterSunrise` (default 20 min) | "Luha prayer in MM:SS" countdown |
-| LUHA_OPEN | wait ends | Brief "Luha (Duha) prayer time has begun" card, then NORMAL |
+| LUHA_OPEN | wait ends | Brief "Luha prayer time has begun" card, then NORMAL |
 | NIGHT | Isha AFTER + `night.afterIshaMinutes` → Fajr − `night.beforeFajrMinutes` | Dimmed (config `night.brightness`), small clock + tomorrow's Fajr time |
 | JUMUAH | Fridays, from `jumuah.bayan` time | See Jumu'ah mode below |
 

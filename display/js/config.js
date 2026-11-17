@@ -143,7 +143,10 @@
         bayanDate: null,         // optional ISO date: only show on that Friday
       },
 
-      luha: { enabled: true, waitAfterSunrise: 20 },
+      // enabled: full-screen "Luha in MM:SS" countdown from sunrise.
+      // showOnMain: after Fajr, the main screen's next prayer is Luha, with
+      // Sunrise | Luha (sunrise + waitAfterSunrise) as its two big times.
+      luha: { enabled: true, showOnMain: true, waitAfterSunrise: 20 },
 
       ramadan: {
         enabled: false,

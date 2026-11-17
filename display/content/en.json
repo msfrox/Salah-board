@@ -4,7 +4,7 @@
     "fajr": "Fajr", "sunrise": "Sunrise", "luhr": "Zuhr", "asr": "Asr",
     "magrib": "Maghrib", "isha": "Isha", "jumuah": "Jumu'ah",
     "azan": "Azan", "iqamah": "Iqamah", "imsak": "Imsak", "iftar": "Iftar",
-    "luha": "Luha (Duha)", "nextPrayer": "Next prayer", "timeTo": "Time remaining",
+    "luha": "Luha", "nextPrayer": "Next prayer", "timeTo": "Time remaining",
     "today": "Today", "bayan": "Bayan", "hijriEra": "AH", "jumuahToday": "Jumu'ah today"
   },
   "hijriMonths": ["Muharram", "Safar", "Rabi' al-Awwal", "Rabi' al-Thani", "Jumada al-Ula", "Jumada al-Akhirah", "Rajab", "Sha'ban", "Ramadan", "Shawwal", "Dhu al-Qi'dah", "Dhu al-Hijjah"],
@@ -52,7 +52,7 @@
   ],
   "khutbahScreen": { "line": "Khutbah in progress — remain silent" },
   "jumuahBayan": { "text": "Bayan in progress" },
-  "luhaOpen": { "text": "Luha (Duha) prayer time has begun" },
+  "luhaOpen": { "text": "Luha prayer time has begun" },
   "afterSalahAdhkar": [
     { "arabic": "أَسْتَغْفِرُ اللَّهَ (×3)", "translation": "I seek Allah's forgiveness (3 times)", "source": "Muslim 591" },
     { "text": "SubhanAllah ×33 · Alhamdulillah ×33 · Allahu Akbar ×34", "source": "Muslim 596-597" },

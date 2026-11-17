@@ -183,13 +183,17 @@
       </section>
 
       <section class="card">
-        <h2>Luha (Duha)</h2>
+        <h2>Luha</h2>
+        <label class="field checkbox-field">
+          <input type="checkbox" data-path="luha.showOnMain">
+          <span>After Fajr, show Sunrise &amp; Luha as the next prayer on the main screen</span>
+        </label>
         <label class="field checkbox-field">
           <input type="checkbox" data-path="luha.enabled">
-          <span>Show Luha countdown after sunrise</span>
+          <span>Show full-screen Luha countdown from sunrise</span>
         </label>
         <label class="field">
-          <span>Wait after sunrise (minutes)</span>
+          <span>Luha begins this many minutes after sunrise</span>
           <input type="number" min="0" step="1" data-path="luha.waitAfterSunrise" data-number>
         </label>
       </section>
@@ -353,6 +357,12 @@
 
       <section class="card">
         <h2>Software update</h2>
+        <div class="version-info" id="version-info">
+          <div class="version-row"><span class="version-key">Running version</span><span class="version-val" id="version-running">Checking…</span></div>
+          <div class="version-row" id="version-change-row" hidden><span class="version-key">Latest change</span><span class="version-val" id="version-subject"></span></div>
+          <div class="version-row" id="version-branch-row" hidden><span class="version-key">Branch</span><span class="version-val" id="version-branch"></span></div>
+          <p class="readonly-status" id="version-note" hidden></p>
+        </div>
         <p class="hint">Fetch the latest Salah Board code from GitHub and apply it. The board must be connected to the internet. (Board device only.)</p>
         <div class="hotspot-btns">
           <button type="button" class="btn btn--primary" id="update-btn">Update from GitHub</button>

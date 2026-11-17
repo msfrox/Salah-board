@@ -31,6 +31,8 @@ the LAN-only device endpoints the admin panel uses:
   POST /api/wifi/connect    -> join {ssid, password?} an existing network
   GET  /api/preview         -> current forced-state preview on the board (or none)
   POST /api/preview         -> push {state, t?, seconds?} to the board (auto-expires)
+  GET  /api/version         -> the code version running now (git commit at
+                               server start) + what is on disk after an update
 
 Config is stored OUTSIDE the repo (default ~/.config/salahboard/config.json,
 override with $SALAHBOARD_CONFIG) so a `git pull` update never touches the
@@ -83,6 +85,29 @@ CONFIG_PATH = os.environ.get("SALAHBOARD_CONFIG") or os.path.join(
     os.path.expanduser("~"), ".config", "salahboard", "config.json"
 )
 MAX_CONFIG_BYTES = 512 * 1024  # generous; config is a couple of KB in practice
+
+
+def git_version():
+    """The repo's current commit, or None if this isn't a git checkout
+    (e.g. a copied folder) or git isn't installed."""
+    try:
+        r = subprocess.run(["git", "-C", ROOT, "log", "-1", "--format=%H%n%h%n%cI%n%s"],
+                           capture_output=True, text=True, timeout=10)
+        if r.returncode != 0:
+            return None
+        full, short, date, subject = (r.stdout.strip().split("\n", 3) + [""] * 4)[:4]
+        b = subprocess.run(["git", "-C", ROOT, "rev-parse", "--abbrev-ref", "HEAD"],
+                           capture_output=True, text=True, timeout=10)
+        return {"commit": full, "short": short, "date": date, "subject": subject,
+                "branch": b.stdout.strip() if b.returncode == 0 else ""}
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+# The version the board is RUNNING: read once when the server starts (at
+# boot). An update (`git pull`) changes the files on disk, but the board keeps
+# running the old code until it reboots — /api/version reports both.
+RUNNING_VERSION = git_version()
 
 
 def lan_ip():
@@ -175,6 +200,15 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 "boardUrl": f"http://{ip}:{PORT}/display/",
             })
 
+        if path == "/api/version":
+            installed = git_version()
+            return self._json(200, {
+                "available": RUNNING_VERSION is not None,
+                "running": RUNNING_VERSION,
+                "installed": installed,
+                "rebootNeeded": bool(RUNNING_VERSION and installed
+                                     and installed["commit"] != RUNNING_VERSION["commit"]),
+            })
         if path == "/api/config":
             cfg = read_config()
             if cfg is None:

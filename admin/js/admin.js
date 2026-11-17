@@ -473,7 +473,7 @@
       if (isNaN(d.getTime())) errors.push("Bayan date is not a valid date.");
       else if (d.getDay() !== 5) errors.push("Bayan date must be a Friday (or leave it empty).");
     }
-    if (config.luha.enabled && !(Number(config.luha.waitAfterSunrise) >= 0)) {
+    if ((config.luha.enabled || config.luha.showOnMain) && !(Number(config.luha.waitAfterSunrise) >= 0)) {
       errors.push('Luha wait-after-sunrise must be 0 or more.');
     }
     if (config.ramadan && config.ramadan.iqamahOverrides) {

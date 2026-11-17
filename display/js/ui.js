@@ -124,7 +124,9 @@
   function timetableCells(content, config, result) {
     const row = result.rows.today;
     if (!row) return [];
-    const nextKey = result.nextAzan && result.nextAzan.prayer;
+    // While the main screen counts down to Luha, highlight Sunrise (Luha's
+    // own time isn't a column in the timetable).
+    const nextKey = result.luhaNext ? 'sunrise' : (result.nextAzan && result.nextAzan.prayer);
     const cells = [
       { key: 'fajr', label: label(content, 'fajr'), time: fmtRowTime(row.fajr, config, result) },
       { key: 'sunrise', label: label(content, 'sunrise'), time: fmtRowTime(row.sunrise, config, result) },
@@ -225,10 +227,23 @@
     const lang = langs(config)[0];
     const clockStr = E.formatClock(result.now, config);
     const next = result.nextAzan;
-    const azanTime = next ? E.formatTime(next.time, config) : '--:--';
-    const iqamahTime = next && next.iqamahTime ? E.formatTime(next.iqamahTime, config) : '--:--';
-    const countdown = next ? E.fmtCountdown(next.time - result.now) : '--:--';
-    const nextName = next ? prayerLabel(content, next.prayer, next.jumuah) : '—';
+    let azanTime = next ? E.formatTime(next.time, config) : '--:--';
+    let iqamahTime = next && next.iqamahTime ? E.formatTime(next.iqamahTime, config) : '--:--';
+    let countdown = next ? E.fmtCountdown(next.time - result.now) : '--:--';
+    let nextName = next ? prayerLabel(content, next.prayer, next.jumuah) : '—';
+    let leftLabel = label(content, 'azan');
+    let rightLabel = label(content, 'iqamah');
+    // After Fajr: Luha is next — Sunrise | Luha, counting down to sunrise,
+    // then to Luha (config luha.showOnMain; see SBState.resolveLuhaNext).
+    const ln = result.luhaNext;
+    if (ln) {
+      nextName = label(content, 'luha');
+      leftLabel = label(content, 'sunrise');
+      rightLabel = label(content, 'luha');
+      azanTime = E.formatTime(ln.sunrise, config);
+      iqamahTime = E.formatTime(ln.luha, config);
+      countdown = E.fmtCountdown((result.now < ln.sunrise ? ln.sunrise : ln.luha) - result.now);
+    }
 
     let jumuahBanner = '';
     if (result.jumuahAlerts) {
@@ -274,12 +289,12 @@
             <span class="np-name">${escapeHtml(nextName)}</span>
             <div class="np-times">
               <div class="np-time-col">
-                <span class="np-time-label">${escapeHtml(label(content, 'azan'))}</span>
+                <span class="np-time-label">${escapeHtml(leftLabel)}</span>
                 <span class="np-time">${escapeHtml(azanTime)}</span>
               </div>
               <div class="np-divider"></div>
               <div class="np-time-col">
-                <span class="np-time-label">${escapeHtml(label(content, 'iqamah'))}</span>
+                <span class="np-time-label">${escapeHtml(rightLabel)}</span>
                 <span class="np-time">${escapeHtml(iqamahTime)}</span>
               </div>
             </div>
