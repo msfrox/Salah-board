@@ -21,7 +21,7 @@
 
 **D1 — Separate repo from the Prayer Time Site.** Different product
 (kiosk APK + releases vs. static public site). Shared data flows one way:
-site repo → `tools/sync-data.ps1` → `display/data/`. Site's design
+site repo → `tools/sync-data.py` → `display/data/`. Site's design
 principles (static JSON, solar-valid-every-year) are inherited.
 
 **D2 — Web display + thin native shell, not a native UI.** Themes become

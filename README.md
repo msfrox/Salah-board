@@ -1,17 +1,19 @@
 # Salah Board
 
 **Free, open-source prayer display for masjids** — built for Sri Lanka
-(official **ACJU** timetable, Shafi'i), designed to run on any cheap
-Android TV box and any TV.
+(official **ACJU** timetable, Shafi'i), designed to run as a
+Linux kiosk (a small Debian PC or tablet) on any TV or HDMI screen.
 
 Commercial masjid displays charge a large sum upfront — or worse, a
 subscription. Salah Board is free forever, has no accounts, no cloud, no
 tracking, and works fully offline. Any masjid, anywhere in Sri Lanka, can
-set one up for roughly the cost of a budget Android box (~LKR 10,000) and
+set one up for roughly the cost of a small Linux box or old tablet and
 any HDMI screen.
 
-> **Status: foundation.** Architecture and specs are complete; implementation
-> follows the milestones in [`docs/MILESTONES.md`](docs/MILESTONES.md).
+> **Status: pre-1.0, running in a masjid.** The web display, the settings panel and the
+> Debian kiosk (`deploy/`) are built and live. v1.0 is the Linux kiosk
+> ([ADR 0001](decisions/0001-linux-kiosk-is-v1-android-is-parked.md)); the Android shell
+> (`android/`) is parked. What is next: [`ROADMAP.md`](ROADMAP.md).
 
 ---
 
@@ -41,11 +43,13 @@ any HDMI screen.
 ```
 display/   Pure HTML/CSS/JS web app — the actual screen. No framework,
            no build step. Runs in ANY browser (dev, Pi, smart TV) and
-           inside the Android shell's WebView in production.
-android/   Thin Kotlin shell: HOME-launcher kiosk, boot receiver, WebView,
+           in Chromium --kiosk on the Linux board in production.
+deploy/    The Linux kiosk (v1.0): serve.py (static server + settings API),
+           systemd, Openbox, hotspot, WiFi, install scripts.
+android/   PARKED (ADR 0001). Thin Kotlin shell: HOME-launcher kiosk, boot receiver, WebView,
            keep-screen-on, embedded admin HTTP server, LocalOnlyHotspot,
            NTP time offset, crash watchdog. No display logic lives here.
-admin/     (served by the shell) settings panel web UI, edited from a phone.
+admin/     (served by serve.py) settings panel web UI, edited from a phone.
 docs/      Full spec, architecture, config schema, milestones, hardware guide.
 ```
 
@@ -57,8 +61,8 @@ so the app never *needs* the internet.
 ## Quick start (development)
 
 ```bash
-# 1. Get the timetable data (copies from sibling repo or downloads)
-powershell tools/sync-data.ps1
+# 1. Refresh the timetable data (optional: it is already bundled)
+python3 tools/sync-data.py --check   # or --from ../Prayer-Time-Site/data, or --url https://pray.gear.lk/data/
 
 # 2. Serve the repo (any static server; this one adds no-cache headers)
 python3 deploy/serve.py 8080

@@ -1,7 +1,8 @@
 # Salah Board — instructions for Claude
 
 Open-source masjid prayer display for Sri Lanka (ACJU timetable, Shafi'i).
-Web display (`display/`) wrapped by a thin Android kiosk shell (`android/`).
+Web display (`display/`) run as a Linux Debian kiosk (`deploy/`) — v1.0 is the Linux
+kiosk; the Android shell (`android/`) is parked (`decisions/0001-…`).
 Sister project: **pray.gear.lk** (`~/Projects/Prayer-Time-Site`) — same data,
 same ethos.
 
@@ -12,7 +13,7 @@ same ethos.
 2. **Offline-first.** All 13 zones × 12 months of ACJU data are bundled in
    `display/data/`. The app must never *require* internet. Online is only
    for NTP time sync and optional data refresh from pray.gear.lk.
-3. **The shell stays thin.** Kotlin code only does what the web layer can't:
+3. **The shell stays thin.** (Applies equally to `serve.py` and the shell scripts.) Native code only does what the web layer can't:
    kiosk/boot/WebView, admin HTTP server, hotspot, time offset, brightness,
    watchdog. Display logic never goes in Kotlin.
 4. **`config.json` is the single contract** between display, admin panel and
@@ -28,29 +29,31 @@ same ethos.
 
 ## How to work (every session)
 
-1. Read `docs/MILESTONES.md`, find the current milestone (first one not
-   marked done). Read ONLY the spec sections it links. Keep sessions small.
-2. Implement against the milestone's acceptance criteria. All must pass
-   before marking it done (tick the checkbox in MILESTONES.md).
+1. Read `ROADMAP.md` and `HANDOFF.md`, then the card in `TASKS.md` you are doing. Read ONLY
+   the docs the card links. Keep sessions small. (`docs/MILESTONES.md` holds the original
+   M1–M5 specs; M3/M4 are parked, so do not follow it to Android.)
+2. Implement against the card's "Done when". All must pass before marking it done.
 3. Test in a normal desktop browser first. Use the debug URL params:
    `?t=2026-07-02T12:10` (fake clock), `?state=between` (force a state),
-   `?zone=01` (override zone). Implement these params in M1 and keep them.
+   `?zone=01` (override zone). Keep them working.
    **Always test at 1366×768** — the most common resolution on the local
    TVs masjids use. Every visual change must be checked there (all themes,
    all states, with banners on), in addition to any other sizes.
-4. Don't start Android work (M3) until M1–M2 are done and reviewed.
+4. The live board is in a masjid: build sessions never push to it. Don't start Android
+   work (M3/M4) — parked by ADR 0001.
 
 ## Repo layout
 
 ```
 display/            The screen. index.html + js/ + themes/ + content/ + data/
-display/data/       ACJU zone JSONs — synced by tools/sync-data.ps1. NEVER hand-edit.
+display/data/       ACJU zone JSONs — synced by tools/sync-data.py. NEVER hand-edit.
 display/content/    Language packs (duas, labels, screens) — en/ta/si + Arabic inline.
 display/themes/     One folder per theme (CSS + optional layout overrides).
-android/            Kotlin shell (M3+). See android/README.md for responsibilities.
+deploy/             Linux kiosk: serve.py, systemd, Openbox, install scripts (v1.0).
+android/            Kotlin shell — PARKED (ADR 0001). See android/README.md.
 docs/               SPEC, ARCHITECTURE, CONFIG-SCHEMA, MILESTONES, HARDWARE.
-tools/sync-data.ps1 Copies data from sibling Prayer Time Site repo, or
-                    downloads from https://pray.gear.lk/data/.
+tools/sync-data.py  Syncs data (+ manifest, SHA-256 check) from a sibling Prayer-Time-Site
+                    checkout (--from) or https://pray.gear.lk/data/ (--url).
 ```
 
 ## Data notes

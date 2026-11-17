@@ -65,7 +65,7 @@ Acceptance:
 - [x] Export/import round-trips; garbage import rejected with clear error
 - [x] Notices CRUD with date ranges
 
-## M3 — Android shell APK  `[ ] not started`
+## M3 — Android shell APK  `[ ] PARKED (ADR 0001)`
 **Read:** ARCHITECTURE.md (D2–D8, shell responsibilities), android/README.md.
 
 Kotlin, minSdk 26, single activity + WebView. HOME intent filter,
@@ -81,7 +81,7 @@ Acceptance:
 - [ ] WebView crash/App kill → back on screen within 10 s
 - [ ] Release workflow: signed APK via GitHub Actions on tag
 
-## M4 — Time correction + hotspot  `[ ] not started`
+## M4 — Time correction + hotspot  `[ ] PARKED (ADR 0001)`
 **Read:** ARCHITECTURE.md D4, D5.
 
 SNTP client → `time.offsetMs`; periodic re-sync; boot sanity screen with
@@ -109,7 +109,7 @@ APK + checksums.
 Acceptance:
 - [ ] A non-technical caretaker can go from boxed hardware to running
       display using only the printed guide, in under 30 minutes
-- [ ] Fresh clone → `tools/sync-data.ps1` → M1 dev flow works on a
+- [ ] Fresh clone → `tools/sync-data.py` → M1 dev flow works on a
       machine without the sibling repo (downloads from pray.gear.lk)
 
 ## Later (explicitly deferred)
