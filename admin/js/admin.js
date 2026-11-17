@@ -326,6 +326,15 @@
     $('#bayan-enabled').checked = bayanEnabled;
     $('#bayan-details').classList.toggle('hidden', !bayanEnabled);
     $('#bayan-date').value = config.jumuah.bayanDate || '';
+    // Last Friday's speaker/topic clears itself: once its Jumu'ah is over the
+    // fields open empty (the board already stopped showing them), so the
+    // next Save stores them cleared and the next speaker can be typed in.
+    if (bayanExpired(config)) {
+      $('[data-path="jumuah.bayanSpeaker"]').value = '';
+      $('[data-path="jumuah.bayanTopic"]').value = '';
+      $('#bayan-date').value = '';
+    }
+    updateBayanDateNote(config);
 
     // Ramadan overrides enabled toggles
     PRAYERS.forEach(p => {
@@ -397,6 +406,14 @@
     config.jumuah.bayanSpeaker = String(config.jumuah.bayanSpeaker || '').trim();
     config.jumuah.bayanTopic = String(config.jumuah.bayanTopic || '').trim();
     config.jumuah.bayanDate = $('#bayan-date').value || null;
+    // A speaker/topic always belongs to ONE Friday, so it clears itself after
+    // that Jumu'ah: no date chosen (or an old one) → the coming Friday.
+    // Nothing entered → no date.
+    if (config.jumuah.bayanSpeaker || config.jumuah.bayanTopic) {
+      if (!config.jumuah.bayanDate || bayanExpired(config)) config.jumuah.bayanDate = comingFriday(config);
+    } else {
+      config.jumuah.bayanDate = null;
+    }
 
     // Ramadan overrides: delete key entirely when disabled (sparse per spec)
     config.ramadan.iqamahOverrides = config.ramadan.iqamahOverrides || {};
@@ -513,6 +530,47 @@
     box.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
+  // ── Bayan speaker/topic: one Friday at a time ───────────
+  const isoDate = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  // When that Friday's Jumu'ah is over: iqamah + salah duration (the same
+  // moment the board stops showing the speaker/topic). Fallback: 3 PM.
+  function jumuahEnd(config, day) {
+    const E = window.SBEngine;
+    const iq = E && config.jumuah.iqamah ? E.parseTime(config.jumuah.iqamah, day) : null;
+    if (iq) return E.addMinutes(iq, Number(config.jumuah.salahDuration) || 0);
+    const d = new Date(day); d.setHours(15, 0, 0, 0); return d;
+  }
+  // Today if it's Friday and Jumu'ah isn't over yet, otherwise next Friday.
+  function comingFriday(config, now = new Date()) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let add = (5 - d.getDay() + 7) % 7;
+    if (add === 0 && now >= jumuahEnd(config, d)) add = 7;
+    d.setDate(d.getDate() + add);
+    return isoDate(d);
+  }
+  // Has the Friday this speaker/topic was for already had its Jumu'ah?
+  function bayanExpired(config, now = new Date()) {
+    const iso = config.jumuah.bayanDate;
+    if (!iso) return false;
+    const day = new Date(iso + 'T00:00:00');
+    if (isNaN(day.getTime())) return false;
+    return now >= jumuahEnd(config, day);
+  }
+  let _bayanCfg = null; // last loaded config, for the live note while typing
+  function updateBayanDateNote(config) {
+    if (config) _bayanCfg = config; else config = _bayanCfg;
+    const el = $('#bayan-date-note');
+    if (!config) return;
+    if (!el) return;
+    const iso = $('#bayan-date').value;
+    const hasText = $('[data-path="jumuah.bayanSpeaker"]').value.trim() || $('[data-path="jumuah.bayanTopic"]').value.trim();
+    if (!hasText) { el.textContent = 'Type a name or topic; it will show on the coming Friday only, then clear itself.'; return; }
+    const target = iso || comingFriday(config);
+    const d = new Date(target + 'T12:00:00');
+    const when = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    el.textContent = `Shows on ${when} until Jumu'ah salah ends, then clears itself.`;
+  }
+
   function showToast(msg, isError) {
     const t = $('#toast');
     t.textContent = msg;
@@ -585,6 +643,9 @@
 
     // Advanced tab: live % labels, −/+ fine steps, reset.
     document.addEventListener('input', e => { if (e.target.classList.contains('layout-range')) refreshLayoutValues(); });
+    document.addEventListener('input', e => {
+      if (e.target.matches('[data-path="jumuah.bayanSpeaker"], [data-path="jumuah.bayanTopic"], #bayan-date')) updateBayanDateNote();
+    });
     $('#layout-groups').addEventListener('click', e => {
       const groupReset = e.target.closest('.layout-group-reset');
       if (groupReset) {

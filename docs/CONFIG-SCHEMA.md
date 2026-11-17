@@ -40,8 +40,12 @@ breaking change via `configVersion`.
     "salahDuration": 15,
     "bayanSpeaker": "",                // optional, e.g. "Moulavi Ahmed Rizwan"
     "bayanTopic": "",                  // optional, e.g. "Patience in hardship"
-    "bayanDate": null                  // optional ISO Friday "2026-11-13"; set →
-                                       // speaker/topic shown only on that date.
+    "bayanDate": null                  // ISO Friday "2026-11-13": speaker/topic show
+                                       // only on that date. Admin stamps it on
+                                       // save (coming Friday, unless a later one is
+                                       // picked) and opens with the fields cleared
+                                       // once that Jumu'ah is over → they clear
+                                       // themselves weekly. null when both empty.
     // Speaker/topic alternate with the times in the "Jumu'ah today" banner
     // (one-line carousel) and appear on the bayan
     // screen, only when `bayan` is set, and disappear once Jumu'ah salah ends.

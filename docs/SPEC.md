@@ -74,8 +74,10 @@ editable in the admin panel:
    If the masjid entered the bayan speaker and/or topic, the banner becomes
    a one-line carousel that crossfades between the Jumu'ah times and
    "speaker · topic" (6 s each), so it takes no extra height. The speaker/
-   topic slide disappears as soon as Jumu'ah salah ends (no longer relevant). Optional `bayanDate` limits it to one
-   Friday so a previous week's speaker is never shown by mistake.
+   topic slide disappears as soon as Jumu'ah salah ends (no longer relevant). The speaker/topic
+   always belong to one Friday (`bayanDate`, stamped by the admin on save: the coming Friday
+   unless a later one is picked) and clear themselves after that Jumu'ah, so a previous
+   week's speaker is never shown by mistake.
 2. `bayan` time → card "Bayan in progress", with the speaker and topic
    underneath when set.
 3. Azan (today's `luhr` time) → AZAN state as usual.
