@@ -31,6 +31,7 @@ html, body {
 .admin-header {
   padding: 1.25rem 1rem 0.5rem;
 }
+.lock-btn { float: right; }
 .admin-header h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
 .admin-sub { color: var(--a-fg-dim); font-size: .9rem; margin: 0; }
 

@@ -144,4 +144,9 @@ breaking change via `configVersion`.
   sanity, zone exists). Display never shows raw errors on the big screen.
 - **Storage:** browser dev = localStorage (`sb_config`); Android = file via
   shell, served at `/api/config`. Same JSON either way.
+- **No secrets in config.json.** `GET /api/config` is open (the display polls it
+  with no login), and Export writes the same JSON to a file. The caretaker PIN
+  lives in `pin.json` beside it (salted PBKDF2 hash, mode 0600, `deploy/pinauth.py`);
+  WiFi and hotspot passwords stay in NetworkManager. Never add a password, PIN
+  or key field here: put it in its own file and behind the PIN (SB-4).
 - **12-hour time strings** ("1:00 PM") to match the data files' format.

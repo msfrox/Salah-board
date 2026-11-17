@@ -204,6 +204,24 @@ if ! visudo -cf /etc/sudoers.d/salahboard >/dev/null 2>&1; then
   rm -f /etc/sudoers.d/salahboard
 fi
 
+echo ">> Settings PIN..."
+# The settings API answers on the whole network, so it needs a PIN (SB-4).
+# Asked only when a person is at the terminal; firstboot (no terminal) leaves
+# it unset and the settings page asks for one the first time it is opened.
+# Stored as a salted hash in ~/.config/salahboard/pin.json, never in the repo.
+PIN_CMD=(sudo -u "$KIOSK_USER" python3 "${REPO_DIR}/deploy/pinauth.py")
+PIN_DIR="${USER_HOME}/.config/salahboard"
+if [ -t 0 ] && [ -t 1 ]; then
+  if "${PIN_CMD[@]}" status --dir "$PIN_DIR" | grep -q "^PIN is set"; then
+    echo "   A PIN is already set (keep it; to clear it: touch ${PIN_DIR}/reset-pin)."
+  else
+    "${PIN_CMD[@]}" set --dir "$PIN_DIR" || \
+      echo "   No PIN set: the settings page will ask for one the first time it opens."
+  fi
+else
+  echo "   No terminal: the settings page will ask for a PIN the first time it opens."
+fi
+
 echo ">> Installing the static-server systemd service..."
 sed -e "s#@REPO@#${REPO_DIR}#g" -e "s#@USER@#${KIOSK_USER}#g" \
   "${REPO_DIR}/deploy/linux/salahboard-server.service" \

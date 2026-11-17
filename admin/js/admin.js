@@ -87,6 +87,9 @@
         body: JSON.stringify(config),
       });
       if (res.ok) return true;
+      // The board refused (PIN session ended, or a real error): never save to
+      // this browser's localStorage instead, or the Save would look done.
+      if ([400, 401, 403, 429, 500].includes(res.status)) return false;
     } catch (e) { /* not running under the shell server — fall through */ }
     return SBConfig.save(config);
   }
@@ -558,8 +561,8 @@
         return;
       }
       populateForm(merged);
-      persistConfig(merged);
-      showToast('Config imported and saved.');
+      persistConfig(merged).then(ok => showToast(ok ? 'Config imported and saved.'
+        : 'Imported into the form, but not saved — unlock the settings and press Save.', !ok));
     };
     reader.onerror = () => showToast('Import failed: could not read the file.', true);
     reader.readAsText(file);
@@ -647,7 +650,7 @@
       const errors = validate(config);
       if (errors.length) { showErrors(errors); showToast(`Not saved — ${errors.length} issue${errors.length > 1 ? 's' : ''} to fix.`, true); return; }
       showErrors([]);
-      await persistConfig(config);
+      if (!(await persistConfig(config))) { showToast('Not saved — the board refused it. Unlock the settings and press Save again.', true); return; }
       populateForm(config);
       showToast('Saved. The display updates within a couple of seconds.');
     });

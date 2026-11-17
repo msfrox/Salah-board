@@ -10,6 +10,7 @@
 <body>
   <header class="admin-header">
     <a href="../display/" class="btn btn--secondary back-to-display">&larr; Back to display</a>
+    <button type="button" id="lock-btn" class="btn btn--secondary lock-btn" hidden>Lock settings</button>
     <h1>Salah Board — Admin</h1>
     <p class="admin-sub">Changes save to this board and reach the display within a couple of seconds.</p>
   </header>
@@ -351,6 +352,27 @@
         <p class="readonly-status" id="display-status"></p>
       </section>
 
+      <section class="card" id="pin-card" hidden>
+        <h2>Settings PIN</h2>
+        <p class="hint">The PIN keeps people on the masjid WiFi from changing the board. Changing it signs out every other phone and screen. (Board device only.)</p>
+        <label class="field">
+          <span>Current PIN</span>
+          <input type="password" inputmode="numeric" maxlength="12" id="pin-current" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>New PIN (6 to 12 digits)</span>
+          <input type="password" inputmode="numeric" maxlength="12" id="pin-new" autocomplete="off">
+        </label>
+        <label class="field">
+          <span>New PIN again</span>
+          <input type="password" inputmode="numeric" maxlength="12" id="pin-new2" autocomplete="off">
+        </label>
+        <div class="hotspot-btns">
+          <button type="button" class="btn btn--primary" id="pin-change">Change PIN</button>
+        </div>
+        <p class="readonly-status" id="pin-status"></p>
+      </section>
+
       <section class="card">
         <h2>Software update</h2>
         <p class="hint">Fetch the latest Salah Board code from GitHub and apply it. The board must be connected to the internet. (Board device only.)</p>
@@ -421,6 +443,7 @@
     <button type="button" id="save-btn" class="btn btn--primary">Save</button>
   </footer>
 
+  <script src="./js/auth.js"></script>
   <script src="../display/js/engine.js"></script>
   <script src="../display/js/config.js"></script>
   <script src="./js/admin.js"></script>

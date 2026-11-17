@@ -17,11 +17,20 @@ This is the PC/Linux equivalent of the Android shell's embedded HTTP server
 (docs/ARCHITECTURE.md D4/D8). It implements the shared config contract plus
 the LAN-only device endpoints the admin panel uses:
 
-  GET  /api/config          -> the board's stored config.json (single contract)
+Access (card SB-4, deploy/pinauth.py): the display's three routes below marked
+"open" need nothing; every other /api/ route needs the caretaker's session
+cookie (POST /api/login with the PIN) and answers 401 without it.
+
+  GET  /api/auth            -> open: {pinSet, loggedIn, waitSeconds}
+  POST /api/login           -> open: {pin} -> session cookie | 401 | 429 (wait)
+  POST /api/logout          -> end this session
+  POST /api/pin             -> {pin, current?}: set the first PIN (open while none
+                               is set), or change it (session + current PIN)
+  GET  /api/config          -> open: the board's stored config.json (single contract)
   PUT  /api/config          -> replace it (a Save from the board OR a phone)
   GET  /api/whoami          -> the phone URL to reach this admin page (+ QR)
   POST /api/display/<mode>  -> switch screen: external | tablet | both | toggle
-  GET  /api/time            -> the board's current wall clock (for offset sync)
+  GET  /api/time            -> open: the board's current wall clock (for offset sync)
   POST /api/time            -> set the board's system clock (needs sudoers helper)
   GET  /api/hotspot         -> WiFi hotspot status + ssid/password
   POST /api/hotspot/start   -> turn the hotspot on
@@ -29,8 +38,13 @@ the LAN-only device endpoints the admin panel uses:
   POST /api/hotspot/config  -> set {ssid, password} (and turn it on)
   GET  /api/wifi/scan       -> nearby WiFi networks (read-only nmcli)
   POST /api/wifi/connect    -> join {ssid, password?} an existing network
-  GET  /api/preview         -> current forced-state preview on the board (or none)
+  GET  /api/preview         -> open: current forced-state preview on the board (or none)
   POST /api/preview         -> push {state, t?, seconds?} to the board (auto-expires)
+  POST /api/update          -> update the code (git)
+  POST /api/reboot          -> reboot the board
+
+Only /display/ and /admin/ are served as files; the rest of the repo (.git,
+deploy/, docs) is not reachable over the network.
 
 Config is stored OUTSIDE the repo (default ~/.config/salahboard/config.json,
 override with $SALAHBOARD_CONFIG) so a `git pull` update never touches the
@@ -40,6 +54,7 @@ do nothing unless install-kiosk.sh has added the sudoers drop-in.
 import http.server
 import json
 import os
+import posixpath
 import shutil
 import socket
 import socketserver
@@ -47,8 +62,12 @@ import subprocess
 import sys
 import threading
 import time
+import urllib.parse
+from http.cookies import SimpleCookie
 
-PORT = int(sys.argv[1]) if len(sys.argv) > 1 else 8080
+import pinauth
+
+PORT = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 8080
 
 # Serve the whole repo root (not just display/) so /admin/ is reachable on
 # the device too. The board itself lives at /display/ . Works regardless of
@@ -83,6 +102,12 @@ CONFIG_PATH = os.environ.get("SALAHBOARD_CONFIG") or os.path.join(
     os.path.expanduser("~"), ".config", "salahboard", "config.json"
 )
 MAX_CONFIG_BYTES = 512 * 1024  # generous; config is a couple of KB in practice
+
+AUTH = pinauth.Auth(os.path.dirname(os.path.abspath(CONFIG_PATH)))
+# The display polls these with no session; they must never carry a secret.
+OPEN_GET = {"/api/config", "/api/preview", "/api/time", "/api/auth"}
+OPEN_POST = {"/api/login", "/api/logout", "/api/pin"}  # each checks for itself
+STATIC_PREFIXES = ("/display/", "/admin/")
 
 
 def lan_ip():
@@ -151,6 +176,102 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(body)
 
+    # ── access ───────────────────────────────────────────────
+    def _token(self):
+        c = SimpleCookie()
+        try:
+            c.load(self.headers.get("Cookie") or "")
+        except Exception:
+            return None
+        m = c.get(pinauth.COOKIE)
+        return m.value if m else None
+
+    def _bucket(self):
+        # The board's own screen is a separate lockout bucket, so guessing
+        # from the WiFi can never lock out the caretaker at the board.
+        return "local" if self.client_address[0] in ("127.0.0.1", "::1") else "network"
+
+    def _authed(self):
+        return AUTH.session_ok(self._token())
+
+    def _deny(self):
+        return self._json(401, {"ok": False, "error": "PIN required",
+                                "pinSet": AUTH.pin_set()})
+
+    def _cross_site(self):
+        """True if a browser says this unsafe request came from another site."""
+        origin = self.headers.get("Origin")
+        if not origin or origin == "null":
+            return origin == "null"
+        host = self.headers.get("Host") or ""
+        return origin.split("://", 1)[-1] != host
+
+    def _session_json(self, code, obj, token):
+        """JSON reply that sets (token) or clears (None) the session cookie."""
+        body = json.dumps(obj).encode()
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json")
+        self.send_header("Content-Length", str(len(body)))
+        if token:
+            self.send_header("Set-Cookie", f"{pinauth.COOKIE}={token}; Path=/; "
+                             f"HttpOnly; SameSite=Strict; Max-Age={pinauth.SESSION_MAX}")
+        else:
+            self.send_header("Set-Cookie", f"{pinauth.COOKIE}=; Path=/; HttpOnly; "
+                             "SameSite=Strict; Max-Age=0")
+        self.end_headers()
+        self.wfile.write(body)
+
+    def _auth_status(self):
+        return self._json(200, {"pinSet": AUTH.pin_set(), "loggedIn": self._authed(),
+                                "waitSeconds": AUTH.wait_for(self._bucket())})
+
+    def _login(self):
+        obj = self._read_body() or {}
+        status, token, retry = AUTH.login(str(obj.get("pin") or ""), self._bucket())
+        if status == "ok":
+            return self._session_json(200, {"ok": True}, token)
+        if status == "nopin":
+            return self._json(409, {"ok": False, "pinSet": False, "error": "No PIN is set yet."})
+        if status == "locked":
+            return self._json(429, {"ok": False, "waitSeconds": retry,
+                                    "error": f"Too many wrong PINs. Wait {retry} seconds."})
+        return self._json(401, {"ok": False, "waitSeconds": retry, "error": "Wrong PIN."})
+
+    def _logout(self):
+        AUTH.logout(self._token())
+        return self._session_json(200, {"ok": True}, None)
+
+    def _set_pin(self):
+        obj = self._read_body() or {}
+        status, token, retry, err = AUTH.change_pin(
+            str(obj.get("pin") or ""), str(obj.get("current") or ""),
+            self._token(), self._bucket())
+        if status == "ok":
+            return self._session_json(200, {"ok": True}, token)
+        code = {"bad": 400, "denied": 401, "wrong": 401, "locked": 429}[status]
+        return self._json(code, {"ok": False, "error": err, "waitSeconds": retry})
+
+    def _static(self, head=False):
+        """Serve files from /display/ and /admin/ only."""
+        path = self.path.split("?")[0]
+        if path in ("/", "/display", "/admin"):
+            self.send_response(302)
+            self.send_header("Location", "/display/" if path == "/" else path + "/")
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return None
+        # Check the path the file handler will actually open: decoded and
+        # normalised, so "/display/%2e%2e/.git/config" can't climb out.
+        real = posixpath.normpath(urllib.parse.unquote(path))
+        if path.endswith("/"):
+            real += "/"
+        if not real.startswith(STATIC_PREFIXES) or "/." in real:
+            return self._json(404, {"error": "not found"})
+        return super().do_HEAD() if head else super().do_GET()
+
+    def do_HEAD(self):
+        return self._static(head=True)
+
     def _read_body(self):
         """Read and JSON-parse the request body, capped at MAX_CONFIG_BYTES."""
         length = int(self.headers.get("Content-Length") or 0)
@@ -165,6 +286,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
     # ── GET ──────────────────────────────────────────────────
     def do_GET(self):
         path = self.path.split("?")[0]
+
+        if path.startswith("/api/") and path not in OPEN_GET and not self._authed():
+            return self._deny()
+
+        if path == "/api/auth":
+            return self._auth_status()
 
         if path == "/api/whoami":
             ip = lan_ip()
@@ -213,10 +340,14 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/wifi/scan":
             return self._wifi_scan()
 
-        return super().do_GET()
+        return self._static()
 
     # ── PUT ──────────────────────────────────────────────────
     def do_PUT(self):
+        if self._cross_site():
+            return self._json(403, {"ok": False, "error": "cross-site request refused"})
+        if not self._authed():
+            return self._deny()
         if self.path.split("?")[0] == "/api/config":
             obj = self._read_body()
             if not isinstance(obj, dict):
@@ -230,7 +361,18 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
     # ── POST ─────────────────────────────────────────────────
     def do_POST(self):
-        parts = self.path.split("?")[0].strip("/").split("/")
+        path = self.path.split("?")[0]
+        if self._cross_site():
+            return self._json(403, {"ok": False, "error": "cross-site request refused"})
+        if path == "/api/login":
+            return self._login()
+        if path == "/api/logout":
+            return self._logout()
+        if path == "/api/pin":
+            return self._set_pin()
+        if not self._authed():
+            return self._deny()
+        parts = path.strip("/").split("/")
 
         # /api/display/<mode>
         if len(parts) == 3 and parts[0] == "api" and parts[1] == "display":
@@ -422,6 +564,7 @@ if __name__ == "__main__":
     with Server(("0.0.0.0", PORT), Handler) as httpd:
         print(f"Salah Board: serving {ROOT}")
         print(f"  config:   {CONFIG_PATH}")
+        print(f"  PIN:      {'set' if AUTH.pin_set() else 'not set (settings page will ask)'}")
         print(f"  board:    http://localhost:{PORT}/display/")
         print(f"  settings: http://localhost:{PORT}/admin/")
         print(f"  network:  http://{lan_ip()}:{PORT}/display/")

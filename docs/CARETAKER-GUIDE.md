@@ -55,6 +55,24 @@ with a "set the time" prompt. Use the remote's ±1m/±10m/±1h/±1d buttons,
 or scan the QR from your phone — either way, prayer times shown are
 never wrong, the screen just waits for you to confirm the time.
 
+## Settings PIN (Linux kiosk)
+
+The settings page asks for a PIN of 6 to 12 digits, so nobody on the masjid
+WiFi can change the board. The display itself never needs it.
+
+- **First time:** if no PIN was set when the board was installed, the settings
+  page asks you to choose one. Do it straight away, and give the PIN to the
+  masjid committee.
+- **Change it:** settings → Network → *Settings PIN*. Every other phone is
+  signed out.
+- **Wrong PIN five times:** the page makes you wait 30 seconds, then longer
+  after each further wrong PIN. Guessing from a phone never locks the board's
+  own screen.
+- **Forgot it:** whoever installed the board clears it at the board. With a
+  keyboard: press `Ctrl+Alt+F2`, log in, type
+  `touch ~/.config/salahboard/reset-pin`, then `Ctrl+Alt+F1` to go back. (Or
+  the same command over SSH.) The settings page then asks for a new PIN.
+
 ## Getting help
 
 This is free, open-source software with no company behind it. For setup

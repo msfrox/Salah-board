@@ -6,6 +6,34 @@ binding, validation, notices CRUD, export/import) is storage-agnostic.
 Swapping these two functions is the entire M3 migration — no other
 file in `admin/` should need to change.
 
+## The Linux kiosk (`deploy/serve.py`, v1.0) — access and the PIN
+
+The full route list is the docstring at the top of `deploy/serve.py`. Since
+SB-4 every route needs the caretaker's session except these:
+
+| Route | Who calls it | Why it is open |
+|---|---|---|
+| `GET /api/config` | the display, every 3 s | holds no secrets (`docs/CONFIG-SCHEMA.md`) |
+| `GET /api/preview` | the display | a state name and a time, nothing else |
+| `GET /api/time` | the display, Time tab | the board's clock |
+| `GET /api/auth` | `admin/js/auth.js` | `{pinSet, loggedIn, waitSeconds}` |
+| `POST /api/login` | lock screen | `{pin}` → `200` + `sb_session` cookie, `401` wrong, `429` wait, `409` no PIN yet |
+| `POST /api/logout` | "Lock settings" | clears the cookie |
+| `POST /api/pin` | lock screen, Network → Settings PIN | `{pin}` sets the first PIN while none is set; afterwards `{pin, current}` with a session |
+
+Everything else (`PUT /api/config`, hotspot, WiFi, clock, display switch,
+preview push, update, reboot, `whoami`) answers `401 {"pinSet": …}` without a
+session. The cookie is `HttpOnly; SameSite=Strict`; a request whose `Origin`
+is another site gets `403`. Sessions end after 30 idle minutes or 12 hours and
+are in memory only. Wrong PINs: four free, then 30 s, doubling to an hour,
+counted separately for the board's own screen (loopback) and the network.
+
+`admin/js/auth.js` loads first: it shows the lock (or "set a PIN") screen,
+and any later `401` from `/api/` brings it back. `persistConfig()` returns
+`false` on a refused save instead of writing localStorage. Off the board
+(`/api/auth` missing) none of this runs. Only `/display/` and `/admin/` are
+served as files. Tests: `python3 -m unittest discover -s tests -p 'test_*.py'`.
+
 ## Browser-dev (M2, current)
 
 - `loadConfig()` reads `localStorage['sb_config']` (same key the display

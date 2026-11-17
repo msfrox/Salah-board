@@ -95,6 +95,10 @@ Requirement: *"restart with no intervention after a sudden power off."*
    crash-restarting Chromium kiosk, a systemd service for the server, and
    routes the picture to HDMI (switching the tablet's own panel off).
 
+   When run from a terminal it also asks for the **settings PIN** (6–12
+   digits). Skip it and the settings page asks for one the first time it is
+   opened, so set it before the board goes on the masjid WiFi.
+
 4. It boots straight into the board on the HDMI monitor.
 
 **Pin a zone/language** (optional): re-run the installer with, e.g.
@@ -109,6 +113,16 @@ systemctl status salahboard-server        # is the server up?
 curl -sI http://localhost:8080/display/   # should print HTTP/1.0 200 OK
 journalctl -u salahboard-server -f        # server logs
 ```
+
+Settings PIN (card SB-4, `deploy/pinauth.py`):
+
+```sh
+python3 deploy/pinauth.py status          # is a PIN set?
+python3 deploy/pinauth.py set             # set or replace it (prompts twice)
+touch ~/.config/salahboard/reset-pin      # clear it; works while the server runs
+```
+
+Run these as the kiosk user, not root.
 
 To leave kiosk mode temporarily: switch to another VT with
 `Ctrl+Alt+F2`, log in, and `sudo systemctl stop getty@tty1` (or just edit
