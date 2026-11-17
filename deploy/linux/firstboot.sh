@@ -22,7 +22,11 @@ for _ in $(seq 1 60); do
 done
 
 cd "$REPO" || { echo "repo not found at $REPO — aborting"; exit 1; }
-git pull --ff-only || echo "git pull skipped/failed — using cloned copy"
+# Run the newest release (vX.Y.Z tag), never whatever is on main (SB-7).
+# As the board user: git refuses a root-owned checkout in someone else's
+# repo, and the release record belongs in ~board/.config/salahboard/.
+sudo -u board -H python3 deploy/release.py update \
+  || echo "no release installed — staying on the cloned copy ($(git rev-parse --short HEAD))"
 
 # Run the kiosk installer as the auto-login user 'board'.
 KIOSK_USER=board bash deploy/linux/install-kiosk.sh

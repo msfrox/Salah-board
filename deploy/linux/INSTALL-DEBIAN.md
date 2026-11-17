@@ -181,41 +181,42 @@ machine, then copy the repo (including the generated
 detects it and installs without any network. Do the §4-B manual install
 (the automated §4-A path clones over the internet, so it needs a connection).
 
-## Updating an installed board to the latest code
+## Updating an installed board
 
-The board is a git clone (this guide put it at `~/Salah-board`), so an update is
-a `git pull`. Log in on the tablet (`Ctrl+Alt+F2` for a text console), then:
+A board runs a **release**: a git tag `vX.Y.Z` (card SB-7; how one is made is
+`docs/RELEASING.md`). It never takes unreleased work from `main`.
+
+**From the settings page** (the usual way): Network → *Software update* →
+*Check for a new version* → *Update to vX.Y.Z* → *Reboot board*. If the new
+version's prayer-time data fails its check, the board refuses it and stays where
+it was. *Go back to …* returns to the version that ran before the last update.
+
+**From a console** (`Ctrl+Alt+F2`, log in as the kiosk user, not root):
 
 ```bash
-cd ~/Salah-board            # wherever you cloned it
-git pull                    # fetch the latest code
+cd ~/Salah-board                      # wherever you cloned it
+python3 deploy/release.py check       # what runs, what is newest
+python3 deploy/release.py update      # move to the newest release
+python3 deploy/release.py rollback    # back to the one before
+sudo reboot
 ```
 
-Then apply it, depending on what changed:
-
-- **Display / admin / server changes only** (the common case):
-  ```bash
-  sudo systemctl restart salahboard-server   # picks up serve.py changes
-  sudo reboot                                # relaunch Chromium on the new code
-  ```
-  (The display auto-reloads *config* changes live, but new HTML/CSS/JS needs the
-  browser to reload — a reboot is the simplest way on a keyboard-less board.)
+The record of what ran before is `~/.config/salahboard/release.json`, next to
+the masjid's `config.json`; an update never touches either.
 
 - **After an update that adds device features** (e.g. the WiFi-hotspot / clock
-  controls, which need NetworkManager + a sudoers rule), re-run the installer
-  once so those are set up, then reboot:
+  controls, or the settings PIN), re-run the installer once, then reboot:
   ```bash
   sudo bash deploy/linux/install-kiosk.sh
   sudo reboot
   ```
-  Re-running is safe and idempotent — it just refreshes packages, the service and
-  the sudoers drop-in. Your masjid settings live in
-  `~/.config/salahboard/config.json` (outside the repo), so a pull never touches
-  them.
+  Re-running is safe and idempotent — it refreshes packages, the service and
+  the sudoers drop-in, and keeps an existing PIN.
 
-If `git pull` complains about local changes, you didn't edit tracked files on
-purpose — run `git stash` first, or `git reset --hard` to take the new code as-is
-(your `config.json` is safe either way, being outside the repo).
+**"Program files have been changed by hand"**: someone edited a tracked file on
+the board, so the update stopped without changing anything. See what changed
+with `git status`; `git stash` keeps the edit aside, `git checkout -- .` drops
+it. `config.json` is outside the repo and safe either way.
 
 ## If something's off
 

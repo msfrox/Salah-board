@@ -41,6 +41,9 @@ PROTECTED = [
     ("POST", "/api/preview", {"state": "azan", "seconds": 5}),
     ("POST", "/api/wifi/connect", {"ssid": "Masjid"}),
     ("POST", "/api/update", None),
+    ("GET", "/api/version", None),
+    ("POST", "/api/version/check", None),
+    ("POST", "/api/rollback", None),
     ("POST", "/api/reboot", None),
 ]
 DISPLAY_ROUTES = ["/api/config", "/api/preview", "/api/time"]
@@ -65,7 +68,7 @@ class ServerTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         serve.run_helper = _stub_helper
-        serve.Handler._update = lambda self: self._json(200, {"ok": True, "stub": True})
+        serve.Handler._release = lambda self, fn: self._json(200, {"ok": True, "stub": fn.__name__})
         serve.Handler._display = lambda self, mode: self._json(200, {"ok": True, "mode": mode})
         serve.Handler._wifi_scan = lambda self: self._json(200, {"available": True, "networks": []})
         cls.httpd = serve.Server(("127.0.0.1", 0), serve.Handler)

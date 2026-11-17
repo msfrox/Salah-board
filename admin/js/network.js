@@ -155,24 +155,52 @@
     if (cancel) cancel.addEventListener('click', () => { $('#wifi-connect').hidden = true; });
   }
 
-  // ── Software update (git pull) + reboot ──────────────────
+  // ── Software update (release tags, SB-7) + reboot ───────
   function wireUpdate() {
     const upStatus = m => { const el = $('#update-status'); if (el) el.textContent = m; };
-    const upBtn = $('#update-btn');
-    if (upBtn) upBtn.addEventListener('click', async () => {
-      if (!confirm('Fetch and apply the latest code from GitHub?')) return;
-      upBtn.disabled = true;
-      upStatus('Updating from GitHub…');
-      const r = await post('/api/update');
-      upBtn.disabled = false;
-      if (r.ok) {
-        upStatus(r.output && /already up to date/i.test(r.output)
-          ? 'Already up to date.'
-          : 'Updated. Reboot the board to apply the new code.');
-      } else {
-        upStatus('Update failed — ' + (r.error || 'board device with internet only.'));
-      }
+    const verStatus = m => { const el = $('#version-status'); if (el) el.textContent = m; };
+    const upBtn = $('#update-btn'), backBtn = $('#rollback-btn'), checkBtn = $('#version-check-btn');
+
+    function showVersion(v) {
+      if (!v || !v.current) { verStatus('Version information is available only on the board device.'); return; }
+      const when = v.checkedAt ? ` (last checked ${v.checkedAt.replace('T', ' ').slice(0, 16)})` : '';
+      verStatus(`Running ${v.current}. ` + (v.latest
+        ? (v.updateAvailable ? `Newest release: ${v.latest}.` : `This is the newest release${when}.`)
+        : `No release found yet${when}.`));
+      if (upBtn) { upBtn.hidden = !v.updateAvailable; upBtn.textContent = `Update to ${v.latest}`; }
+      if (backBtn) { backBtn.hidden = !v.previous; backBtn.textContent = `Go back to ${v.previous}`; }
+    }
+    async function loadVersion() {
+      try {
+        const res = await fetch('/api/version', { cache: 'no-store' });
+        showVersion(res.ok ? await res.json() : null);
+      } catch (e) { showVersion(null); }
+    }
+    async function act(path, busy) {
+      [upBtn, backBtn, checkBtn].forEach(b => { if (b) b.disabled = true; });
+      upStatus(busy);
+      const res = await fetch(path, { method: 'POST' }).catch(() => null);
+      const j = res ? await res.json().catch(() => ({})) : {};
+      [upBtn, backBtn, checkBtn].forEach(b => { if (b) b.disabled = false; });
+      if (j.current) showVersion(j);
+      return { ok: !!(res && res.ok && j.ok), j };
+    }
+
+    if (checkBtn) checkBtn.addEventListener('click', async () => {
+      const r = await act('/api/version/check', 'Looking for a new version…');
+      upStatus(r.ok ? '' : (r.j.error || 'Could not check — board device with internet only.'));
     });
+    if (upBtn) upBtn.addEventListener('click', async () => {
+      if (!confirm(upBtn.textContent + '? The board keeps showing prayer times; reboot afterwards to start the new version.')) return;
+      const r = await act('/api/update', 'Updating…');
+      upStatus(r.ok ? r.j.message : ('Update failed — ' + (r.j.error || 'board device with internet only.')));
+    });
+    if (backBtn) backBtn.addEventListener('click', async () => {
+      if (!confirm(backBtn.textContent + '?')) return;
+      const r = await act('/api/rollback', 'Going back…');
+      upStatus(r.ok ? r.j.message : ('Could not go back — ' + (r.j.error || 'board device only.')));
+    });
+    document.addEventListener('sb-tab-shown', e => { if (e.detail.tab === 'network') loadVersion(); });
     const rbBtn = $('#reboot-btn');
     if (rbBtn) rbBtn.addEventListener('click', async () => {
       if (!confirm('Reboot the board now?')) return;

@@ -375,9 +375,12 @@
 
       <section class="card">
         <h2>Software update</h2>
-        <p class="hint">Fetch the latest Salah Board code from GitHub and apply it. The board must be connected to the internet. (Board device only.)</p>
+        <p class="hint">The board runs a released version of Salah Board. "Check" looks on GitHub for a newer one (the board needs internet); after an update or going back, reboot to start it. (Board device only.)</p>
+        <p class="readonly-status" id="version-status">Checking…</p>
         <div class="hotspot-btns">
-          <button type="button" class="btn btn--primary" id="update-btn">Update from GitHub</button>
+          <button type="button" class="btn btn--secondary" id="version-check-btn">Check for a new version</button>
+          <button type="button" class="btn btn--primary" id="update-btn" hidden>Update</button>
+          <button type="button" class="btn btn--secondary" id="rollback-btn" hidden>Go back</button>
           <button type="button" class="btn btn--secondary" id="reboot-btn">Reboot board</button>
         </div>
         <p class="readonly-status" id="update-status"></p>

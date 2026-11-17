@@ -32,6 +32,7 @@ html, body {
   padding: 1.25rem 1rem 0.5rem;
 }
 .lock-btn { float: right; }
+[hidden] { display: none !important; }
 .admin-header h1 { font-size: 1.4rem; margin: 0 0 .25rem; }
 .admin-sub { color: var(--a-fg-dim); font-size: .9rem; margin: 0; }
 
@@ -66,6 +67,7 @@ html, body {
 }
 .field > span { display: block; font-size: .85rem; color: var(--a-fg-dim); margin-bottom: .3rem; }
 .field input[type="text"],
+.field input[type="password"],
 .field input[type="number"],
 .field input[type="time"],
 .field input[type="date"],

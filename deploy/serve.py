@@ -40,14 +40,18 @@ cookie (POST /api/login with the PIN) and answers 401 without it.
   POST /api/wifi/connect    -> join {ssid, password?} an existing network
   GET  /api/preview         -> open: current forced-state preview on the board (or none)
   POST /api/preview         -> push {state, t?, seconds?} to the board (auto-expires)
-  POST /api/update          -> update the code (git)
+  GET  /api/version         -> {current, latest, updateAvailable, previous, …} (no network)
+  POST /api/version/check   -> fetch release tags from GitHub, then the same
+  POST /api/update          -> move to the newest vX.Y.Z tag; refuses a dirty tree
+                               and goes back if the new data fails its check
+  POST /api/rollback        -> return to the version before the last update
   POST /api/reboot          -> reboot the board
 
 Only /display/ and /admin/ are served as files; the rest of the repo (.git,
 deploy/, docs) is not reachable over the network.
 
 Config is stored OUTSIDE the repo (default ~/.config/salahboard/config.json,
-override with $SALAHBOARD_CONFIG) so a `git pull` update never touches the
+override with $SALAHBOARD_CONFIG) so an update never touches the
 masjid's settings. The hotspot/time helpers are called through `sudo -n` and
 do nothing unless install-kiosk.sh has added the sudoers drop-in.
 """
@@ -66,6 +70,7 @@ import urllib.parse
 from http.cookies import SimpleCookie
 
 import pinauth
+import release
 
 PORT = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1].isdigit() else 8080
 
@@ -340,6 +345,9 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if path == "/api/wifi/scan":
             return self._wifi_scan()
 
+        if path == "/api/version":
+            return self._release(release.status)
+
         return self._static()
 
     # ── PUT ──────────────────────────────────────────────────
@@ -394,9 +402,13 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if parts == ["api", "wifi", "connect"]:
             return self._wifi_connect()
 
-        # /api/update  -> git pull the repo to the latest code
+        # /api/update  -> move to the newest release tag (SB-7, deploy/release.py)
         if parts == ["api", "update"]:
             return self._update()
+        if parts == ["api", "version", "check"]:
+            return self._release(release.check)
+        if parts == ["api", "rollback"]:
+            return self._release(release.rollback)
 
         # /api/reboot  -> reboot the board (applies updated code)
         if parts == ["api", "reboot"]:
@@ -407,21 +419,23 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return self._json(404, {"ok": False, "error": "not found"})
 
     def _update(self):
-        """`git pull` the repo (owned by this unprivileged user) to latest."""
+        return self._release(release.update)
+
+    def _release(self, fn):
+        """Run a release.py action; a ReleaseError is a message for the caretaker."""
         try:
-            before = subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD"],
-                                    capture_output=True, text=True, timeout=15).stdout.strip()
-            r = subprocess.run(["git", "-C", ROOT, "pull", "--ff-only"],
-                               capture_output=True, text=True, timeout=120)
-            after = subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD"],
-                                   capture_output=True, text=True, timeout=15).stdout.strip()
-            out = (r.stdout + r.stderr).strip()
-            if r.returncode != 0:
-                return self._json(500, {"ok": False, "output": out,
-                                        "error": "git pull failed (local changes, or no internet?)"})
-            return self._json(200, {"ok": True, "changed": before != after, "output": out})
+            out = fn(ROOT, os.path.dirname(os.path.abspath(CONFIG_PATH)))
+            return self._json(200, {"ok": True, **out})
+        except release.ReleaseError as e:
+            return self._json(409, {"ok": False, "error": str(e), **self._safe_status()})
         except (OSError, subprocess.SubprocessError) as e:
             return self._json(500, {"ok": False, "error": str(e)})
+
+    def _safe_status(self):
+        try:
+            return release.status(ROOT, os.path.dirname(os.path.abspath(CONFIG_PATH)))
+        except (OSError, subprocess.SubprocessError):
+            return {}
 
     def _display(self, mode):
         if mode not in VALID_MODES:
