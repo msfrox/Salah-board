@@ -541,7 +541,9 @@
     // them (layout.css .honorific). Text is already escaped, so these
     // characters can only be in text, never inside a tag.
     const html = (cornerClockHtml(config, result) + fn(config, result, contentByLang))
-      .replace(/[\uFDF0-\uFDFF]/g, '<span class="honorific">$&</span>');
+      // The space before it becomes non-breaking, so the honorific never
+      // wraps away from the name it follows ("Muhammad" / "ﷺ" on two lines).
+      .replace(/[ \u00A0]?([\uFDF0-\uFDFF])/g, '&nbsp;<span class="honorific">$1</span>');
     container.innerHTML = html;
     container.className = `screen-root theme-${config.theme} state-${result.state.toLowerCase()}`;
     if (result.state === 'NORMAL') { fitMasjidName(container, config); fitNextName(container); fitBannerSlides(container); }
