@@ -155,34 +155,76 @@
     if (cancel) cancel.addEventListener('click', () => { $('#wifi-connect').hidden = true; });
   }
 
-  // ── Software update (release tags, SB-7) + reboot ───────
+  // ── Version (what code the board is running) ─────────────
+  // From serve.py's GET /api/version: the git commit at server start, what is
+  // on disk after an update, and the release status (SB-7: running tag, newest
+  // tag found, what "go back" returns to). Off the board there is no API.
+  function fmtVersion(v) {
+    const d = new Date(v.date);
+    const when = isNaN(d) ? '' : d.toLocaleString('en-GB', {
+      day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
+    });
+    return when ? `${when} · ${v.short}` : v.short;
+  }
+  function showRunning(info) {
+    const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+    const show = (id, on) => { const el = document.getElementById(id); if (el) el.hidden = !on; };
+    if (!info || !info.available || !info.running) {
+      set('version-running', 'Unknown');
+      set('version-note', info
+        ? 'This copy was not installed from GitHub, so it has no version information.'
+        : 'Version information is available only on the board device.');
+      show('version-note', true);
+      show('version-change-row', false);
+      show('version-branch-row', false);
+      return;
+    }
+    const run = info.running;
+    set('version-running', (info.current && !info.current.startsWith('build ') ? info.current + ' · ' : '') + fmtVersion(run));
+    set('version-subject', run.subject || '');
+    show('version-change-row', !!run.subject);
+    set('version-branch', run.branch || '');
+    show('version-branch-row', !!run.branch && run.branch !== 'HEAD');
+    if (info.rebootNeeded && info.installed) {
+      set('version-note', `A different version is ready (${fmtVersion(info.installed)}). Press Reload board to start using it.`);
+      show('version-note', true);
+    } else {
+      show('version-note', false);
+    }
+  }
+  function showRelease(v) {
+    const verStatus = m => { const el = $('#version-status'); if (el) el.textContent = m; };
+    const upBtn = $('#update-btn'), backBtn = $('#rollback-btn');
+    if (!v || !v.current) { verStatus(''); return; }
+    const when = v.checkedAt ? ` (last checked ${v.checkedAt.replace('T', ' ').slice(0, 16)})` : '';
+    verStatus(v.latest
+      ? (v.updateAvailable ? `A newer release is available: ${v.latest}.` : `This is the newest release${when}.`)
+      : `No release found yet${when}. Press Check to look on GitHub.`);
+    if (upBtn) { upBtn.hidden = !v.updateAvailable; upBtn.textContent = `Update to ${v.latest}`; }
+    if (backBtn) { backBtn.hidden = !v.previous; backBtn.textContent = `Go back to ${v.previous}`; }
+  }
+  async function refreshVersion() {
+    let info = null;
+    try {
+      const res = await fetch('/api/version', { cache: 'no-store' });
+      if (res.ok) info = await res.json();
+    } catch (e) { /* not on the board device */ }
+    showRunning(info);
+    showRelease(info);
+  }
+
+  // ── Software update (release tags, SB-7) + reload + reboot ─
   function wireUpdate() {
     const upStatus = m => { const el = $('#update-status'); if (el) el.textContent = m; };
-    const verStatus = m => { const el = $('#version-status'); if (el) el.textContent = m; };
     const upBtn = $('#update-btn'), backBtn = $('#rollback-btn'), checkBtn = $('#version-check-btn');
 
-    function showVersion(v) {
-      if (!v || !v.current) { verStatus('Version information is available only on the board device.'); return; }
-      const when = v.checkedAt ? ` (last checked ${v.checkedAt.replace('T', ' ').slice(0, 16)})` : '';
-      verStatus(`Running ${v.current}. ` + (v.latest
-        ? (v.updateAvailable ? `Newest release: ${v.latest}.` : `This is the newest release${when}.`)
-        : `No release found yet${when}.`));
-      if (upBtn) { upBtn.hidden = !v.updateAvailable; upBtn.textContent = `Update to ${v.latest}`; }
-      if (backBtn) { backBtn.hidden = !v.previous; backBtn.textContent = `Go back to ${v.previous}`; }
-    }
-    async function loadVersion() {
-      try {
-        const res = await fetch('/api/version', { cache: 'no-store' });
-        showVersion(res.ok ? await res.json() : null);
-      } catch (e) { showVersion(null); }
-    }
     async function act(path, busy) {
       [upBtn, backBtn, checkBtn].forEach(b => { if (b) b.disabled = true; });
       upStatus(busy);
       const res = await fetch(path, { method: 'POST' }).catch(() => null);
       const j = res ? await res.json().catch(() => ({})) : {};
       [upBtn, backBtn, checkBtn].forEach(b => { if (b) b.disabled = false; });
-      if (j.current) showVersion(j);
+      await refreshVersion();
       return { ok: !!(res && res.ok && j.ok), j };
     }
 
@@ -191,7 +233,7 @@
       upStatus(r.ok ? '' : (r.j.error || 'Could not check — board device with internet only.'));
     });
     if (upBtn) upBtn.addEventListener('click', async () => {
-      if (!confirm(upBtn.textContent + '? The board keeps showing prayer times; reboot afterwards to start the new version.')) return;
+      if (!confirm(upBtn.textContent + '? The board keeps showing prayer times; press Reload board afterwards to start the new version.')) return;
       const r = await act('/api/update', 'Updating…');
       upStatus(r.ok ? r.j.message : ('Update failed — ' + (r.j.error || 'board device with internet only.')));
     });
@@ -200,17 +242,35 @@
       const r = await act('/api/rollback', 'Going back…');
       upStatus(r.ok ? r.j.message : ('Could not go back — ' + (r.j.error || 'board device only.')));
     });
-    document.addEventListener('sb-tab-shown', e => { if (e.detail.tab === 'network') loadVersion(); });
+    // Reload board: restart serve.py (new code) — the board page notices the
+    // new server instance and reloads itself. No device reboot. A restart
+    // ends PIN sessions (they live in memory), so the lock screen comes back.
+    const rlBtn = $('#reload-btn');
+    if (rlBtn) rlBtn.addEventListener('click', async () => {
+      rlBtn.disabled = true;
+      upStatus('Reloading the board…');
+      const r = await post('/api/restart');
+      if (!r.ok) {
+        rlBtn.disabled = false;
+        upStatus('Could not reload — ' + (r.error || 'board device only.'));
+        return;
+      }
+      setTimeout(() => {
+        rlBtn.disabled = false;
+        upStatus('Board reloaded. The screen refreshes within a few seconds; enter the PIN again to keep changing settings.');
+        refreshVersion();
+      }, 3000);
+    });
     const rbBtn = $('#reboot-btn');
     if (rbBtn) rbBtn.addEventListener('click', async () => {
-      if (!confirm('Reboot the board now?')) return;
+      if (!confirm('Reboot the whole device now? The screen goes blank for a minute or two.')) return;
       upStatus('Rebooting…');
       const r = await post('/api/reboot');
       if (!r.ok) upStatus('Could not reboot — ' + (r.error || 'board device only.'));
     });
   }
 
-  document.addEventListener('sb-tab-shown', e => { if (e.detail.tab === 'network') refresh(); });
+  document.addEventListener('sb-tab-shown', e => { if (e.detail.tab === 'network') { refresh(); refreshVersion(); } });
 
   wire();
   wireWifi();

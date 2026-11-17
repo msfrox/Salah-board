@@ -2,12 +2,24 @@
 
 _Replace this file at the end of every session; git history keeps the old versions._
 
-## Current state (2026-11-18 — SB-4 and SB-7 done; local commits only, nothing pushed)
+## Current state (2026-11-18 — SB-4 and SB-7 done, origin/main merged; local commits only, nothing pushed)
 
+- **Read `docs/LOCAL-CONTEXT.md` first** (Shehan's file, came in with the merge): local
+  Jumu'ah practice, the live board, his preferences. Keep it current in the same commit.
+- **origin/main merged** (27 of Shehan's commits up to `f4bea7d`, 17 Nov: Jumu'ah set
+  azan → sunnah → bayan → khutbah → fixed 1:00 PM iqamah, background pattern and glow,
+  Luha as next prayer, "Reload board" = `POST /api/restart`, running-version rows). Merge
+  kept both sides: one `GET /api/version` returns origin's running/installed commit *and*
+  the release status; the Network card shows both, with Check / Update to / Go back /
+  Reload board / Reboot device. `/api/restart` is behind the PIN. Release messages now say
+  "Reload board", not reboot. The two engine tests that pinned the old Jumu'ah sequence are
+  re-pinned to the new one (early-azan 6 Nov: bayan 12:15; late-azan 3 Jul: bayan 12:26;
+  both khutbah 12:53, iqamah 1:00), matching LOCAL-CONTEXT §2.
 - **What runs:** the Linux Debian kiosk (`deploy/serve.py` + systemd + Openbox + Chromium
-  `--kiosk`), live in a masjid. **Its code is old (last known `b7d445a`)**: no PIN, Update
-  pulls `main`, and it serves the whole repo, `.git` included, to the masjid WiFi. Nothing
-  from this session is on it. Steps for Shehan are below.
+  `--kiosk`), live in a masjid. **It runs Shehan's `main` from before this work** (probably
+  `f4bea7d` or close; Settings → Network → Running version shows it): no PIN, Update pulls
+  `main`, and it serves the whole repo, `.git` included, to the masjid WiFi. Nothing from
+  this session is on it. Steps for Shehan are below.
 - **SB-1, SB-2 done** (earlier today). **SB-3:** characterisation tests done; the swap waits
   for Prayer-Time-Site PT-3 on its `main`.
 - **SB-4 done (`a3e0c59`)**: caretaker PIN. `deploy/pinauth.py` (PBKDF2 hash in
@@ -55,9 +67,9 @@ Context you won't get from the files: nothing is pushed to the live board by a b
 
 ## Updating the live board to this code (Shehan, when ready)
 
-The board's old Update button pulls `main`, so the first update must go through `main`;
-after that it follows tags. Set the PIN **before** the reboot, so there is no window where
-anyone on the WiFi can set it first.
+The board's current Update button pulls `main`, so the first update must go through `main`;
+after that it follows tags. Set the PIN **before** the board restarts on the new code, so
+there is no window where anyone on the WiFi can set it first.
 
 1. On your machine: `git push origin main` (and, if you want boards on the release path
    now, tag a pre-1.0 release after `docs/RELEASING.md`'s checklist, e.g.
@@ -69,17 +81,17 @@ anyone on the WiFi can set it first.
    git pull --ff-only
    python3 deploy/pinauth.py set      # 6–12 digits, typed twice
    python3 tools/sync-data.py --check # must say "data check: ok"
-   sudo systemctl restart salahboard-server
-   sudo reboot
+   sudo systemctl restart salahboard-server   # = Reload board; the screen reloads itself
    ```
-   (Or, without SSH: settings → Network → Update from GitHub → Reboot, then **straight
-   away** open settings on the board's screen and set the PIN.)
+   (Or, without SSH: settings → Network → Update from GitHub → Reload board, then
+   **straight away** open settings on the board's screen and set the PIN.)
 3. Check from a phone on the masjid WiFi: `http://<board>:8080/admin/` asks for the PIN;
    `http://<board>:8080/.git/config` is "not found"; the display still updates.
 4. If you tagged in step 1: settings → Network → Software update should say "Running
-   v0.9.0" after `python3 deploy/release.py update` (or the button) and a reboot.
-5. If anything is wrong: `git checkout b7d445a && sudo reboot` returns to the old code (the
-   PIN file is then ignored; `config.json` is untouched either way).
+   v0.9.0" after `python3 deploy/release.py update` (or the button) and Reload board.
+5. If anything is wrong: note the running commit before step 2 (`git rev-parse --short
+   HEAD`); `git checkout <that commit> && sudo systemctl restart salahboard-server` returns
+   to it (the PIN file is then ignored; `config.json` is untouched either way).
 
 ## In flight
 
@@ -121,6 +133,18 @@ today and are also in `SHEHAN-TODO.md`.
 13. **Android release workflow** now triggers on `android-v*` tags, not `v*`, so a board
     release doesn't start the parked APK build (which needs keystore secrets). Reverse: one
     line in `.github/workflows/release.yml`.
+
+14. **LOCAL-CONTEXT vs SB-7 (from the merge).** `docs/LOCAL-CONTEXT.md` §1 described updating
+    the board with "Update from GitHub" (pull `main`) and §6 says Shehan pushes straight to
+    `main`; SB-7 (ADR 0001 point 4) makes boards follow release tags only. Options: tags
+    only / keep pulling `main` / a per-board "channel" setting. Picked: **tags only**, and
+    LOCAL-CONTEXT §1 and §6 updated to say so. Why: it is the card's purpose and a second
+    masjid must never get half-done work; for Shehan the change is one extra step (tag a
+    patch release after pushing a fix). Reverse: in `release.update`, fall back to
+    `git pull --ff-only` when the board is on a branch, or add a `channel` key to config.
+15. **Reload board ends PIN sessions** (sessions live in server memory; Reload restarts the
+    server). The card says so and the lock screen returns. Reverse: persist sessions to a
+    file in `~/.config/salahboard/` (`pinauth.Auth._sessions`).
 
 ## Waiting on Shehan
 

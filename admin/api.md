@@ -22,7 +22,7 @@ SB-4 every route needs the caretaker's session except these:
 | `POST /api/pin` | lock screen, Network → Settings PIN | `{pin}` sets the first PIN while none is set; afterwards `{pin, current}` with a session |
 
 Everything else (`PUT /api/config`, hotspot, WiFi, clock, display switch,
-preview push, update, reboot, `whoami`) answers `401 {"pinSet": …}` without a
+preview push, version, update, rollback, restart, reboot, `whoami`) answers `401 {"pinSet": …}` without a
 session. The cookie is `HttpOnly; SameSite=Strict`; a request whose `Origin`
 is another site gets `403`. Sessions end after 30 idle minutes or 12 hours and
 are in memory only. Wrong PINs: four free, then 30 s, doubling to an hour,
@@ -55,6 +55,8 @@ bound to localhost + LAN interface only (never public).
 | `GET /api/config` | — | `200` full config JSON | Same shape as `sb_config` / `docs/CONFIG-SCHEMA.md` |
 | `PUT /api/config` | full config JSON | `200` `{ "ok": true }` or `400` `{ "error": "..." }` | Shell validates + persists to its config file, then tells the WebView to reload (JS bridge or it just re-fetches) |
 | `GET /api/status` | — | `200` `{ "version", "uptimeMs", "lastConfigSaveISO", "dataZones": [...] }` | Diagnostics only, no admin form field maps to it |
+| `GET /api/version` | — | `200` `{ "available", "running": { "commit", "short", "date", "subject", "branch" } \| null, "installed": {…} \| null, "rebootNeeded" }` | Shown in admin → Network → Software update. `running` = code version at server start; `installed` = what's on disk now (differs after an update until Reload board / reboot). `rebootNeeded` = they differ (any server restart clears it). PC kiosk: from git (`deploy/serve.py`). Android shell: report the APK's `versionName` as `short`, `available: true` |
+| `POST /api/restart` | — | `200` `{ "ok": true }` | "Reload board" (admin → Network → Software update). Restarts the server so updated code is used, without rebooting the device. Every `GET /api/preview` reply carries `"instance"` (changes on each server start); the display reloads its page when it changes. Android shell: restart the embedded server + reload the WebView |
 | `POST /api/time` | `{ "iso": "2026-07-03T18:30:00" }` | `200` `{ "ok": true, "offsetMs": ... }` | M4. Shell computes `offsetMs` vs. system clock, persists it |
 | `POST /api/preview?state=AZAN` | — | `200` `{ "ok": true }` | Optional QA helper mirroring the `?state=` debug param, for testing from the admin UI without touching the TV |
 | `POST /api/data-refresh` | — | `200` `{ "checked", "updated": [...], "error"? }` | M5/D6. Downloads the configured zone's 12 month files from pray.gear.lk, SHA-256-compares against the active copy, writes only files that changed. Manual trigger only — never runs automatically |

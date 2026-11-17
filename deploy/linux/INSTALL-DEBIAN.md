@@ -187,7 +187,8 @@ A board runs a **release**: a git tag `vX.Y.Z` (card SB-7; how one is made is
 `docs/RELEASING.md`). It never takes unreleased work from `main`.
 
 **From the settings page** (the usual way): Network → *Software update* →
-*Check for a new version* → *Update to vX.Y.Z* → *Reboot board*. If the new
+*Check for a new version* → *Update to vX.Y.Z* → *Reload board* (restarts the
+board program in a few seconds; *Reboot device* only if something is stuck). If the new
 version's prayer-time data fails its check, the board refuses it and stays where
 it was. *Go back to …* returns to the version that ran before the last update.
 
@@ -198,7 +199,7 @@ cd ~/Salah-board                      # wherever you cloned it
 python3 deploy/release.py check       # what runs, what is newest
 python3 deploy/release.py update      # move to the newest release
 python3 deploy/release.py rollback    # back to the one before
-sudo reboot
+sudo systemctl restart salahboard-server   # = "Reload board"
 ```
 
 The record of what ran before is `~/.config/salahboard/release.json`, next to

@@ -179,7 +179,7 @@ def update(root=ROOT, state_dir=None, fetch=True):
     _, sha, _ = _git(root, "rev-list", "-n", "1", s["latest"])
     was = _switch(root, state_dir, s["latest"], sha, verify=True)
     return {"changed": True, "message": f"Updated from {was} to {s['latest']}. "
-            "Reboot the board to start the new version.", **status(root, state_dir)}
+            "Press Reload board to start the new version.", **status(root, state_dir)}
 
 
 def rollback(root=ROOT, state_dir=None):
@@ -192,7 +192,7 @@ def rollback(root=ROOT, state_dir=None):
     # Going back to a version that already ran: its data check is not a gate.
     was = _switch(root, state_dir, prev["label"], prev["commit"], verify=False)
     return {"changed": True, "message": f"Went back from {was} to {prev['label']}. "
-            "Reboot the board to start it.", **status(root, state_dir)}
+            "Press Reload board to start it.", **status(root, state_dir)}
 
 
 def _main(argv):

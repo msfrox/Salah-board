@@ -40,12 +40,18 @@ cookie (POST /api/login with the PIN) and answers 401 without it.
   POST /api/wifi/connect    -> join {ssid, password?} an existing network
   GET  /api/preview         -> open: current forced-state preview on the board (or none)
   POST /api/preview         -> push {state, t?, seconds?} to the board (auto-expires)
-  GET  /api/version         -> {current, latest, updateAvailable, previous, …} (no network)
+  GET  /api/version         -> the code running now (git commit at server start), what
+                               is on disk after an update (rebootNeeded), and the
+                               release status: {current, latest, updateAvailable,
+                               previous, …} (no network)
   POST /api/version/check   -> fetch release tags from GitHub, then the same
   POST /api/update          -> move to the newest vX.Y.Z tag; refuses a dirty tree
                                and goes back if the new data fails its check
   POST /api/rollback        -> return to the version before the last update
-  POST /api/reboot          -> reboot the board
+  POST /api/restart         -> "Reload board": restart this server (picks up
+                               updated code) and make the board page reload
+                               itself — no full device reboot. Ends PIN sessions.
+  POST /api/reboot          -> reboot the whole device
 
 Only /display/ and /admin/ are served as files; the rest of the repo (.git,
 deploy/, docs) is not reachable over the network.
@@ -100,7 +106,7 @@ PREVIEW_MAX_SECONDS = 3600
 # forceState() uppercases + underscores them (see display/js/state.js).
 VALID_PREVIEW_STATES = {
     "normal", "azan", "between", "iqamah", "salah", "after",
-    "luha-wait", "luha-open", "night", "jumuah", "khutbah",
+    "luha-wait", "luha-open", "night", "sunnah", "jumuah", "khutbah",
 }
 
 CONFIG_PATH = os.environ.get("SALAHBOARD_CONFIG") or os.path.join(
@@ -113,6 +119,47 @@ AUTH = pinauth.Auth(os.path.dirname(os.path.abspath(CONFIG_PATH)))
 OPEN_GET = {"/api/config", "/api/preview", "/api/time", "/api/auth"}
 OPEN_POST = {"/api/login", "/api/logout", "/api/pin"}  # each checks for itself
 STATIC_PREFIXES = ("/display/", "/admin/")
+
+
+def git_version():
+    """The repo's current commit, or None if this isn't a git checkout
+    (e.g. a copied folder) or git isn't installed."""
+    try:
+        r = subprocess.run(["git", "-C", ROOT, "log", "-1", "--format=%H%n%h%n%cI%n%s"],
+                           capture_output=True, text=True, timeout=10)
+        if r.returncode != 0:
+            return None
+        full, short, date, subject = (r.stdout.strip().split("\n", 3) + [""] * 4)[:4]
+        b = subprocess.run(["git", "-C", ROOT, "rev-parse", "--abbrev-ref", "HEAD"],
+                           capture_output=True, text=True, timeout=10)
+        return {"commit": full, "short": short, "date": date, "subject": subject,
+                "branch": b.stdout.strip() if b.returncode == 0 else ""}
+    except (OSError, subprocess.SubprocessError):
+        return None
+
+
+# The version the board is RUNNING: read once when the server starts. An
+# update (`git pull`) changes the files on disk, but the board keeps running
+# the old code until "Reload board" (or a reboot) — /api/version reports both.
+RUNNING_VERSION = git_version()
+
+# Changes every time this server starts. The board reads it from every
+# /api/preview poll (every 2 s) and reloads its page when it changes, so a
+# server restart ("Reload board", an update, a crash-restart) always brings
+# the screen onto the code now on disk.
+INSTANCE_ID = f"{os.getpid()}-{time.time():.3f}"
+
+
+def restart_server(delay=0.5):
+    """Replace this process with a fresh copy of serve.py (same port/args),
+    after a short delay so the HTTP reply gets out first. Works with or
+    without systemd; the listening socket isn't inherited (PEP 446), so the
+    new process binds the port cleanly."""
+    def _go():
+        time.sleep(delay)
+        sys.stdout.flush()
+        os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
+    threading.Thread(target=_go, daemon=True).start()
 
 
 def lan_ip():
@@ -307,6 +354,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                 "boardUrl": f"http://{ip}:{PORT}/display/",
             })
 
+        if path == "/api/version":
+            installed = git_version()
+            return self._json(200, {
+                "available": RUNNING_VERSION is not None,
+                "running": RUNNING_VERSION,
+                "installed": installed,
+                "rebootNeeded": bool(RUNNING_VERSION and installed
+                                     and installed["commit"] != RUNNING_VERSION["commit"]),
+                **self._safe_status(),   # release tags (SB-7)
+            })
         if path == "/api/config":
             cfg = read_config()
             if cfg is None:
@@ -336,17 +393,15 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             with _PREVIEW_LOCK:
                 remaining = _PREVIEW["until"] - time.time()
                 if remaining <= 0:
-                    return self._json(200, {"active": False})
+                    return self._json(200, {"active": False, "instance": INSTANCE_ID})
                 return self._json(200, {
                     "active": True, "state": _PREVIEW["state"],
                     "t": _PREVIEW["t"], "remaining": int(remaining),
+                    "instance": INSTANCE_ID,
                 })
 
         if path == "/api/wifi/scan":
             return self._wifi_scan()
-
-        if path == "/api/version":
-            return self._release(release.status)
 
         return self._static()
 
@@ -410,7 +465,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if parts == ["api", "rollback"]:
             return self._release(release.rollback)
 
-        # /api/reboot  -> reboot the board (applies updated code)
+        # /api/restart  -> "Reload board": fresh server + the board page reloads
+        if parts == ["api", "restart"]:
+            restart_server()
+            return self._json(200, {"ok": True})
+
+        # /api/reboot  -> reboot the whole device
         if parts == ["api", "reboot"]:
             ok, out, err = run_helper(REBOOT_SH, timeout=10)
             return self._json(200 if ok else 500, {"ok": ok, "output": out,
@@ -485,21 +545,25 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return self._json(400, {"ok": False, "error": f"bad hotspot action: {action}"})
 
     def _preview(self):
-        """Push a forced state to the board (or clear it). Auto-expires."""
+        """Push a forced state and/or a test time to the board (or clear it).
+        Time only (no state) = the board runs LIVE as if it were that time —
+        every screen changes by itself, the clock keeps ticking. Auto-expires."""
         obj = self._read_body() or {}
-        if obj.get("clear") or not obj.get("state"):
+        t = obj.get("t")
+        if obj.get("clear") or not (obj.get("state") or t):
             with _PREVIEW_LOCK:
                 _PREVIEW.update(state=None, t=None, until=0.0)
             return self._json(200, {"ok": True, "active": False})
-        state = str(obj.get("state")).strip().lower()
-        if state not in VALID_PREVIEW_STATES:
+        state = str(obj.get("state") or "").strip().lower() or None
+        if state and state not in VALID_PREVIEW_STATES:
             return self._json(400, {"ok": False, "error": f"unknown state: {state}"})
+        if t is not None and not (isinstance(t, str) and len(t) <= 25 and t[:4].isdigit() and "T" in t):
+            return self._json(400, {"ok": False, "error": "bad time"})
         try:
             seconds = int(obj.get("seconds") or PREVIEW_DEFAULT_SECONDS)
         except (TypeError, ValueError):
             seconds = PREVIEW_DEFAULT_SECONDS
         seconds = max(5, min(PREVIEW_MAX_SECONDS, seconds))
-        t = obj.get("t")
         with _PREVIEW_LOCK:
             _PREVIEW.update(state=state, t=(str(t) if t else None),
                             until=time.time() + seconds)

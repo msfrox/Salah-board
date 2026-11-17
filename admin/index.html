@@ -95,6 +95,22 @@
       </section>
 
       <section class="card">
+        <h2>Luha</h2>
+        <label class="field checkbox-field">
+          <input type="checkbox" data-path="luha.showOnMain">
+          <span>After Fajr, show Sunrise &amp; Luha as the next prayer on the main screen</span>
+        </label>
+        <label class="field checkbox-field">
+          <input type="checkbox" data-path="luha.enabled">
+          <span>Show full-screen Luha countdown from sunrise</span>
+        </label>
+        <label class="field">
+          <span>Luha begins this many minutes after sunrise</span>
+          <input type="number" min="0" step="1" data-path="luha.waitAfterSunrise" data-number>
+        </label>
+      </section>
+
+      <section class="card">
         <h2>Screen durations (minutes)</h2>
         <label class="field">
           <span>Azan screen</span>
@@ -149,14 +165,19 @@
           <input type="checkbox" data-path="jumuah.enabled">
           <span>Enable Jumu'ah mode on Fridays</span>
         </label>
-        <p class="hint">Jumu'ah azan is always that Friday's Zuhr azan time from the timetable — it isn't set separately here.</p>
+        <p class="hint">Order on Fridays: azan → sunnah prayer reminder → bayan → khutbah → iqamah. The azan is always that Friday's Zuhr azan time from the timetable, and moves through the year; the iqamah stays fixed.</p>
+        <label class="field">
+          <span>Sunnah time after the azan, at least (minutes)</span>
+          <input type="number" min="0" step="1" id="sunnah-minutes" data-path="jumuah.sunnahMinutes" data-number>
+          <span class="hint">On Fridays when the azan is late, the bayan starts this long after the azan screen instead of at its usual time.</span>
+        </label>
         <label class="field checkbox-field">
           <input type="checkbox" id="bayan-enabled">
-          <span>Show a bayan (pre-khutbah talk)</span>
+          <span>Show a bayan</span>
         </label>
         <div id="bayan-details">
           <label class="field">
-            <span>Bayan start time</span>
+            <span>Bayan usually starts at</span>
             <input type="time" id="bayan-time" data-path="jumuah.bayan" data-time="ampm">
           </label>
           <label class="field">
@@ -167,31 +188,25 @@
             <span>Bayan topic (optional)</span>
             <input type="text" data-path="jumuah.bayanTopic" placeholder="e.g. Patience in times of hardship">
           </label>
+          <p class="readonly-status" id="bayan-date-note"></p>
           <label class="field">
-            <span>Only show the name &amp; topic on this Friday (optional)</span>
+            <span>For a later Friday instead (optional)</span>
             <input type="date" id="bayan-date">
-            <span class="hint">Shown in the "Jumu'ah today" banner and on the bayan screen until Jumu'ah salah ends. Set the date so last week's speaker never appears by mistake; leave it empty to show every Friday until you change it.</span>
+            <span class="hint">Leave empty for the coming Friday. The name and topic show in the "Jumu'ah today" banner and on the bayan screen until Jumu'ah salah ends, then clear themselves — last week's speaker never appears by mistake.</span>
           </label>
         </div>
         <label class="field">
-          <span>Iqamah time (fixed, e.g. 1:15 PM)</span>
-          <input type="time" data-path="jumuah.iqamah" data-time="ampm">
+          <span>Iqamah time (fixed)</span>
+          <input type="time" id="jumuah-iqamah-time" data-path="jumuah.iqamah" data-time="ampm">
         </label>
+        <label class="field">
+          <span>Khutbah length (minutes)</span>
+          <input type="number" min="1" step="1" id="khutbah-minutes" data-path="jumuah.khutbahMinutes" data-number>
+        </label>
+        <p class="readonly-status" id="jumuah-summary"></p>
         <label class="field">
           <span>Jumu'ah salah duration (minutes)</span>
           <input type="number" min="1" step="1" data-path="jumuah.salahDuration" data-number>
-        </label>
-      </section>
-
-      <section class="card">
-        <h2>Luha (Duha)</h2>
-        <label class="field checkbox-field">
-          <input type="checkbox" data-path="luha.enabled">
-          <span>Show Luha countdown after sunrise</span>
-        </label>
-        <label class="field">
-          <span>Wait after sunrise (minutes)</span>
-          <input type="number" min="0" step="1" data-path="luha.waitAfterSunrise" data-number>
         </label>
       </section>
 
@@ -375,13 +390,20 @@
 
       <section class="card">
         <h2>Software update</h2>
-        <p class="hint">The board runs a released version of Salah Board. "Check" looks on GitHub for a newer one (the board needs internet); after an update or going back, reboot to start it. (Board device only.)</p>
+        <div class="version-info" id="version-info">
+          <div class="version-row"><span class="version-key">Running version</span><span class="version-val" id="version-running">Checking…</span></div>
+          <div class="version-row" id="version-change-row" hidden><span class="version-key">Latest change</span><span class="version-val" id="version-subject"></span></div>
+          <div class="version-row" id="version-branch-row" hidden><span class="version-key">Branch</span><span class="version-val" id="version-branch"></span></div>
+          <p class="readonly-status" id="version-note" hidden></p>
+        </div>
         <p class="readonly-status" id="version-status">Checking…</p>
+        <p class="hint">The board runs a released version of Salah Board. <strong>Check</strong> looks on GitHub for a newer one (the board needs internet). After an update or going back, press <strong>Reload board</strong> to start using it (a few seconds; the screen reloads by itself, and you enter the PIN again). <strong>Reboot device</strong> restarts the whole computer — only needed if something is stuck. (Board device only.)</p>
         <div class="hotspot-btns">
           <button type="button" class="btn btn--secondary" id="version-check-btn">Check for a new version</button>
           <button type="button" class="btn btn--primary" id="update-btn" hidden>Update</button>
           <button type="button" class="btn btn--secondary" id="rollback-btn" hidden>Go back</button>
-          <button type="button" class="btn btn--secondary" id="reboot-btn">Reboot board</button>
+          <button type="button" class="btn btn--secondary" id="reload-btn">Reload board</button>
+          <button type="button" class="btn btn--secondary" id="reboot-btn">Reboot device</button>
         </div>
         <p class="readonly-status" id="update-status"></p>
       </section>
@@ -391,19 +413,32 @@
     <div class="tab-panel" data-panel="preview" hidden>
       <section class="card">
         <h2>Preview &amp; test</h2>
-        <p class="hint">Force the board into any state without waiting for that time of day — great for checking the theme and content. Save your settings first so the preview reflects them.</p>
+        <p class="hint">Show any screen on the board without waiting for that time of day — great for checking the theme and content. Save your settings first so the preview reflects them. The board goes back to live by itself after the time chosen below.</p>
         <label class="field checkbox-field">
-          <input type="checkbox" id="preview-on-board">
-          <span>Show on the board screen (instead of opening a new tab here). Board device only — reverts to live automatically after 5&nbsp;minutes.</span>
+          <input type="checkbox" id="preview-here">
+          <span>Open here on this device instead (a new tab), not on the board</span>
         </label>
         <label class="field">
           <span>Pretend the time is (optional — drives clocks &amp; countdowns)</span>
           <input type="datetime-local" step="60" id="preview-time">
         </label>
+        <label class="field">
+          <span>Board test lasts</span>
+          <select id="preview-duration">
+            <option value="300">5 minutes</option>
+            <option value="900" selected>15 minutes</option>
+            <option value="1800">30 minutes</option>
+            <option value="3600">1 hour</option>
+          </select>
+        </label>
+        <div class="preview-run">
+          <button type="button" class="btn btn--primary" id="preview-run-time">Run the board from this time</button>
+          <button type="button" class="btn btn--secondary" id="preview-resume-live" hidden>Resume live board</button>
+        </div>
+        <p class="readonly-status" id="preview-board-status"></p>
+        <p class="hint preview-run-hint">Runs the real board as if the clock showed the time above, then keeps ticking — every screen changes by itself (e.g. set a Friday 11:55 to watch azan → sunnah → bayan → khutbah). Goes back to live after the time chosen, or press "Resume live board". The screen buttons below show one screen only.</p>
         <div class="preview-grid" id="preview-grid"></div>
         <button type="button" class="btn btn--primary" id="preview-open-live">Open board (live) in a new tab</button>
-        <button type="button" class="btn btn--secondary" id="preview-resume-live" hidden>Resume live board</button>
-        <p class="readonly-status" id="preview-board-status"></p>
       </section>
     </div>
 

@@ -76,16 +76,49 @@
       { key: 'nightClock', label: 'Clock', selector: '.night-clock' },
       { key: 'nightFajr', label: "Tomorrow's Fajr", selector: '.night-next-fajr' },
     ] },
-    { id: 'jumuah', title: "Bayan (Jumu'ah)", state: 'jumuah', store: 'screens', items: [
-      { key: 'bayanTitle', label: '"Bayan in progress"', selector: '.jumuah-banner' },
+    { id: 'jumuah', title: "Jumu'ah sunnah & bayan", state: 'jumuah', store: 'screens', items: [
+      { key: 'bayanTitle', label: '"Bayan in progress" / "Sunnah prayer"', selector: '.jumuah-banner' },
       { key: 'bayanSpeaker', label: 'Speaker', selector: '.jumuah-speaker' },
-      { key: 'bayanTopic', label: 'Topic', selector: '.jumuah-topic' },
-      { key: 'bayanEtiquette', label: 'Etiquette card', selector: '.screen--jumuah .card--etiquette' },
+      { key: 'bayanTopic', label: 'Topic / sunnah reminder', selector: '.jumuah-topic' },
+      { key: 'bayanTimes', label: 'Times & minutes left', selector: '.jumuah-times, .jumuah-countdown' },
+      { key: 'jumuahQuiet', label: '"Switch off your phones · remain silent"', selector: '.screen--jumuah .jm-quiet' },
     ] },
     { id: 'khutbah', title: 'Khutbah', state: 'khutbah', store: 'screens', items: [
-      { key: 'khutbahLine', label: '"Khutbah in progress" line', selector: '.khutbah-line' },
+      { key: 'khutbahTitle', label: '"Khutbah in progress"', selector: '.khutbah-title' },
+      { key: 'khutbahLine', label: '"Remain silent"', selector: '.khutbah-line' },
+      { key: 'khutbahQuiet', label: '"Switch off your phones"', selector: '.screen--khutbah .jm-quiet' },
     ] },
   ];
+
+  // ── Background pattern + glow (default theme) ─────────────────────────
+  // Per screen (keys = LAYOUT_GROUPS ids):
+  //   visibility 0–100, size 50–200 % — the masjid's rosette;
+  //   glow 0–100 — a soft glow of the screen's colour behind its content
+  //     (the khutbah screen's look, available on every screen);
+  //   custom false → pattern + glow use the screen's own text colour
+  //     (theme.css), true → hue 0–360 + saturation 0–100 instead.
+  // Defaults follow the design: clear on the main and information screens,
+  // faint on the calm Jumu'ah ones, barely there on salah and night.
+  const pg = (visibility, glow) => ({ visibility, size: 100, glow, custom: false, hue: 40, saturation: 55 });
+  const PATTERN_DEFAULTS = {
+    pages: {
+      normal:   pg(45, 10),
+      azan:     pg(35, 25),
+      between:  pg(35, 30),
+      iqamah:   pg(35, 35),
+      salah:    pg(5, 0),
+      after:    pg(35, 25),
+      luha:     pg(35, 30),
+      luhaOpen: pg(35, 35),
+      night:    pg(10, 0),
+      jumuah:   pg(15, 25),
+      khutbah:  pg(10, 40),
+    },
+  };
+  // Alpha at 100 — "as strong as it should ever get" (a full-strength
+  // stencil or glow would compete with the text).
+  const PATTERN_MAX_ALPHA = 0.5;
+  const GLOW_MAX_ALPHA = 0.45;
 
   function layoutSizeDefaults(store) {
     const out = {};
@@ -94,11 +127,42 @@
   }
 
   // Older saved configs had one "banners" size for all three NORMAL banners.
+  // "1:00 PM" ± minutes → "12:53 PM" (config-only helper; the engine isn't
+  // loaded yet when the display reads its config).
+  function shiftAmpm(str, minutes) {
+    const m = /^\s*(\d{1,2}):(\d{2})\s*([AP]M)\s*$/i.exec(String(str || ''));
+    if (!m) return null;
+    let h = Number(m[1]) % 12 + (m[3].toUpperCase() === 'PM' ? 12 : 0);
+    let t = ((h * 60 + Number(m[2]) + minutes) % 1440 + 1440) % 1440;
+    h = Math.floor(t / 60);
+    const ap = h < 12 ? 'AM' : 'PM';
+    return `${h % 12 === 0 ? 12 : h % 12}:${String(t % 60).padStart(2, '0')} ${ap}`;
+  }
+
   function migrateStored(stored) {
     const s = stored && stored.layout && stored.layout.normal && stored.layout.normal.sizes;
     if (s && s.banners !== undefined) {
       ['jumuahBanner', 'pinnedBanner', 'ramadanBlock'].forEach(k => { if (s[k] === undefined) s[k] = s.banners; });
       delete s.banners;
+    }
+    // Jumu'ah settings history (keep old saved configs working):
+    // For a short while (Nov 2026) the khutbah START was stored instead of the
+    // iqamah; iqamah is the fixed time again → iqamah = khutbah + length, so a
+    // masjid's iqamah never moves on upgrade.
+    const j = stored && stored.jumuah;
+    if (j) {
+      // The bayan is a fixed TIME again (it was on/off for a few days):
+      // on → the default 12:15 PM, off → null (no bayan).
+      if (j.bayan === true) j.bayan = '12:15 PM';
+      else if (j.bayan === false) j.bayan = null;
+      if (typeof j.khutbah === 'string') {
+        if (typeof j.iqamah !== 'string') {
+          const len = Number(j.khutbahMinutes) > 0 ? Number(j.khutbahMinutes) : 7;
+          const iq = shiftAmpm(j.khutbah, len);
+          if (iq) { j.iqamah = iq; j.khutbahMinutes = len; }
+        }
+        delete j.khutbah;
+      }
     }
     return stored;
   }
@@ -131,10 +195,17 @@
         salahDuration: { fajr: 10, luhr: 10, asr: 10, magrib: 10, isha: 12 },
       },
 
+      // Friday sequence: azan (that Friday's luhr time) → azan screen →
+      // sunnah reminder → bayan → khutbah (khutbahMinutes, ending at the
+      // fixed iqamah) → iqamah. The bayan starts at its set time, or after
+      // the azan screen + sunnahMinutes if that's later (late-azan months);
+      // the iqamah never moves. Khutbah start = iqamah − khutbahMinutes.
       jumuah: {
         enabled: true,
-        bayan: '12:30 PM',       // fixed set time; null = no bayan card
-        iqamah: '1:15 PM',       // fixed set time (azan is that Friday's luhr time)
+        bayan: '12:15 PM',       // bayan start time; null = no bayan
+        sunnahMinutes: 5,        // at least this much sunnah time after the azan screen
+        iqamah: '1:00 PM',       // fixed set time
+        khutbahMinutes: 7,       // khutbah length → khutbah starts at iqamah − this
         salahDuration: 15,
         // Who gives the bayan and on what — shown in the "Jumu'ah today"
         // banner and on the bayan screen, until Jumu'ah salah ends.
@@ -143,7 +214,10 @@
         bayanDate: null,         // optional ISO date: only show on that Friday
       },
 
-      luha: { enabled: true, waitAfterSunrise: 20 },
+      // enabled: full-screen "Luha in MM:SS" countdown from sunrise.
+      // showOnMain: after Fajr, the main screen's next prayer is Luha, with
+      // Sunrise | Luha (sunrise + waitAfterSunrise) as its two big times.
+      luha: { enabled: true, showOnMain: true, waitAfterSunrise: 20 },
 
       ramadan: {
         enabled: false,
@@ -180,6 +254,7 @@
             timetable: true, cards: true,
           },
         },
+        pattern: JSON.parse(JSON.stringify(PATTERN_DEFAULTS)),
       },
 
       time: {
@@ -295,6 +370,7 @@
   }
 
   global.SBConfig = { defaults, deepMerge, getConfig, getConfigAsync, getStoredAsync, save, debugParams,
-    applyOverrides, layoutFactor, LAYOUT_MIN, LAYOUT_MAX, LAYOUT_GROUPS, STORAGE_KEY };
+    applyOverrides, layoutFactor, LAYOUT_MIN, LAYOUT_MAX, LAYOUT_GROUPS, STORAGE_KEY,
+    PATTERN_DEFAULTS, PATTERN_MAX_ALPHA, GLOW_MAX_ALPHA };
 
 })(window);

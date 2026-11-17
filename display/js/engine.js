@@ -84,8 +84,14 @@
     return showSec ? `${h}:${m}:${s}` : `${h}:${m}`;
   }
 
+  // Remaining time rounds UP to the whole second. The clock shows the current
+  // whole second (rounded down), so rounding the countdown down as well left
+  // them one second apart: clock 4:06:01 + countdown 1:44:58 = 5:50:59, not
+  // the 5:51:00 azan. Rounding up keeps clock + countdown == target exactly,
+  // and the countdown reads 00:01 (never a stale 00:00) in its last second.
   function fmtCountdown(ms) {
     if (ms < 0) ms = 0;
+    ms = Math.ceil(ms / 1000) * 1000;
     const h = Math.floor(ms / 3600000);
     const m = Math.floor((ms % 3600000) / 60000);
     const s = Math.floor((ms % 60000) / 1000);
@@ -155,30 +161,56 @@
     ].filter(s => s.end > s.start);
   }
 
-  // Jumu'ah azan is Zuhr's own azan time for that day (masjid convention —
-  // there's no separate Jumu'ah azan clock). Iqamah is a fixed wall-clock
-  // time set by the masjid (like bayan), not an offset from khutbah length,
-  // since khutbah runs however long the imam takes.
+  // Jumu'ah timings for one Friday. Azan is Zuhr's own azan time that day
+  // (no separate Jumu'ah azan clock). The masjid fixes the IQAMAH (it must
+  // fit office lunch hours, so it doesn't move through the year) and a bayan
+  // time (`bayan`, null = no bayan); the khutbah lasts khutbahMinutes and
+  // ends at the iqamah. Order: azan → azan screen → sunnah reminder → bayan
+  // → khutbah → iqamah.
+  // The azan moves through the year (zone 01: 11:56–12:26), so the bayan
+  // starts at its set time OR once the azan screen and at least
+  // sunnahMinutes of sunnah time have passed — whichever is later. That's
+  // what masjids do in the late-azan months (the bayan starts later, the
+  // iqamah stays). It never starts after the khutbah. No bayan → the sunnah
+  // reminder runs until the khutbah. Sanity: iqamah must be after the azan
+  // screen (else azan + 10 min, the regular-iqamah rule) and the khutbah
+  // can't start before the azan screen ends.
+  function jumuahPlan(dateObj, row, config) {
+    const azan = row ? parseTime(row.luhr, dateObj) : null;
+    if (!azan) return null;
+    const j = config.jumuah || {};
+    const azanEnd = addMinutes(azan, config.screens.azan);
+    const iqamah = computeIqamah(azanEnd, { mode: 'fixed', time: j.iqamah });
+    const len = Number(j.khutbahMinutes) > 0 ? Number(j.khutbahMinutes) : 7;
+    let khutbah = addMinutes(iqamah, -len);
+    if (khutbah < azanEnd) khutbah = azanEnd;
+    let bayan = j.bayan ? parseTime(j.bayan, dateObj) : null;
+    if (bayan) {
+      const earliest = addMinutes(azanEnd, Math.max(0, Number(j.sunnahMinutes) || 0));
+      if (bayan < earliest) bayan = earliest;             // late-azan Fridays: bayan starts later
+      if (bayan > khutbah) bayan = khutbah;               // never after the khutbah
+    }
+    const sunnahEnd = bayan || khutbah;                  // sunnah reminder runs until here
+    return { azan, azanEnd, bayan, sunnahEnd, khutbah, iqamah };
+  }
+
   function buildJumuahCycle(dateObj, row, config) {
-    const segs = [];
-    const azanDate = row ? parseTime(row.luhr, dateObj) : null;
-    if (!azanDate) return segs;
-    const azanEnd = addMinutes(azanDate, config.screens.azan);
-    const iqamahDate = computeIqamah(azanEnd, { mode: 'fixed', time: config.jumuah.iqamah });
-    const iqamahWarnEnd = addMinutes(iqamahDate, config.screens.iqamahWarning);
+    const plan = jumuahPlan(dateObj, row, config);
+    if (!plan) return [];
+    const { azan, azanEnd, bayan, sunnahEnd, khutbah, iqamah } = plan;
+    const iqamahWarnEnd = addMinutes(iqamah, config.screens.iqamahWarning);
     const salahEnd = addMinutes(iqamahWarnEnd, config.jumuah.salahDuration);
     const afterEnd = addMinutes(salahEnd, config.screens.after);
-    const jm = { jumuah: true, iqamahTime: iqamahDate };
-    if (config.jumuah.bayan) {
-      const bayanDate = parseTime(config.jumuah.bayan, dateObj);
-      if (bayanDate && bayanDate < azanDate) {
-        segs.push({ state: 'JUMUAH', start: bayanDate, end: azanDate, prayer: 'luhr', meta: Object.assign({ phase: 'bayan' }, jm) });
-      }
-    }
+    const jm = { jumuah: true, iqamahTime: iqamah, bayanStart: bayan, khutbah, bayan: !!bayan };
+    const phase = p => Object.assign({ phase: p }, jm);
+    const segs = [
+      { state: 'AZAN', start: azan, end: azanEnd, prayer: 'luhr', meta: jm },
+      { state: 'JUMUAH', start: azanEnd, end: sunnahEnd, prayer: 'luhr', meta: phase('sunnah') },
+    ];
+    if (bayan) segs.push({ state: 'JUMUAH', start: bayan, end: khutbah, prayer: 'luhr', meta: phase('bayan') });
     segs.push(
-      { state: 'AZAN', start: azanDate, end: azanEnd, prayer: 'luhr', meta: jm },
-      { state: 'KHUTBAH', start: azanEnd, end: iqamahDate, prayer: 'luhr', meta: jm },
-      { state: 'IQAMAH', start: iqamahDate, end: iqamahWarnEnd, prayer: 'luhr', meta: jm },
+      { state: 'KHUTBAH', start: khutbah, end: iqamah, prayer: 'luhr', meta: jm },
+      { state: 'IQAMAH', start: iqamah, end: iqamahWarnEnd, prayer: 'luhr', meta: jm },
       { state: 'SALAH', start: iqamahWarnEnd, end: salahEnd, prayer: 'luhr', meta: jm },
       { state: 'AFTER', start: salahEnd, end: afterEnd, prayer: 'luhr', meta: jm },
     );
@@ -332,7 +364,7 @@
   global.SBEngine = {
     DATA_BASE, MON_SHORT, PRAYERS, SALAH, LUHA_OPEN_MINUTES,
     pad2, padZone,
-    parseTime, addMinutes, addDays, roundUpTo,
+    parseTime, addMinutes, addDays, roundUpTo, jumuahPlan,
     formatTime, formatClock, fmtCountdown,
     loadMonth, rowForDate, loadRowForDate,
     resolveIqamahRule, computeIqamah,

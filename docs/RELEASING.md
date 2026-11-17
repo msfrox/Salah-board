@@ -72,7 +72,7 @@ tablet, never the live board):
 ### 4. Update path
 
 On the spare tablet, running the previous release: Network → *Check* → *Update
-to vX.Y.Z* → reboot. Then *Go back* → reboot, and forward again. Settings and
+to vX.Y.Z* → *Reload board*. Then *Go back* → *Reload board*, and forward again. Settings and
 PIN survive both ways.
 
 ### 5. Tag and notes

@@ -29,6 +29,11 @@ same ethos.
 
 ## How to work (every session)
 
+0. **Read `docs/LOCAL-CONTEXT.md` first.** It records local practice (e.g.
+   how Jumu'ah runs here), the live board, and the owner's preferences, so
+   they never have to be repeated. **Keep it updated:** whenever you learn
+   something new about local practice, the community, the board, or how the
+   owner wants things done, add or correct it there in the same commit.
 1. Read `ROADMAP.md` and `HANDOFF.md`, then the card in `TASKS.md` you are doing. Read ONLY
    the docs the card links. Keep sessions small. (`docs/MILESTONES.md` holds the original
    M1–M5 specs; M3/M4 are parked, so do not follow it to Android.)
@@ -51,7 +56,8 @@ display/content/    Language packs (duas, labels, screens) — en/ta/si + Arabic
 display/themes/     One folder per theme (CSS + optional layout overrides).
 deploy/             Linux kiosk: serve.py, systemd, Openbox, install scripts (v1.0).
 android/            Kotlin shell — PARKED (ADR 0001). See android/README.md.
-docs/               SPEC, ARCHITECTURE, CONFIG-SCHEMA, MILESTONES, HARDWARE.
+docs/               SPEC, ARCHITECTURE, CONFIG-SCHEMA, MILESTONES, HARDWARE, RELEASING,
+                    LOCAL-CONTEXT (local practice + owner preferences — read first).
 tools/sync-data.py  Syncs data (+ manifest, SHA-256 check) from a sibling Prayer-Time-Site
                     checkout (--from) or https://pray.gear.lk/data/ (--url).
 ```

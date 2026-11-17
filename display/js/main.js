@@ -90,6 +90,25 @@
     }
     const show = n.show || {};
     html.dataset.sbHide = Object.keys(show).filter(k => show[k] === false).join(' ');
+    applyPattern(html, layout.pattern || {});
+  }
+
+  // Background pattern + glow → CSS variables the theme uses (default
+  // theme: #screen-root::before / ::after). Per screen: alpha, size, glow,
+  // and a colour only when overridden — otherwise the theme uses the
+  // screen's own text colour.
+  function applyPattern(html, p) {
+    const D = SBConfig.PATTERN_DEFAULTS;
+    const clamp = (v, lo, hi, d) => { const n = Number(v); return Number.isFinite(n) ? Math.max(lo, Math.min(hi, n)) : d; };
+    const pages = p.pages || {};
+    for (const id of Object.keys(D.pages)) {
+      const pg = Object.assign({}, D.pages[id], pages[id] || {});
+      html.style.setProperty(`--sb-pat-a-${id}`, String(clamp(pg.visibility, 0, 100, 0) / 100 * SBConfig.PATTERN_MAX_ALPHA));
+      html.style.setProperty(`--sb-pat-s-${id}`, String(clamp(pg.size, 50, 200, 100) / 100));
+      html.style.setProperty(`--sb-glow-a-${id}`, String(clamp(pg.glow, 0, 100, 0) / 100 * SBConfig.GLOW_MAX_ALPHA));
+      if (pg.custom) html.style.setProperty(`--sb-pat-c-${id}`, `hsl(${clamp(pg.hue, 0, 360, 40)}, ${clamp(pg.saturation, 0, 100, 55)}%, 62%)`);
+      else html.style.removeProperty(`--sb-pat-c-${id}`);
+    }
   }
 
   // Themes are plain CSS folders (docs/MILESTONES.md M5) — swapping the
@@ -162,11 +181,19 @@
   // Poll the preview channel; re-anchor the fake clock only when the directive
   // actually changes, so a preview with ?t= keeps advancing smoothly instead of
   // jumping back to `t` on every poll.
+  // The server's instance id (deploy/serve.py) rides along on this poll. It
+  // changes whenever the server restarts — "Reload board" in admin, after an
+  // update — and the board then reloads itself onto the code now on disk.
+  let serverInstance = null;
   async function pollPreview() {
     try {
       const res = await fetch('/api/preview', { cache: 'no-store' });
       if (!res.ok) { if (preview) { preview = null; lastPreviewSig = null; } return; }
       const p = await res.json();
+      if (p && p.instance) {
+        if (serverInstance && p.instance !== serverInstance) { location.reload(); return; }
+        serverInstance = p.instance;
+      }
       if (!p || !p.active) { if (preview) { preview = null; lastPreviewSig = null; } return; }
       const sig = (p.state || '') + '|' + (p.t || '');
       if (sig !== lastPreviewSig) {

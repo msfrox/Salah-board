@@ -52,6 +52,160 @@
     _fitCache.size = el.style.fontSize;
   }
 
+  // Shrink the next-prayer name until the label + name row fits its half of
+  // the hero, for themes that put them on one row (default, landscape:
+  // .np-head is a flex row). Elsewhere .np-head is display:contents — skip.
+  let _npFit = { key: null, size: '' };
+  function fitNextName(root) {
+    const head = root.querySelector('.np-head');
+    const el = head && head.querySelector('.np-name');
+    if (!el || getComputedStyle(head).display !== 'flex') return;
+    const key = `${el.textContent}|${head.clientWidth}|${root.querySelector('.screen').className}`;
+    if (_npFit.key === key) { if (_npFit.size) el.style.fontSize = _npFit.size; return; }
+    el.style.fontSize = '';                 // theme size first
+    const base = parseFloat(getComputedStyle(el).fontSize);
+    let size = base;
+    // Never below 50% of the theme size.
+    for (let i = 0; i < 30 && head.scrollWidth > head.clientWidth + 1 && size > base * 0.5; i++) {
+      size *= 0.95;
+      el.style.fontSize = size + 'px';
+    }
+    _npFit = { key, size: el.style.fontSize };
+  }
+
+  // Shrink any Jumu'ah banner slide that's wider than the banner (down to
+  // 75%); past that, CSS ends it with "…" (layout.css .jdb-slide).
+  let _slideFit = {};
+  function fitBannerSlides(root) {
+    root.querySelectorAll('.jdb-carousel .jdb-slide').forEach(el => {
+      const key = `${el.textContent}|${el.parentElement.clientWidth}`;
+      if (key in _slideFit) { if (_slideFit[key]) el.style.fontSize = _slideFit[key]; return; }
+      const base = parseFloat(getComputedStyle(el).fontSize);
+      let size = base;
+      for (let i = 0; i < 12 && el.scrollWidth > el.clientWidth + 1 && size > base * 0.75; i++) {
+        size *= 0.97;
+        el.style.fontSize = size + 'px';
+      }
+      _slideFit[key] = el.style.fontSize;
+    });
+  }
+
+  // Size the big azan/iqamah numbers to the room the hero ACTUALLY has
+  // (default theme, landscape grid). The CSS formula guesses the height the
+  // rest of the hero takes; any change to it (admin size sliders, a taller
+  // banner, another screen) made the guess wrong — numbers smaller than
+  // needed with a gap above the timetable, or overlap. This measures and
+  // fills the space exactly, within the same limits as the CSS: at most
+  // 13rem, at most the width cap, at least 5rem. The CSS stays as fallback.
+  let _heroFit = { key: null, size: '', compact: false };
+  // Prayer times must stay clearly the biggest text: if they'd come out less
+  // than this many times the clock's height, the clock, name and countdown
+  // step back to compact sizes (theme.css .hero-compact) and we fit again.
+  const HERO_MIN_RATIO = 1.4;
+  function fitHero(root) {
+    const row = root.querySelector('.hero-row');
+    if (!row || getComputedStyle(row).display !== 'grid') return;
+    const times = Array.from(row.querySelectorAll('.np-time'));
+    const screen = root.querySelector('.screen');
+    if (!times.length || !screen) return;
+    const key = [row.clientWidth, row.clientHeight, screen.className,
+      document.documentElement.style.cssText, times.map(t => t.textContent).join('|'),
+      (row.querySelector('.np-name') || {}).textContent].join('/');
+    const apply = v => times.forEach(t => { t.style.fontSize = v; });
+    if (_heroFit.key === key) {
+      screen.classList.toggle('hero-compact', _heroFit.compact);
+      apply(_heroFit.size);
+      return;
+    }
+
+    const rem = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+    const maxF = Math.min(13 * rem, (row.clientWidth - 4 * rem) / 6.4);
+    const minF = 5 * rem;
+    const items = Array.from(row.querySelectorAll('.np-head, .hero-clock, .np-times, .np-countdown'));
+    const used = () => {
+      let top = Infinity, bottom = -Infinity;
+      items.forEach(el => { const r = el.getBoundingClientRect(); if (r.height) { top = Math.min(top, r.top); bottom = Math.max(bottom, r.bottom); } });
+      return bottom - top;
+    };
+    const fit = () => {
+      const target = row.clientHeight - 0.3 * rem;        // small safety margin
+      let f = maxF;
+      apply(f + 'px');
+      let h = used();
+      if (h > target) {
+        // Height grows linearly with the font size: measure the slope once,
+        // jump straight to the size that fits, then nudge down if needed.
+        const f2 = Math.max(minF, f * 0.8);
+        apply(f2 + 'px');
+        const h2 = used();
+        const slope = (h - h2) / (f - f2) || 0.8;
+        f = Math.max(minF, Math.min(maxF, f2 - (h2 - target) / slope));
+        apply(f + 'px');
+        for (let i = 0; i < 6 && used() > target && f > minF; i++) {
+          f = Math.max(minF, f * 0.97);
+          apply(f + 'px');
+        }
+      }
+      return f;
+    };
+    const ratio = () => {
+      const c = row.querySelector('.clock-big');
+      const ch = c ? c.getBoundingClientRect().height : 0;
+      return ch ? times[0].getBoundingClientRect().height / ch : Infinity;
+    };
+    screen.classList.remove('hero-compact');
+    let f = fit();
+    let compact = false;
+    if (ratio() < HERO_MIN_RATIO) {
+      screen.classList.add('hero-compact');
+      const fc = fit();
+      if (fc > f) { f = fc; compact = true; }
+      else { screen.classList.remove('hero-compact'); apply(f + 'px'); }
+    }
+    _heroFit = { key, size: f + 'px', compact };
+  }
+
+  // Jumu'ah footer: stack its two messages if they don't fit on one line.
+  // Last resort (very narrow screens, e.g. portrait Tamil): shrink to 75%,
+  // then let a message wrap rather than run off the screen.
+  let _quietFit = {};
+  function fitQuiet(root) {
+    const q = root.querySelector('.jm-quiet');
+    if (!q) return;
+    const key = `${q.textContent}|${root.clientWidth}|${document.documentElement.style.cssText}`;
+    const apply = f => {
+      q.classList.toggle('jm-quiet--stack', f.stack);
+      q.classList.toggle('jm-quiet--wrap', f.wrap);
+      q.style.fontSize = f.size;
+    };
+    if (key in _quietFit) { apply(_quietFit[key]); return; }
+    const f = { stack: false, wrap: false, size: '' };
+    apply(f);
+    const limit = root.clientWidth * 0.94;
+    const msgs = q.querySelectorAll('.jm-msg');
+    const oneLine = msgs.length < 2 || Math.abs(msgs[0].getBoundingClientRect().top - msgs[1].getBoundingClientRect().top) < 2;
+    if (msgs.length > 1 && (!oneLine || q.getBoundingClientRect().width > limit)) { f.stack = true; apply(f); }
+    const base = parseFloat(getComputedStyle(q).fontSize);
+    let size = base;
+    for (let i = 0; i < 10 && q.scrollWidth > limit && size > base * 0.75; i++) { size *= 0.97; f.size = size + 'px'; apply(f); }
+    if (q.scrollWidth > limit) { f.wrap = true; apply(f); }
+    _quietFit[key] = f;
+  }
+
+  // All fits above cache their result. If a web font (e.g. Tamil) finishes
+  // loading after the first fit, the text was measured in a narrower fallback
+  // font and would stay clipped — so forget the cached fits whenever fonts
+  // finish loading; the next render (≤ 1 s) measures again with real fonts.
+  if (global.document && document.fonts && document.fonts.addEventListener) {
+    document.fonts.addEventListener('loadingdone', () => {
+      _fitCache = { name: null, avail: 0, factor: 1 };
+      _npFit = { key: null, size: '' };
+      _slideFit = {};
+      _heroFit = { key: null, size: '', compact: false };
+      _quietFit = {};
+    });
+  }
+
   function escapeHtml(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
       '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
@@ -124,7 +278,9 @@
   function timetableCells(content, config, result) {
     const row = result.rows.today;
     if (!row) return [];
-    const nextKey = result.nextAzan && result.nextAzan.prayer;
+    // While the main screen counts down to Luha, highlight Sunrise (Luha's
+    // own time isn't a column in the timetable).
+    const nextKey = result.luhaNext ? 'sunrise' : (result.nextAzan && result.nextAzan.prayer);
     const cells = [
       { key: 'fajr', label: label(content, 'fajr'), time: fmtRowTime(row.fajr, config, result) },
       { key: 'sunrise', label: label(content, 'sunrise'), time: fmtRowTime(row.sunrise, config, result) },
@@ -224,21 +380,48 @@
     const E = global.SBEngine;
     const lang = langs(config)[0];
     const clockStr = E.formatClock(result.now, config);
+    // Small AM/PM after the main clock (12-hour only): "4:06" alone could be
+    // morning or afternoon.
+    const period = ampmOf(config, result.now);
+    const ampm = period ? `<span class="clock-ampm">${period}</span>` : '';
     const next = result.nextAzan;
-    const azanTime = next ? E.formatTime(next.time, config) : '--:--';
-    const iqamahTime = next && next.iqamahTime ? E.formatTime(next.iqamahTime, config) : '--:--';
-    const countdown = next ? E.fmtCountdown(next.time - result.now) : '--:--';
-    const nextName = next ? prayerLabel(content, next.prayer, next.jumuah) : '—';
+    let azanTime = next ? E.formatTime(next.time, config) : '--:--';
+    let iqamahTime = next && next.iqamahTime ? E.formatTime(next.iqamahTime, config) : '--:--';
+    let countdown = next ? E.fmtCountdown(next.time - result.now) : '--:--';
+    let nextName = next ? prayerLabel(content, next.prayer, next.jumuah) : '—';
+    let leftLabel = label(content, 'azan');
+    let rightLabel = label(content, 'iqamah');
+    // After Fajr: Luha is next — Sunrise | Luha, counting down to sunrise,
+    // then to Luha (config luha.showOnMain; see SBState.resolveLuhaNext).
+    const ln = result.luhaNext;
+    if (ln) {
+      nextName = label(content, 'luha');
+      leftLabel = label(content, 'sunrise');
+      rightLabel = label(content, 'luha');
+      azanTime = E.formatTime(ln.sunrise, config);
+      iqamahTime = E.formatTime(ln.luha, config);
+      countdown = E.fmtCountdown((result.now < ln.sunrise ? ln.sunrise : ln.luha) - result.now);
+    }
 
     let jumuahBanner = '';
     if (result.jumuahAlerts) {
+      // Morning (until Luha begins): "Jumu'ah today · Azan · Bayan". After
+      // Luha the big numbers already show the Jumu'ah azan, so the banner
+      // gives what comes next instead: "Jumu'ah today · Bayan · Khutbah".
       const todayRow = result.rows.today;
-      const bayanPart = config.jumuah.bayan
-        ? ` · ${escapeHtml(label(content, 'bayan'))} ${escapeHtml(E.formatTime(E.parseTime(config.jumuah.bayan, result.dates.today), config))}`
-        : '';
-      const jumuahAzanTime = todayRow ? fmtRowTime(todayRow.luhr, config, result) : '--:--';
-      const mainLine = `<span class="jdb-main">${escapeHtml(label(content, 'jumuahToday'))}` +
-        `${bayanPart} · ${escapeHtml(label(content, 'azan'))} ${escapeHtml(jumuahAzanTime)}</span>`;
+      const plan = result.jumuahPlan;
+      const part = (key, date) => ` · ${escapeHtml(label(content, key))} ${escapeHtml(date ? E.formatTime(date, config) : '--:--')}`;
+      const sunrise = todayRow ? E.parseTime(todayRow.sunrise, result.dates.today) : null;
+      const luhaStart = sunrise ? E.addMinutes(sunrise, Math.max(0, Number(config.luha && config.luha.waitAfterSunrise) || 0)) : null;
+      const afterLuha = luhaStart && result.now >= luhaStart;
+      const azanDate = todayRow ? E.parseTime(todayRow.luhr, result.dates.today) : null;
+      // plan.bayan is today's actual bayan start (moved later on late-azan
+      // Fridays), always after the azan.
+      const bayanPart = plan && plan.bayan ? part('bayan', plan.bayan) : '';
+      const parts = afterLuha
+        ? bayanPart + part('khutbah', plan && plan.khutbah)
+        : part('azan', azanDate) + bayanPart;
+      const mainLine = `<span class="jdb-main">${escapeHtml(label(content, 'jumuahToday'))}${parts}</span>`;
       jumuahBanner = result.bayanInfo
         ? jumuahCarouselHtml([mainLine, bayanInfoLine(result.bayanInfo)], result.now)
         : `<div class="jumuah-day-banner">${mainLine}</div>`;
@@ -267,19 +450,21 @@
         ${ramadanBlock}
         <div class="hero-row">
           <div class="card hero-clock">
-            <div class="clock-big">${clockStr}</div>
+            <div class="clock-big">${clockStr}${ampm}</div>
           </div>
           <div class="card hero-next">
-            <span class="np-label">${escapeHtml(label(content, 'nextPrayer'))}</span>
-            <span class="np-name">${escapeHtml(nextName)}</span>
+            <div class="np-head">
+              <span class="np-label">${escapeHtml(label(content, 'nextPrayer'))}</span>
+              <span class="np-name">${escapeHtml(nextName)}</span>
+            </div>
             <div class="np-times">
               <div class="np-time-col">
-                <span class="np-time-label">${escapeHtml(label(content, 'azan'))}</span>
+                <span class="np-time-label">${escapeHtml(leftLabel)}</span>
                 <span class="np-time">${escapeHtml(azanTime)}</span>
               </div>
               <div class="np-divider"></div>
               <div class="np-time-col">
-                <span class="np-time-label">${escapeHtml(label(content, 'iqamah'))}</span>
+                <span class="np-time-label">${escapeHtml(rightLabel)}</span>
                 <span class="np-time">${escapeHtml(iqamahTime)}</span>
               </div>
             </div>
@@ -419,24 +604,81 @@
     return `<span class="jdb-bayan">${parts.join('<span class="jdb-sep"> · </span>')}</span>`;
   }
 
+  // ── Jumu'ah: sunnah → bayan → khutbah ─────────────────────
+  // One shared layout so the three screens read as a set:
+  //   body   — what's happening now (title) + its detail;
+  //   sched  — sunnah/bayan only: the next times and minutes until the next
+  //            step (whole minutes — nothing ticking while someone speaks);
+  //   quiet  — the same footer on all three: no-phone icon + "switch off
+  //            your phones · please remain silent" (khutbah: phones only —
+  //            "remain silent" is already its main message).
+  // Deliberately calm: no rotating cards, no seconds (corner clock too).
+  // Each message is one unbreakable piece. Side by side with a dot when they
+  // fit on one line; otherwise ui.js fitQuiet stacks them as two clean lines
+  // (long Tamil/Sinhala wording, portrait) instead of breaking mid-phrase.
+  function jumuahQuietHtml(content, withSilent) {
+    const msg = key => `<span class="jm-msg">${escapeHtml(label(content, key))}</span>`;
+    const text = msg('phonesOff') + (withSilent ? `<span class="jm-dot" aria-hidden="true">·</span>${msg('remainSilent')}` : '');
+    return `<div class="jm-quiet"><span class="jm-quiet-icon">${ICON_NO_PHONE}</span><span class="jm-quiet-text">${text}</span></div>`;
+  }
+
   function renderJumuah(config, result, contentByLang) {
     const content = primaryContent(contentByLang, config);
-    const info = result.bayanInfo;
-    const speaker = info && info.speaker ? `<div class="jumuah-speaker">${escapeHtml(info.speaker)}</div>` : '';
-    const topic = info && info.topic ? `<div class="jumuah-topic">${escapeHtml(info.topic)}</div>` : '';
+    const E = global.SBEngine;
+    const m = result.meta || {};
+    const phase = m.phase || 'bayan';
+    const t = d => (d ? E.formatTime(d, config) : '--:--');
+    const pair = (key, d) => `<span class="jm-pair"><span class="jm-key">${escapeHtml(label(content, key))}</span> ${escapeHtml(t(d))}</span>`;
+    const sep = '<span class="date-sep jm-sep">·</span>';
+    const inMinutes = (key, target) => {
+      const n = target ? Math.max(1, Math.ceil((target - result.now) / 60000)) : '–';
+      return label(content, 'inMinutes').replace('{name}', label(content, key)).replace('{n}', n);
+    };
+    const schedule = (pairs, key, target) => `
+        <div class="jm-sched">
+          <div class="jumuah-times">${pairs.join(sep)}</div>
+          <div class="jumuah-countdown">${escapeHtml(inMinutes(key, target))}</div>
+        </div>`;
+
+    let title, detail, sched;
+    if (phase === 'sunnah') {
+      // Next step: the bayan, or the khutbah when there's no bayan.
+      const toBayan = m.bayan !== false && m.bayanStart && m.bayanStart < m.khutbah;
+      const reminder = (content.sunnahReminder || {}).text;
+      title = label(content, 'sunnahPrayer');
+      detail = reminder ? `<div class="jumuah-topic">${escapeHtml(reminder)}</div>` : '';
+      sched = toBayan
+        ? schedule([pair('bayan', m.bayanStart), pair('iqamah', m.iqamahTime)], 'bayan', m.bayanStart)
+        : schedule([pair('khutbah', m.khutbah), pair('iqamah', m.iqamahTime)], 'khutbah', m.khutbah);
+    } else {
+      const info = result.bayanInfo;
+      title = (content.jumuahBayan || {}).text;
+      detail = (info && info.speaker ? `<div class="jumuah-speaker">${escapeHtml(info.speaker)}</div>` : '') +
+        (info && info.topic ? `<div class="jumuah-topic">${escapeHtml(info.topic)}</div>` : '');
+      sched = schedule([pair('khutbah', m.khutbah), pair('iqamah', m.iqamahTime)], 'khutbah', m.khutbah);
+    }
     return `
-      <div class="screen screen--jumuah">
-        <div class="jumuah-banner">${escapeHtml((content.jumuahBayan || {}).text)}</div>
-        ${speaker}${topic}
-        ${jumuahEtiquetteCardHtml(content, config, result)}
+      <div class="screen screen--jumuah jm jm--${phase === 'sunnah' ? 'sunnah' : 'bayan'}">
+        <div class="jm-body">
+          <div class="jumuah-banner">${escapeHtml(title)}</div>
+          ${detail}
+          ${sched}
+        </div>
+        ${jumuahQuietHtml(content, true)}
       </div>`;
   }
 
   function renderKhutbah(config, result, contentByLang) {
     const content = primaryContent(contentByLang, config);
+    const k = content.khutbahScreen || {};
+    // Older/partial packs only have the combined line.
+    const body = k.title && k.silent
+      ? `<div class="khutbah-title">${escapeHtml(k.title)}</div><div class="khutbah-line">${escapeHtml(k.silent)}</div>`
+      : `<div class="khutbah-line">${escapeHtml(k.line)}</div>`;
     return `
-      <div class="screen screen--khutbah">
-        <div class="khutbah-line">${escapeHtml((content.khutbahScreen || {}).line)}</div>
+      <div class="screen screen--khutbah jm jm--khutbah">
+        <div class="jm-body">${body}</div>
+        ${jumuahQuietHtml(content, false)}
       </div>`;
   }
 
@@ -448,9 +690,24 @@
   const CORNER_CLOCK_STATES = ['AZAN', 'BETWEEN', 'IQAMAH', 'AFTER',
     'LUHA_WAIT', 'LUHA_OPEN', 'JUMUAH', 'KHUTBAH'];
 
+  // "AM"/"PM" for 12-hour clocks, '' for 24-hour. Latin in every language,
+  // like the digits.
+  function ampmOf(config, now) {
+    if (config.clock && config.clock.format === '24h') return '';
+    return now.getHours() < 12 ? 'AM' : 'PM';
+  }
+
   function cornerClockHtml(config, result) {
     if (!CORNER_CLOCK_STATES.includes(result.state)) return '';
-    return `<div class="corner-clock">${escapeHtml(global.SBEngine.formatClock(result.now, config))}</div>`;
+    // AM/PM at the clock's own size here (board feedback) — the corner clock
+    // is small already, so a reduced suffix would be hard to read.
+    const period = ampmOf(config, result.now);
+    // During the bayan and the khutbah the seconds would be the only thing
+    // moving on a deliberately calm screen — show hours:minutes there.
+    const calm = result.state === 'JUMUAH' || result.state === 'KHUTBAH';
+    const clockCfg = calm ? Object.assign({}, config, { clock: Object.assign({}, config.clock, { showSeconds: false }) }) : config;
+    return `<div class="corner-clock">${escapeHtml(global.SBEngine.formatClock(result.now, clockCfg))}` +
+      (period ? `<span class="corner-ampm">${period}</span>` : '') + `</div>`;
   }
 
   const RENDERERS = {
@@ -469,9 +726,20 @@
 
   function render(container, result, config, contentByLang) {
     const fn = RENDERERS[result.state] || renderNormal;
-    container.innerHTML = cornerClockHtml(config, result) + fn(config, result, contentByLang);
-    container.className = `screen-root theme-${config.theme} state-${result.state.toLowerCase()}`;
-    if (result.state === 'NORMAL') fitMasjidName(container, config);
+    // Arabic honorific ligatures (ﷺ ﷻ … U+FDF0–FDFF) pack a whole phrase into
+    // one character, unreadable at text size — wrap them so CSS can enlarge
+    // them (layout.css .honorific). Text is already escaped, so these
+    // characters can only be in text, never inside a tag.
+    const html = (cornerClockHtml(config, result) + fn(config, result, contentByLang))
+      // The space before it becomes non-breaking, so the honorific never
+      // wraps away from the name it follows ("Muhammad" / "ﷺ" on two lines).
+      .replace(/[ \u00A0]?([\uFDF0-\uFDFF])/g, '&nbsp;<span class="honorific">$1</span>');
+    container.innerHTML = html;
+    // phase-*: lets a theme tell Jumu'ah sunnah and bayan apart (both JUMUAH).
+    const phase = result.meta && result.meta.phase ? ` phase-${result.meta.phase}` : '';
+    container.className = `screen-root theme-${config.theme} state-${result.state.toLowerCase()}${phase}`;
+    if (result.state === 'NORMAL') { fitMasjidName(container, config); fitNextName(container); fitBannerSlides(container); fitHero(container); }
+    if (result.state === 'JUMUAH' || result.state === 'KHUTBAH') fitQuiet(container);
   }
 
   function applyNightDim(overlayEl, active, brightnessPercent) {

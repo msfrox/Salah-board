@@ -35,13 +35,30 @@ breaking change via `configVersion`.
 
   "jumuah": {
     "enabled": true,
-    "bayan": "12:30 PM",               // fixed set time; null = no bayan card
-    "iqamah": "1:15 PM",               // fixed set time (khutbah runs until this)
+    "bayan": "12:15 PM",               // usual bayan start time; null = no bayan
+    "sunnahMinutes": 5,                // at least this much sunnah time after the
+                                       // azan screen (late-azan Fridays: the bayan
+                                       // starts later instead)
+    "iqamah": "1:00 PM",               // fixed set time
+    "khutbahMinutes": 7,               // khutbah length → khutbah starts at
+                                       // iqamah − this
     "salahDuration": 15,
+    // Sequence: azan (that Friday's luhr) → azan screen (screens.azan) →
+    // sunnah reminder until the bayan → bayan → khutbah → the fixed `iqamah`.
+    // The bayan starts at its time, or after the azan screen + sunnahMinutes
+    // if that's later (zone 01: late Dec–Apr, Jun–early Sep) — the iqamah
+    // never moves (office lunch hours). Khutbah start is derived. Migration
+    // (config.js migrateStored): "bayan": true/false (used briefly) →
+    // "12:15 PM"/null; a stored "khutbah" start (used briefly) → iqamah =
+    // khutbah + khutbahMinutes.
     "bayanSpeaker": "",                // optional, e.g. "Moulavi Ahmed Rizwan"
     "bayanTopic": "",                  // optional, e.g. "Patience in hardship"
-    "bayanDate": null                  // optional ISO Friday "2026-11-13"; set →
-                                       // speaker/topic shown only on that date.
+    "bayanDate": null                  // ISO Friday "2026-11-13": speaker/topic show
+                                       // only on that date. Admin stamps it on
+                                       // save (coming Friday, unless a later one is
+                                       // picked) and opens with the fields cleared
+                                       // once that Jumu'ah is over → they clear
+                                       // themselves weekly. null when both empty.
     // Speaker/topic alternate with the times in the "Jumu'ah today" banner
     // (one-line carousel) and appear on the bayan
     // screen, only when `bayan` is set, and disappear once Jumu'ah salah ends.
@@ -49,8 +66,13 @@ breaking change via `configVersion`.
     // luhr azan time from the zone data (there's no distinct Jumu'ah clock).
   },
 
-  "luha": { "enabled": true, "waitAfterSunrise": 20 },   // minutes
-                                      // (no sunrise countdown: NORMAL runs until sunrise)
+  "luha": {
+    "enabled": true,                  // full-screen "Luha in MM:SS" countdown, sunrise → Luha
+    "showOnMain": true,               // NORMAL, Fajr azan → Luha: next prayer = Luha,
+                                      // big times = Sunrise | Luha (instead of Azan | Iqamah),
+                                      // countdown to sunrise then to Luha; timetable highlights Sunrise
+    "waitAfterSunrise": 20            // minutes; Luha time = sunrise + this (used by both)
+  },
 
   "ramadan": {
     "enabled": false,                 // manual toggle only (moon sighting)
@@ -118,9 +140,35 @@ breaking change via `configVersion`.
         "afterArabic": 100, "afterText": 100,
         "luhaLabel": 100, "luhaCountdown": 100, "luhaOpen": 100,
         "nightClock": 100, "nightFajr": 100,
-        "bayanTitle": 100, "bayanSpeaker": 100, "bayanTopic": 100, "bayanEtiquette": 100,
-        "khutbahLine": 100
+        "bayanTitle": 100, "bayanSpeaker": 100, "bayanTopic": 100, "bayanTimes": 100,
+        "jumuahQuiet": 100,                           // phones/silence footer (sunnah, bayan)
+        "khutbahTitle": 100, "khutbahLine": 100, "khutbahQuiet": 100
       }
+    },
+    "pattern": {                      // background rosette + glow (default theme),
+                                      // admin → Advanced, in each screen's section.
+                                      // Defaults: config.js PATTERN_DEFAULTS
+      "pages": {                      // per screen; keys = LAYOUT_GROUPS ids:
+                                      // normal azan between iqamah salah after luha
+                                      // luhaOpen night jumuah (sunnah+bayan) khutbah
+        "khutbah": {
+          "visibility": 10,           // pattern 0–100 (100 = alpha PATTERN_MAX_ALPHA 0.5)
+          "size": 100,                // pattern 50–200 %
+          "glow": 40,                 // soft radial glow of the screen's colour behind
+                                      // its content, 0–100 (100 = GLOW_MAX_ALPHA 0.45)
+          "custom": false,            // false: pattern + glow use the screen's own
+                                      // text colour (theme.css --page-c);
+          "hue": 40, "saturation": 55 // true: this colour instead (hsl, 62% light)
+        }
+        // … one entry like this per screen
+      }
+      // Each screen composes the rosette its own way (themes/default
+      // theme.css "Background pattern"): main = medallion off the right
+      // edge; azan = bottom corners; iqamah countdown = centred halo;
+      // straighten rows = a row along the bottom (the saff); salah = small,
+      // half sunk; after = four corners; Luha = rising / risen sun; night =
+      // small "moon"; sunnah = left+right pair; bayan = off the left edge;
+      // khutbah = faint, centred.
     }
   },
 

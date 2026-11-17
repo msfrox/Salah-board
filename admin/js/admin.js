@@ -151,6 +151,40 @@
       </div>`;
   }
 
+  // Generic slider row (pattern controls). data-unit: what to show after the value.
+  function rangeRowHtml(id, labelText, path, min, max, step, unit, cls = '') {
+    return `
+      <div class="field layout-size">
+        <span><label for="${id}">${labelText}</label> <strong class="layout-size-value" data-for="${id}"></strong></span>
+        <div class="stepper">
+          <button type="button" class="btn btn--secondary stepper-btn" data-step="-${step}" data-target="${id}" aria-label="Less">−</button>
+          <input type="range" id="${id}" class="layout-range ${cls}" min="${min}" max="${max}" step="${step}"
+                 data-path="${path}" data-unit="${unit}" data-number>
+          <button type="button" class="btn btn--secondary stepper-btn" data-step="${step}" data-target="${id}" aria-label="More">+</button>
+        </div>
+      </div>`;
+  }
+
+  // Per-screen pattern + glow controls (default theme). Colour: the screen's
+  // own text colour unless "Custom colour" is ticked.
+  function patternRowsHtml(group) {
+    if (!SBConfig.PATTERN_DEFAULTS.pages[group.id]) return '';
+    const id = group.id, base = `layout.pattern.pages.${id}`;
+    return `<h4>Background pattern &amp; glow</h4>` +
+      rangeRowHtml(`pattern-vis-${id}`, 'Pattern visibility', `${base}.visibility`, 0, 100, 5, '%') +
+      rangeRowHtml(`pattern-size-${id}`, 'Pattern size', `${base}.size`, 50, 200, 10, '%') +
+      rangeRowHtml(`pattern-glow-${id}`, 'Glow', `${base}.glow`, 0, 100, 5, '%') + `
+      <label class="field checkbox-field">
+        <input type="checkbox" class="pattern-custom-toggle" data-page="${id}" data-path="${base}.custom">
+        <span>Custom colour (instead of this screen's own text colour)</span>
+      </label>
+      <div class="pattern-custom" data-page="${id}">
+        <div class="pattern-swatch" data-page="${id}" aria-hidden="true"></div>
+        ${rangeRowHtml(`pattern-hue-${id}`, 'Colour (hue)', `${base}.hue`, 0, 360, 5, '°', 'pattern-hue')}
+        ${rangeRowHtml(`pattern-sat-${id}`, 'Colour richness (0 = grey)', `${base}.saturation`, 0, 100, 5, '%')}
+      </div>`;
+  }
+
   function layoutShowRowHtml(item) {
     return `
       <label class="field checkbox-field">
@@ -170,6 +204,7 @@
         <div class="layout-group-body">
           ${group.items.map(item => layoutSizeRowHtml(item, group)).join('')}
           ${showRows}
+          ${patternRowsHtml(group)}
           <button type="button" class="btn btn--secondary layout-group-reset">Reset this screen</button>
         </div>
       </details>`;
@@ -178,7 +213,16 @@
   function refreshLayoutValues() {
     $$('.layout-range').forEach(r => {
       const out = document.querySelector(`.layout-size-value[data-for="${r.id}"]`);
-      if (out) out.textContent = `${r.value}%`;
+      if (out) out.textContent = `${r.value}${r.dataset.unit || '%'}`;
+    });
+    // Per-screen custom colour: show its sliders only when ticked; live swatch.
+    $$('.pattern-custom-toggle').forEach(cb => {
+      const id = cb.dataset.page;
+      const box = document.querySelector(`.pattern-custom[data-page="${id}"]`);
+      if (box) box.hidden = !cb.checked;
+      const sw = document.querySelector(`.pattern-swatch[data-page="${id}"]`);
+      const hue = document.getElementById(`pattern-hue-${id}`), sat = document.getElementById(`pattern-sat-${id}`);
+      if (sw && hue && sat) sw.style.background = `hsl(${hue.value}, ${sat.value}%, 62%)`;
     });
   }
 
@@ -325,10 +369,20 @@
     refreshPrimaryLangOptions(langs);
 
     // Jumu'ah bayan enabled toggle
-    const bayanEnabled = !!config.jumuah.bayan;
-    $('#bayan-enabled').checked = bayanEnabled;
-    $('#bayan-details').classList.toggle('hidden', !bayanEnabled);
+    $('#bayan-enabled').checked = !!config.jumuah.bayan;
+    if (!config.jumuah.bayan) $('#bayan-time').value = '12:15';   // ready if they switch it on
+    $('#bayan-details').classList.toggle('hidden', !$('#bayan-enabled').checked);
+    updateJumuahSummary();
     $('#bayan-date').value = config.jumuah.bayanDate || '';
+    // Last Friday's speaker/topic clears itself: once its Jumu'ah is over the
+    // fields open empty (the board already stopped showing them), so the
+    // next Save stores them cleared and the next speaker can be typed in.
+    if (bayanExpired(config)) {
+      $('[data-path="jumuah.bayanSpeaker"]').value = '';
+      $('[data-path="jumuah.bayanTopic"]').value = '';
+      $('#bayan-date').value = '';
+    }
+    updateBayanDateNote(config);
 
     // Ramadan overrides enabled toggles
     PRAYERS.forEach(p => {
@@ -395,11 +449,19 @@
       ? [primary, ...enabled.filter(l => l !== primary)]
       : ['en'];
 
-    // Jumu'ah bayan: null when disabled
-    config.jumuah.bayan = $('#bayan-enabled').checked ? inputValueToAmpm($('#bayan-time').value) : null;
+    // Bayan: its fixed start time, or null when switched off.
+    config.jumuah.bayan = $('#bayan-enabled').checked ? (inputValueToAmpm($('#bayan-time').value) || null) : null;
     config.jumuah.bayanSpeaker = String(config.jumuah.bayanSpeaker || '').trim();
     config.jumuah.bayanTopic = String(config.jumuah.bayanTopic || '').trim();
     config.jumuah.bayanDate = $('#bayan-date').value || null;
+    // A speaker/topic always belongs to ONE Friday, so it clears itself after
+    // that Jumu'ah: no date chosen (or an old one) → the coming Friday.
+    // Nothing entered → no date.
+    if (config.jumuah.bayanSpeaker || config.jumuah.bayanTopic) {
+      if (!config.jumuah.bayanDate || bayanExpired(config)) config.jumuah.bayanDate = comingFriday(config);
+    } else {
+      config.jumuah.bayanDate = null;
+    }
 
     // Ramadan overrides: delete key entirely when disabled (sparse per spec)
     config.ramadan.iqamahOverrides = config.ramadan.iqamahOverrides || {};
@@ -469,6 +531,9 @@
     });
     if (config.jumuah.enabled) {
       if (!config.jumuah.iqamah) errors.push("Jumu'ah iqamah time is required when Jumu'ah mode is enabled.");
+      if (!(Number(config.jumuah.khutbahMinutes) > 0)) errors.push("Khutbah length must be more than 0 minutes.");
+      if ($('#bayan-enabled').checked && !config.jumuah.bayan) errors.push("Bayan start time is required when the bayan is switched on.");
+      if (!(Number(config.jumuah.sunnahMinutes) >= 0)) errors.push("Sunnah time must be 0 minutes or more.");
       if (!(Number(config.jumuah.salahDuration) > 0)) errors.push("Jumu'ah salah duration must be more than 0.");
     }
     if (config.jumuah.bayanDate) {
@@ -476,7 +541,7 @@
       if (isNaN(d.getTime())) errors.push("Bayan date is not a valid date.");
       else if (d.getDay() !== 5) errors.push("Bayan date must be a Friday (or leave it empty).");
     }
-    if (config.luha.enabled && !(Number(config.luha.waitAfterSunrise) >= 0)) {
+    if ((config.luha.enabled || config.luha.showOnMain) && !(Number(config.luha.waitAfterSunrise) >= 0)) {
       errors.push('Luha wait-after-sunrise must be 0 or more.');
     }
     if (config.ramadan && config.ramadan.iqamahOverrides) {
@@ -514,6 +579,63 @@
       errors.map(e => `<li>${escapeAttr(e)}</li>`).join('')
     }</ul>`;
     box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // ── Bayan speaker/topic: one Friday at a time ───────────
+  const isoDate = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  // When that Friday's Jumu'ah is over: the fixed iqamah + salah duration —
+  // the same moment the board stops showing the speaker/topic. Fallback: 3 PM.
+  function jumuahEnd(config, day) {
+    const E = window.SBEngine;
+    const iq = E && config.jumuah.iqamah ? E.parseTime(config.jumuah.iqamah, day) : null;
+    if (iq) return E.addMinutes(iq, Number(config.jumuah.salahDuration) || 0);
+    const d = new Date(day); d.setHours(15, 0, 0, 0); return d;
+  }
+  // Live line under the iqamah/khutbah fields: when the khutbah starts.
+  function updateJumuahSummary() {
+    const el = $('#jumuah-summary');
+    if (!el) return;
+    const v = $('#jumuah-iqamah-time').value;           // "HH:MM" (24h) from the time input
+    const len = Number($('#khutbah-minutes').value);
+    if (!v || !(len > 0)) { el.textContent = 'Set the iqamah time and khutbah length to see when the khutbah starts.'; return; }
+    const [h, m] = v.split(':').map(Number);
+    const t = ((h * 60 + m - len) % 1440 + 1440) % 1440;
+    const fmt = (H, M) => `${H % 12 === 0 ? 12 : H % 12}:${String(M).padStart(2, '0')} ${H < 12 ? 'AM' : 'PM'}`;
+    const bayanOn = $('#bayan-enabled').checked && $('#bayan-time').value;
+    const sun = Number($('#sunnah-minutes').value) || 0;
+    el.textContent = `Khutbah starts: ${fmt(Math.floor(t / 60), t % 60)} (iqamah ${fmt(h, m)} − ${len} min). ` + (bayanOn
+      ? `After the azan the sunnah reminder shows until the bayan. When the azan is late (e.g. January), the bayan starts after the azan screen + ${sun} min instead — the iqamah doesn't move.`
+      : 'After the azan the sunnah reminder shows until the khutbah.');
+  }
+  // Today if it's Friday and Jumu'ah isn't over yet, otherwise next Friday.
+  function comingFriday(config, now = new Date()) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    let add = (5 - d.getDay() + 7) % 7;
+    if (add === 0 && now >= jumuahEnd(config, d)) add = 7;
+    d.setDate(d.getDate() + add);
+    return isoDate(d);
+  }
+  // Has the Friday this speaker/topic was for already had its Jumu'ah?
+  function bayanExpired(config, now = new Date()) {
+    const iso = config.jumuah.bayanDate;
+    if (!iso) return false;
+    const day = new Date(iso + 'T00:00:00');
+    if (isNaN(day.getTime())) return false;
+    return now >= jumuahEnd(config, day);
+  }
+  let _bayanCfg = null; // last loaded config, for the live note while typing
+  function updateBayanDateNote(config) {
+    if (config) _bayanCfg = config; else config = _bayanCfg;
+    const el = $('#bayan-date-note');
+    if (!config) return;
+    if (!el) return;
+    const iso = $('#bayan-date').value;
+    const hasText = $('[data-path="jumuah.bayanSpeaker"]').value.trim() || $('[data-path="jumuah.bayanTopic"]').value.trim();
+    if (!hasText) { el.textContent = 'Type a name or topic; it will show on the coming Friday only, then clear itself.'; return; }
+    const target = iso || comingFriday(config);
+    const d = new Date(target + 'T12:00:00');
+    const when = d.toLocaleDateString('en-GB', { weekday: 'long', day: 'numeric', month: 'long' });
+    el.textContent = `Shows on ${when} until Jumu'ah salah ends, then clears itself.`;
   }
 
   function showToast(msg, isError) {
@@ -575,6 +697,7 @@
       if (e.target.id === 'bayan-enabled') {
         $('#bayan-details').classList.toggle('hidden', !e.target.checked);
       }
+      if (['jumuah-iqamah-time', 'khutbah-minutes', 'bayan-time', 'bayan-enabled', 'sunnah-minutes'].includes(e.target.id)) updateJumuahSummary();
       if (e.target.classList.contains('ramadan-override-enabled')) {
         e.target.closest('.subcard').querySelector('.ramadan-override-body').classList.toggle('hidden', !e.target.checked);
       }
@@ -588,6 +711,11 @@
 
     // Advanced tab: live % labels, −/+ fine steps, reset.
     document.addEventListener('input', e => { if (e.target.classList.contains('layout-range')) refreshLayoutValues(); });
+    document.addEventListener('change', e => { if (e.target.classList.contains('pattern-custom-toggle')) refreshLayoutValues(); });
+    document.addEventListener('input', e => {
+      if (e.target.matches('[data-path="jumuah.bayanSpeaker"], [data-path="jumuah.bayanTopic"], #bayan-date')) updateBayanDateNote();
+      if (['jumuah-iqamah-time', 'khutbah-minutes', 'bayan-time', 'bayan-enabled', 'sunnah-minutes'].includes(e.target.id)) updateJumuahSummary();
+    });
     $('#layout-groups').addEventListener('click', e => {
       const groupReset = e.target.closest('.layout-group-reset');
       if (groupReset) {
@@ -598,7 +726,7 @@
       const btn = e.target.closest('.stepper-btn');
       if (!btn) return;
       const range = document.getElementById(btn.dataset.target);
-      const v = Math.max(SBConfig.LAYOUT_MIN, Math.min(SBConfig.LAYOUT_MAX, Number(range.value) + Number(btn.dataset.step)));
+      const v = Math.max(Number(range.min), Math.min(Number(range.max), Number(range.value) + Number(btn.dataset.step)));
       range.value = v;
       range.dispatchEvent(new Event('input', { bubbles: true }));
     });
@@ -607,12 +735,13 @@
       const d = SBConfig.defaults();
       scope.querySelectorAll('.layout-range').forEach(r => { r.value = getPath(d, r.dataset.path); });
       scope.querySelectorAll('#layout-show-rows input[type=checkbox]').forEach(cb => { cb.checked = getPath(d, cb.dataset.path) !== false; });
+      scope.querySelectorAll('.pattern-custom-toggle').forEach(cb => { cb.checked = !!getPath(d, cb.dataset.path); });
       refreshLayoutValues();
       document.dispatchEvent(new CustomEvent('sb-layout-changed'));
     }
     $('#layout-reset').addEventListener('click', () => {
       resetLayout($('#layout-groups'));
-      showToast('All sizes reset — press Save to apply it to the board.');
+      showToast('All sizes and the pattern reset — press Save to apply it to the board.');
     });
 
     $('#add-notice').addEventListener('click', () => {

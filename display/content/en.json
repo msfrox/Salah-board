@@ -4,8 +4,10 @@
     "fajr": "Fajr", "sunrise": "Sunrise", "luhr": "Zuhr", "asr": "Asr",
     "magrib": "Maghrib", "isha": "Isha", "jumuah": "Jumu'ah",
     "azan": "Azan", "iqamah": "Iqamah", "imsak": "Imsak", "iftar": "Iftar",
-    "luha": "Luha (Duha)", "nextPrayer": "Next prayer", "timeTo": "Time remaining",
-    "today": "Today", "bayan": "Bayan", "hijriEra": "AH", "jumuahToday": "Jumu'ah today"
+    "luha": "Luha", "nextPrayer": "Next prayer", "timeTo": "Time remaining",
+    "today": "Today", "bayan": "Bayan", "hijriEra": "AH", "jumuahToday": "Jumu'ah today",
+    "khutbah": "Khutbah", "sunnahPrayer": "Sunnah prayer", "inMinutes": "{name} in {n} min",
+    "phonesOff": "Switch off your mobile phones", "remainSilent": "Please remain silent"
   },
   "hijriMonths": ["Muharram", "Safar", "Rabi' al-Awwal", "Rabi' al-Thani", "Jumada al-Ula", "Jumada al-Akhirah", "Rajab", "Sha'ban", "Ramadan", "Shawwal", "Dhu al-Qi'dah", "Dhu al-Hijjah"],
   "azanReply": {
@@ -17,7 +19,7 @@
   "azanDua": {
     "title": "Dua after the Azan",
     "arabic": "اللَّهُمَّ رَبَّ هَذِهِ الدَّعْوَةِ التَّامَّةِ وَالصَّلَاةِ الْقَائِمَةِ آتِ مُحَمَّدًا الْوَسِيلَةَ وَالْفَضِيلَةَ وَابْعَثْهُ مَقَامًا مَحْمُودًا الَّذِي وَعَدْتَهُ",
-    "translation": "O Allah, Lord of this perfect call and established prayer, grant Muhammad the Wasilah and honour, and raise him to the praised station You have promised him.",
+    "translation": "O Allah, Lord of this perfect call and established prayer, grant Muhammad ﷺ the Wasilah and honour, and raise him to the praised station You have promised him.",
     "source": "Bukhari 614"
   },
   "betweenReminder": {
@@ -50,9 +52,9 @@
     { "text": "Send abundant salawat upon the Prophet ﷺ", "source": "Abu Dawud 1047" },
     { "text": "When the Imam delivers the khutbah, remain completely silent", "source": "Bukhari 934" }
   ],
-  "khutbahScreen": { "line": "Khutbah in progress — remain silent" },
+  "khutbahScreen": { "line": "Khutbah in progress — remain silent", "title": "Khutbah in progress", "silent": "Remain silent" },
   "jumuahBayan": { "text": "Bayan in progress" },
-  "luhaOpen": { "text": "Luha (Duha) prayer time has begun" },
+  "luhaOpen": { "text": "Luha prayer time has begun" },
   "afterSalahAdhkar": [
     { "arabic": "أَسْتَغْفِرُ اللَّهَ (×3)", "translation": "I seek Allah's forgiveness (3 times)", "source": "Muslim 591" },
     { "text": "SubhanAllah ×33 · Alhamdulillah ×33 · Allahu Akbar ×34", "source": "Muslim 596-597" },

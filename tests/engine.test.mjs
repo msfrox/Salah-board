@@ -156,24 +156,35 @@ test('Ramadan: iqamah override applies only when enabled; imsak/iftar times', as
   assert.equal(hm(r.iftarDate), '18:32');
 });
 
-// ── Jumu'ah (Fri 3 Jul 2026) ─────────────────────────────
-test("Jumu'ah Friday: Luhr azan, KHUTBAH until the fixed iqamah, then IQAMAH/SALAH/AFTER", async () => {
-  const tl = await timeline(at('2026-07-03T10:00'));
-  const day = tl.segments.filter(s => s.prayer === 'luhr' && ymd(s.start) === '2026-07-03');
-  assert.deepEqual(day.map(s => s.state), ['AZAN', 'KHUTBAH', 'IQAMAH', 'SALAH', 'AFTER']);
-  assert.deepEqual(day.map(s => [hm(s.start), hm(s.end)]), [
-    ['12:16', '12:21'], ['12:21', '13:15'], ['13:15', '13:17'], ['13:17', '13:32'], ['13:32', '13:42']]);
+// ── Jumu'ah (docs/LOCAL-CONTEXT.md §2) ───────────────────
+// Order: azan → sunnah reminder → bayan → khutbah → iqamah. Iqamah is a fixed
+// 1:00 PM; the 7-minute khutbah ends at it; the bayan starts at 12:15 PM, or
+// later on a late-azan Friday (azan screen + 5 min sunnah), iqamah unchanged.
+// Re-pinned 2026-11-18 when origin/main's Jumu'ah rework was merged.
+const luhrDay = async (d, over) => {
+  const tl = await timeline(at(d + 'T10:00'), over);
+  return tl.segments.filter(s => s.prayer === 'luhr' && ymd(s.start) === d);
+};
+const shape = (day) => day.map(s => [s.state, s.meta.phase || '', hm(s.start), hm(s.end)]);
+
+test("Jumu'ah, early-azan Friday (6 Nov): bayan at its usual 12:15, khutbah 12:53, iqamah 1:00", async () => {
+  const day = await luhrDay('2026-11-06');
+  assert.deepEqual(shape(day), [
+    ['AZAN', '', '11:56', '12:01'], ['JUMUAH', 'sunnah', '12:01', '12:15'],
+    ['JUMUAH', 'bayan', '12:15', '12:53'], ['KHUTBAH', '', '12:53', '13:00'],
+    ['IQAMAH', '', '13:00', '13:02'], ['SALAH', '', '13:02', '13:17'], ['AFTER', '', '13:17', '13:27']]);
   assert.ok(day.every(s => s.meta.jumuah));
-  assert.equal((await nextAt(at('2026-07-03T12:00'))).jumuah, true);
+  assert.equal((await nextAt(at('2026-11-06T11:30'))).jumuah, true);
 });
 
-test("Jumu'ah bayan card shows only when its time is before the Luhr azan", async () => {
-  // QUIRK: the default bayan (12:30 PM) is AFTER today's Luhr azan (12:16 PM), so no JUMUAH segment is built.
-  const dflt = await timeline(at('2026-07-03T10:00'));
-  assert.equal(seg(dflt, 'JUMUAH').length, 0);
-  const early = await timeline(at('2026-07-03T10:00'), { jumuah: { bayan: '11:45 AM' } });
-  const b = seg(early, 'JUMUAH').find(s => ymd(s.start) === '2026-07-03');
-  assert.deepEqual([hm(b.start), hm(b.end), b.meta.phase], ['11:45', '12:16', 'bayan']);
+test("Jumu'ah, late-azan Friday (3 Jul): bayan waits for azan + sunnah, iqamah stays 1:00", async () => {
+  assert.deepEqual(shape(await luhrDay('2026-07-03')), [
+    ['AZAN', '', '12:16', '12:21'], ['JUMUAH', 'sunnah', '12:21', '12:26'],
+    ['JUMUAH', 'bayan', '12:26', '12:53'], ['KHUTBAH', '', '12:53', '13:00'],
+    ['IQAMAH', '', '13:00', '13:02'], ['SALAH', '', '13:02', '13:17'], ['AFTER', '', '13:17', '13:27']]);
+  // No bayan configured: the sunnah reminder runs until the khutbah.
+  assert.deepEqual(shape(await luhrDay('2026-07-03', { jumuah: { bayan: null } })).slice(0, 3), [
+    ['AZAN', '', '12:16', '12:21'], ['JUMUAH', 'sunnah', '12:21', '12:53'], ['KHUTBAH', '', '12:53', '13:00']]);
 });
 
 test("Jumu'ah disabled: Friday is an ordinary Luhr; weekday never gets Jumu'ah", async () => {

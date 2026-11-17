@@ -28,8 +28,9 @@ default stands.
 - [ ] **Optional: tag a pre-1.0 release** (e.g. `v0.9.0`) after `docs/RELEASING.md`'s
   checklist, so the board's Update button has a release to move to. Until a `vX.Y.Z` tag
   exists, Update says "no release yet".
-- [ ] **Review the 13 "Decided on default" items** in `HANDOFF.md` (6–13 are new: first
-  PIN, lockout counting, reset, sessions, release rules).
+- [ ] **Review the 15 "Decided on default" items** in `HANDOFF.md` (6–15 are new: first
+  PIN, lockout counting, reset, sessions, release rules; 14 is where SB-7 changes how you
+  update the board, per your LOCAL-CONTEXT).
 - [ ] **Photos from the back row of the hall** of each theme (`classic`, `led`, `mono`,
   `default`) for card SB-8.
 - [ ] **Give the review sheets** (after SB-6) to the imam and the Tamil and Sinhala readers.

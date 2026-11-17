@@ -11,7 +11,7 @@ All times below are display-time (see Time Correction in ARCHITECTURE.md).
 | Iqamah | Second call, immediately before congregation starts |
 | Jumu'ah | Friday congregational prayer (replaces Luhr on Fridays) |
 | Bayan | Pre-khutbah talk on Fridays (Sri Lanka convention) |
-| Ishraq / Luha | Sunrise; Luha (Duha) prayer becomes valid ~20 min after sunrise |
+| Ishraq / Luha | Sunrise; Luha prayer becomes valid ~20 min after sunrise |
 | Imsak | End of suhoor in Ramadan (ACJU: 2 min before Fajr) |
 
 ## Display state machine
@@ -27,14 +27,14 @@ States, in the order they occur around each of the 5 daily prayers:
 | 5 | SALAH | after IQAMAH | +`salahDuration[prayer]` | Near-black screen, tiny clock, "Salah in progress — phones off". Minimum light spill in the hall |
 | 6 | AFTER | after SALAH | +`afterScreen.minutes` (default 10) | Post-salah adhkar rotation (Astaghfirullah ×3, Ayat al-Kursi reminder, tasbih 33/33/34) |
 
-Then back to NORMAL. After Fajr's AFTER screen the board stays on NORMAL until sunrise (there is no separate sunrise countdown screen — sunrise is already in the timetable strip). Special overlay states:
+Then back to NORMAL. After Fajr's AFTER screen the board stays on NORMAL until sunrise (there is no separate sunrise countdown screen). With `luha.showOnMain` (default on), NORMAL's hero shows **Next prayer: Luha** from Fajr azan until Luha begins, with **Sunrise | Luha** (sunrise + `luha.waitAfterSunrise`) as the two big times in place of Azan | Iqamah, counting down to sunrise and then to Luha; the timetable highlights Sunrise. Special overlay states:
 
 | State | When | Screen shows |
 |---|---|---|
 | LUHA_WAIT | sunrise → +`luha.waitAfterSunrise` (default 20 min) | "Luha prayer in MM:SS" countdown |
-| LUHA_OPEN | wait ends | Brief "Luha (Duha) prayer time has begun" card, then NORMAL |
+| LUHA_OPEN | wait ends | Brief "Luha prayer time has begun" card, then NORMAL |
 | NIGHT | Isha AFTER + `night.afterIshaMinutes` → Fajr − `night.beforeFajrMinutes` | Dimmed (config `night.brightness`), small clock + tomorrow's Fajr time |
-| JUMUAH | Fridays, from `jumuah.bayan` time | See Jumu'ah mode below |
+| JUMUAH | Fridays, after the azan screen until the khutbah (sunnah reminder, then bayan) | See Jumu'ah mode below |
 
 **Per-board fine-tuning:** every element on every screen can be resized (50–250% of the theme size) per board, and parts of the NORMAL screen can be hidden — `config.layout` (admin → Advanced: one section per screen, a live preview that switches to the screen being tuned and warns when elements no longer fit). The element list is `LAYOUT_GROUPS` in `display/js/config.js`; the display generates its zoom rules from it, on top of every theme, so themes don't need to know about it.
 
@@ -63,30 +63,49 @@ Rules:
 
 Timeline driven by `config.jumuah`. Jumu'ah azan is **not** separately
 configured — it's that Friday's own `luhr` azan time from the zone data
-(masjids don't ring a distinct Jumu'ah clock). `bayan` and `iqamah` are both
-fixed wall-clock times (e.g. "12:30 PM" / "1:15 PM") set by the masjid,
-editable in the admin panel:
+(masjids don't ring a distinct Jumu'ah clock). The masjid sets a fixed
+`iqamah` time (it must fit office lunch hours, so it doesn't move through
+the year), the usual `bayan` start (default 12:15 PM; null = no bayan) and
+the khutbah length (`khutbahMinutes`, default 7): azan → azan screen →
+sunnah reminder → bayan → khutbah (starts at iqamah − length) → iqamah.
+The azan moves through the year (zone 01: 11:56–12:26); on late-azan
+Fridays the bayan starts after the azan screen + `sunnahMinutes` (default
+5) instead of its usual time — later bayan, same iqamah.
 
-1. From morning, NORMAL shows "Jumu'ah today" with bayan + azan times and
-   rotating Jumu'ah etiquette cards (ghusl, early arrival, Surah al-Kahf,
-   salawat, listen silently during khutbah). Both stop at that day's Asr
-   azan — Jumu'ah is over by then, so the reminders would only be noise.
+1. From morning, NORMAL shows "Jumu'ah today · Azan · Bayan" (in time
+   order) and rotating Jumu'ah etiquette cards (ghusl,
+   Surah al-Kahf, salawat, silence during khutbah). Once Luha has begun the
+   big numbers already show the Jumu'ah azan, so the banner shows what
+   comes next instead: "Jumu'ah today · Bayan · Khutbah". Banner and cards
+   stop at that day's Asr azan.
    If the masjid entered the bayan speaker and/or topic, the banner becomes
    a one-line carousel that crossfades between the Jumu'ah times and
    "speaker · topic" (6 s each), so it takes no extra height. The speaker/
-   topic slide disappears as soon as Jumu'ah salah ends (no longer relevant). Optional `bayanDate` limits it to one
-   Friday so a previous week's speaker is never shown by mistake.
-2. `bayan` time → card "Bayan in progress", with the speaker and topic
-   underneath when set.
-3. Azan (today's `luhr` time) → AZAN state as usual.
-4. After azan → KHUTBAH state (not BETWEEN): screen shows ONLY "Khutbah in
-   progress — remain silent" (talking during khutbah forfeits the reward —
-   Bukhari 934). No countdowns, no rotation. Runs until the fixed `iqamah`
-   time (however long the khutbah actually takes).
-5. `iqamah` time → IQAMAH → SALAH → AFTER as normal. Sanity: if `iqamah` ≤
+   topic always belong to one Friday (`bayanDate`, stamped by the admin on
+   save: the coming Friday unless a later one is picked) and clear
+   themselves after that Jumu'ah, so a previous week's speaker is never
+   shown by mistake.
+2. Azan (today's `luhr` time) → AZAN state as usual.
+   Steps 3–5 are one designed set sharing a layout: what's happening now
+   (big) → its detail → a quiet schedule line → the same footer: no-phone
+   icon + "Switch off your mobile phones · Please remain silent" (wording
+   reused from the iqamah/salah screens). Deliberately calm: no rotating
+   cards, minutes not seconds, and the corner clock drops its seconds.
+3. Azan screen ends → JUMUAH (phase `sunnah`) until the bayan: "Sunnah
+   prayer" with the sourced reminder (Bukhari 627), "Bayan · Iqamah" times
+   and minutes until the bayan (no bayan: "Khutbah · Iqamah", until the
+   khutbah).
+4. → JUMUAH (phase `bayan`) until the khutbah: "Bayan in progress", speaker
+   and topic, "Khutbah · Iqamah" times and "Khutbah in N min".
+5. Khutbah start (iqamah − `khutbahMinutes`) → KHUTBAH state: "Khutbah in
+   progress" above a large "Remain silent" (talking during khutbah forfeits
+   the reward — Bukhari 934), the phones footer and the corner clock without
+   seconds. Nothing else: no countdowns, no rotation.
+6. `iqamah` → IQAMAH → SALAH → AFTER as normal. Sanity: if `iqamah` ≤
    azan + `screens.azan`, fall back to azan + 10 min (same rule as regular
-   iqamah).
-6. Women's/second Jumu'ah variations are out of scope for v1.
+   iqamah); the khutbah can't start before the azan screen ends, and the
+   bayan never starts after the khutbah.
+7. Women's/second Jumu'ah variations are out of scope for v1.
 
 ## Ramadan mode (`config.ramadan.enabled`)
 
