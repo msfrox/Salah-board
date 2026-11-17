@@ -17,10 +17,19 @@ default stands.
 
 ## Steps only you can do
 
-- [ ] **Change the board's login password and save it in your password manager.** The old
-  one (and the board's address) was written in `HANDOFF.md` and is still in git history. The
-  repo is the place a volunteer or contributor will read first.
-- [ ] **Update the live board** when a release is ready. Build sessions never push to it.
+- [ ] **Change the board's login password and save it in your password manager — now
+  urgent.** The old one (and the board's address) is in git history, and the live board's
+  old server hands its whole `.git` folder to anyone on the masjid WiFi
+  (`http://<board>:8080/.git/…`). The update below closes that, but the old password stays
+  in the public history.
+- [ ] **Update the live board** to the SB-4/SB-7 code: push `main`, then the exact steps in
+  `HANDOFF.md` → "Updating the live board" (set the PIN before the reboot). Build sessions
+  never push to it.
+- [ ] **Optional: tag a pre-1.0 release** (e.g. `v0.9.0`) after `docs/RELEASING.md`'s
+  checklist, so the board's Update button has a release to move to. Until a `vX.Y.Z` tag
+  exists, Update says "no release yet".
+- [ ] **Review the 13 "Decided on default" items** in `HANDOFF.md` (6–13 are new: first
+  PIN, lockout counting, reset, sessions, release rules).
 - [ ] **Photos from the back row of the hall** of each theme (`classic`, `led`, `mono`,
   `default`) for card SB-8.
 - [ ] **Give the review sheets** (after SB-6) to the imam and the Tamil and Sinhala readers.

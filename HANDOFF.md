@@ -2,87 +2,149 @@
 
 _Replace this file at the end of every session; git history keeps the old versions._
 
-## Current state (2026-11-18 — SB-1, SB-2 and SB-3's tests done; local commits only)
+## Current state (2026-11-18 — SB-4 and SB-7 done; local commits only, nothing pushed)
 
 - **What runs:** the Linux Debian kiosk (`deploy/serve.py` + systemd + Openbox + Chromium
-  `--kiosk`), live in a masjid. Nothing was pushed to it. **Check what the board runs before
-  assuming** (last known code on it: `b7d445a`).
-- **SB-1 done:** README, `CLAUDE.md`, `docs/MILESTONES.md` (M3/M4 marked PARKED, ADR 0001),
-  `docs/ARCHITECTURE.md` now describe the Linux kiosk. No board address or password is in the
-  tree (checked; they remain in git history, `SHEHAN-TODO.md` asks Shehan to change them).
-  `android/` untouched (its `DataRefresh.kt` comment still names the old `.ps1`).
-- **SB-2 done:** `tools/sync-data.py` (`--from`, `--url`, `--engine`, `--check`; stdlib only);
-  `tools/sync-data.ps1` removed. `display/data/manifest.json` added (source revision
-  `2026-11-16.1`, 157 files = 156 zone files + `zones.json`, filtered from the site's
-  manifest). Tests: `python3 -m unittest discover -s tools -p 'test_*.py'` (6, local HTTP
-  server: download, checksum mismatch, partial download, missing file, `--check`).
-  `--from ../Prayer-Time-Site/data` reports "no changes"; a corrupted file makes `--check`
-  exit 1 and name it.
-- **SB-3 half done:** `tests/engine.test.mjs`, 20 characterisation tests (`node --test
-  tests/*.test.mjs`, no install, TZ pinned to Asia/Colombo). Mutation-checked once. **The
-  swap is NOT done**: PT-3 (`b1ff42c`, versioned `pt-core.js` with `PT.configure`) exists
-  only on Prayer-Time-Site branch `build/pt-0-3`, not on its `main`.
-- Pinned oddities (not bugs fixed here): the default Isha iqamah (fixed 7:15 PM) is before
-  Isha azan most of the year, so it falls back to azan+10; the default Jumu'ah bayan
-  (12:30 PM) is after the Luhr azan (~12:16), so no bayan card is built. Worth a look in a
-  later display session; the tests will need updating if either changes.
-- Both ADRs are still "proposed" (Shehan has not answered `SHEHAN-TODO.md`).
+  `--kiosk`), live in a masjid. **Its code is old (last known `b7d445a`)**: no PIN, Update
+  pulls `main`, and it serves the whole repo, `.git` included, to the masjid WiFi. Nothing
+  from this session is on it. Steps for Shehan are below.
+- **SB-1, SB-2 done** (earlier today). **SB-3:** characterisation tests done; the swap waits
+  for Prayer-Time-Site PT-3 on its `main`.
+- **SB-4 done (`a3e0c59`)**: caretaker PIN. `deploy/pinauth.py` (PBKDF2 hash in
+  `~/.config/salahboard/pin.json`, 0600; sessions in memory, 30 min idle / 12 h; four free
+  wrong PINs then 30 s doubling to 1 h, separate counts for the board's own screen and the
+  network; reset by dropping `~/.config/salahboard/reset-pin`; CLI `set|reset|status`).
+  `serve.py`: only `GET /api/config|preview|time` and the auth routes are open; Origin check;
+  files served from `/display/` and `/admin/` only (checked after decoding, so `%2e%2e`
+  can't climb out). Admin: lock / "set a PIN" screen with click keypad, Lock button,
+  Network → Settings PIN. A refused Save says so instead of quietly writing localStorage.
+  `install-kiosk.sh` asks for the PIN when run from a terminal.
+- **SB-7 done (`29d1fcd`)**: `deploy/release.py` (update to newest `vX.Y.Z`, refuse a dirty
+  tree, run the new version's `sync-data.py --check` and go back if it fails, rollback,
+  record in `~/.config/salahboard/release.json`). Routes `GET /api/version`,
+  `POST /api/version/check|update|rollback`. Settings card shows running / newest version
+  with Update to / Go back to. `firstboot.sh` installs the newest tag. `docs/RELEASING.md`.
+- **Tests (all green):** `node --test tests/*.test.mjs` (20) ·
+  `python3 -m unittest discover -s tests -p 'test_*.py'` (24: 15 access, 9 release) ·
+  `python3 -m unittest discover -s tools -p 'test_*.py'` (6). Both new suites were
+  mutation-checked (gate, data check and dirty check each disabled → tests fail).
+- **Browser-checked at 1366×768** on a scratch config: set PIN by keypad, save, session ended
+  mid-use brings the lock back, five wrong PINs → 30 s wait, display polls config with no
+  session; version card in both states. **Not verified on the board.**
+- No release tag exists yet (only `debug-latest`). Until one does, Update says "No release
+  has been published yet" and firstboot stays on the cloned `main`.
 
 ## Resume
 
-**Model: Opus 5.5. Effort: medium.** Next: **SB-4** (caretaker PIN, `TASKS.md`). Then SB-7.
-SB-3's swap can follow once PT-3 is on the site's `main`: vendor with
+**Model: Opus 5.5. Effort: medium.** Ready cards: none that need nothing from Shehan.
+SB-3's swap once PT-3 is on the site's `main` (vendor with
 `python3 tools/sync-data.py --from ../Prayer-Time-Site/data --engine`, reduce `engine.js`,
-keep `tests/` green before and after, do the `?t=` day walk at 1366×768. SB-5 needs the live
-manifest at `https://pray.gear.lk/data/manifest.json` (not checked). SB-6 waits for Sakina
-SK-1; SB-8 needs Shehan at the board.
+tests green before and after, `?t=` day walk at 1366×768). SB-5 is blocked (needs PT-1/PT-3
+live; its routes go behind the PIN, `release.py` is a model for its swap-and-verify). SB-6
+waits for Sakina SK-1; SB-8 needs Shehan at the board (the caretaker guide's new "Settings
+PIN" section is a start; the rest of that guide is still Android-era).
 
 ```text
 Continue Salah-board according to /project-playbook — read ROADMAP.md and HANDOFF.md in ~/Projects/Salah-board, then do
-card SB-4 (caretaker PIN) from TASKS.md. Delegate sweeps to Haiku Explore agents.
+SB-3's swap if Prayer-Time-Site PT-3 is on its main, else SB-8 with Shehan's photos. Check docs/general/RESEARCH-INDEX.md
+before researching (it does not exist yet). Delegate sweeps to Haiku Explore agents.
 Model: opus · Effort: medium — set both before sending.
 
 Context you won't get from the files: nothing is pushed to the live board by a build session; no ssh to it.
 ```
 
+## Updating the live board to this code (Shehan, when ready)
+
+The board's old Update button pulls `main`, so the first update must go through `main`;
+after that it follows tags. Set the PIN **before** the reboot, so there is no window where
+anyone on the WiFi can set it first.
+
+1. On your machine: `git push origin main` (and, if you want boards on the release path
+   now, tag a pre-1.0 release after `docs/RELEASING.md`'s checklist, e.g.
+   `git tag -a v0.9.0 -m "Salah Board v0.9.0" && git push origin v0.9.0`).
+2. SSH to the board as the kiosk user (not root), then:
+   ```bash
+   cd ~/Salah-board
+   git status --short                 # must be empty; if not: git stash
+   git pull --ff-only
+   python3 deploy/pinauth.py set      # 6–12 digits, typed twice
+   python3 tools/sync-data.py --check # must say "data check: ok"
+   sudo systemctl restart salahboard-server
+   sudo reboot
+   ```
+   (Or, without SSH: settings → Network → Update from GitHub → Reboot, then **straight
+   away** open settings on the board's screen and set the PIN.)
+3. Check from a phone on the masjid WiFi: `http://<board>:8080/admin/` asks for the PIN;
+   `http://<board>:8080/.git/config` is "not found"; the display still updates.
+4. If you tagged in step 1: settings → Network → Software update should say "Running
+   v0.9.0" after `python3 deploy/release.py update` (or the button) and a reboot.
+5. If anything is wrong: `git checkout b7d445a && sudo reboot` returns to the old code (the
+   PIN file is then ignored; `config.json` is untouched either way).
+
 ## In flight
 
-Nothing. Local commits on `main`, not pushed.
+Nothing. Local commits on `main` (`a3e0c59`, `29d1fcd` and this HANDOFF), not pushed.
 
 ## Decided on default — for Shehan to review
 
-(Shehan, 18 Nov: "use the recommended option and continue".) Each question below is in
-`SHEHAN-TODO.md`, unanswered.
+(Shehan, 18 Nov: "use the recommended option and continue".) Items 1–5 are from earlier
+today and are also in `SHEHAN-TODO.md`.
 
-1. **Linux kiosk as v1.0, Android parked (Q19)?** Options: Linux first / Android first.
-   Picked: **Linux first** (ADR 0001 default). Why: it is what runs today. Reverse: ADR 0001
-   says points 1 and 2 swap; re-point README/CLAUDE.md "How to work" at `docs/MILESTONES.md`
-   M3 and un-park it (one commit, `git revert` of the SB-1 docs commit does most of it).
-2. **One masjid or offered to others (Q20)?** Picked: **one now, written for a stranger.**
-   Reverse: nothing built depends on it.
+1. **Linux kiosk as v1.0, Android parked (Q19)?** Picked: Linux first (ADR 0001). Reverse:
+   ADR 0001 points 1 and 2 swap.
+2. **One masjid or offered to others (Q20)?** Picked: one now, written for a stranger.
 3. **Who signs off the duas (Q21)?** Not picked: needs a name. Only matters for SB-6.
-4. **Caretaker PIN (Q22)?** Picked: **yes** (SB-4 will build it). Reverse: drop SB-4.
-5. **SB-2 manifest scope:** the bundled manifest lists only what the display reads (zone
-   files + `zones.json`), not the site's `SCHEMA.md`, schemas or `zones.geojson`. Why: keeps
-   the bundle minimal. Reverse: widen `WANTED` in `tools/sync-data.py`.
+4. **Caretaker PIN (Q22)?** Yes — built in SB-4.
+5. **SB-2 manifest scope:** display files only. Reverse: widen `WANTED` in `sync-data.py`.
+6. **Who may set the first PIN?** Options: anyone while none is set / only the board's own
+   screen / only at install. Picked: **anyone while none is set**, plus the installer asks
+   when run from a terminal. Why: the card requires a hotspot-only masjid to reach settings
+   from a phone, and the "set a PIN" screen instead of a lock-out. Risk: someone on the WiFi
+   sets it first; the fix is the reset file. Reverse: in `pinauth.change_pin`, refuse the
+   first PIN unless `bucket == "local"`.
+7. **Wrong-PIN counting:** Options: one global count / per client IP / board screen and
+   network apart. Picked: **apart**. Why: a global count lets a phone lock out the caretaker
+   at the board; per-IP is beaten by changing IP. Reverse: `_bucket()` in `serve.py`.
+8. **PIN reset:** a file over SSH or the board's console only; no USB-stick detection (the
+   kiosk does not auto-mount). Reverse: add a check of `/media/*/*/salahboard-reset-pin` in
+   `pinauth._check_reset`.
+9. **Sessions:** in memory, 30 min idle, 12 h max; a reboot logs everyone out. Reverse:
+   `SESSION_IDLE` / `SESSION_MAX` in `pinauth.py`.
+10. **`GET /api/whoami` behind the PIN** (the card's "all but three"). It only gives the
+    board's LAN address. Reverse: add it to `OPEN_GET` in `serve.py`.
+11. **A board on an untagged commit** (like the live one) updates to the newest tag even if
+    that tag is older code. Why: releases are the point; main may hold half-done work.
+    Reverse: in `release.status`, make `updateAvailable` false when the tag is an ancestor of
+    HEAD.
+12. **Go back is not gated by the data check** (the version already ran here). Reverse:
+    `verify=True` in `release.rollback`.
+13. **Android release workflow** now triggers on `android-v*` tags, not `v*`, so a board
+    release doesn't start the parked APK build (which needs keystore secrets). Reverse: one
+    line in `.github/workflows/release.yml`.
 
 ## Waiting on Shehan
 
-`SHEHAN-TODO.md`: change the board's password and save it in the password manager (the old
-one is in git history); name who reviews the duas; photos from the hall for SB-8; update the
-live board himself when a release is ready; merge Prayer-Time-Site `build/pt-0-3` (PT-3) to
-its `main` if he agrees (needed for the SB-3 swap).
+`SHEHAN-TODO.md`. New today: **the live board serves its `.git` folder to the masjid WiFi**
+(old code), so the old board password in git history is readable by anyone there until it
+is updated: changing that password is now urgent. Then update the board (steps above) and,
+if wanted, tag a pre-1.0 release. Still: who reviews the duas; hall photos for SB-8; merge
+Prayer-Time-Site `build/pt-0-3` to its `main` for the SB-3 swap; tag v1.0.0 when ready.
 
 ## Gotchas
 
+- The settings page needs the PIN on the board server; off it (plain static server)
+  `auth.js` does nothing and settings save to localStorage as before.
+- `tests/test_serve.py` stubs the privileged helpers, the display switcher and the release
+  actions; never let a test call the real ones (they would `git fetch` or reboot).
+- `release.py` leaves the board on a detached HEAD at a tag; `git pull` no longer applies
+  there. Use `python3 deploy/release.py update`.
 - Privileged features (hotspot, set-clock, reboot, WiFi connect) need the sudoers drop-in
   from `install-kiosk.sh`; a fresh board must run `sudo bash deploy/linux/install-kiosk.sh`.
-- Masjid settings live in `~/.config/salahboard/config.json`, outside the repo.
+- Masjid settings, PIN and release record live in `~/.config/salahboard/`, outside the repo.
 - Preview is in memory and expires (5 minutes, or a reboot).
 - One WiFi radio: joining a network or starting the hotspot drops any SSH carried over WiFi.
 - The board has no `curl`; use `python3 -c 'urllib…'` or `wget`.
 - Never kill Chromium on the board over SSH by matching its command line; kill by pid.
-- `deploy/linux/*.sh` are tracked executable; if a pull complains, `git checkout -- deploy/linux/ && git pull`.
-- The settings API has no login yet (SB-4): anyone on the masjid network can change it.
-- Engine tests run the display's own scripts in a `vm` sandbox with `fetch` reading
-  `display/data`; keep them runnable with plain `node --test`.
+- `deploy/linux/*.sh` are tracked executable; if a pull complains,
+  `git checkout -- deploy/linux/ && git pull`.
+- `docs/CARETAKER-GUIDE.md` is still mostly the Android guide (SB-8 rewrites it).
