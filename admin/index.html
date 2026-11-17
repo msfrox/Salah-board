@@ -94,6 +94,22 @@
       </section>
 
       <section class="card">
+        <h2>Luha</h2>
+        <label class="field checkbox-field">
+          <input type="checkbox" data-path="luha.showOnMain">
+          <span>After Fajr, show Sunrise &amp; Luha as the next prayer on the main screen</span>
+        </label>
+        <label class="field checkbox-field">
+          <input type="checkbox" data-path="luha.enabled">
+          <span>Show full-screen Luha countdown from sunrise</span>
+        </label>
+        <label class="field">
+          <span>Luha begins this many minutes after sunrise</span>
+          <input type="number" min="0" step="1" data-path="luha.waitAfterSunrise" data-number>
+        </label>
+      </section>
+
+      <section class="card">
         <h2>Screen durations (minutes)</h2>
         <label class="field">
           <span>Azan screen</span>
@@ -179,22 +195,6 @@
         <label class="field">
           <span>Jumu'ah salah duration (minutes)</span>
           <input type="number" min="1" step="1" data-path="jumuah.salahDuration" data-number>
-        </label>
-      </section>
-
-      <section class="card">
-        <h2>Luha</h2>
-        <label class="field checkbox-field">
-          <input type="checkbox" data-path="luha.showOnMain">
-          <span>After Fajr, show Sunrise &amp; Luha as the next prayer on the main screen</span>
-        </label>
-        <label class="field checkbox-field">
-          <input type="checkbox" data-path="luha.enabled">
-          <span>Show full-screen Luha countdown from sunrise</span>
-        </label>
-        <label class="field">
-          <span>Luha begins this many minutes after sunrise</span>
-          <input type="number" min="0" step="1" data-path="luha.waitAfterSunrise" data-number>
         </label>
       </section>
 
