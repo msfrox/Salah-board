@@ -28,6 +28,11 @@ same ethos.
 
 ## How to work (every session)
 
+0. **Read `docs/LOCAL-CONTEXT.md` first.** It records local practice (e.g.
+   how Jumu'ah runs here), the live board, and the owner's preferences, so
+   they never have to be repeated. **Keep it updated:** whenever you learn
+   something new about local practice, the community, the board, or how the
+   owner wants things done, add or correct it there in the same commit.
 1. Read `docs/MILESTONES.md`, find the current milestone (first one not
    marked done). Read ONLY the spec sections it links. Keep sessions small.
 2. Implement against the milestone's acceptance criteria. All must pass
@@ -48,7 +53,8 @@ display/data/       ACJU zone JSONs — synced by tools/sync-data.ps1. NEVER han
 display/content/    Language packs (duas, labels, screens) — en/ta/si + Arabic inline.
 display/themes/     One folder per theme (CSS + optional layout overrides).
 android/            Kotlin shell (M3+). See android/README.md for responsibilities.
-docs/               SPEC, ARCHITECTURE, CONFIG-SCHEMA, MILESTONES, HARDWARE.
+docs/               SPEC, ARCHITECTURE, CONFIG-SCHEMA, MILESTONES, HARDWARE,
+                    LOCAL-CONTEXT (local practice + owner preferences — read first).
 tools/sync-data.ps1 Copies data from sibling Prayer Time Site repo, or
                     downloads from https://pray.gear.lk/data/.
 ```
