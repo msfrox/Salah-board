@@ -38,7 +38,8 @@
     return isNaN(d) ? t : d.toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true });
   };
 
-  const onBoard = () => $('#preview-on-board') && $('#preview-on-board').checked;
+  // Default: previews go to the board. Ticking "Open here" opens a new tab instead.
+  const onBoard = () => !($('#preview-here') && $('#preview-here').checked);
   function setStatus(msg) { const el = $('#preview-board-status'); if (el) el.textContent = msg || ''; }
 
   function previewUrl(state) {
@@ -81,6 +82,7 @@
   async function runTimeOnBoard() {
     const t = $('#preview-time') && $('#preview-time').value;
     if (!t) { setStatus('Pick a date and time above first.'); return; }
+    if (!onBoard()) { window.open(previewUrl(null), '_blank'); return; } // "Open here": live board from that time in a new tab
     const secs = previewSeconds();
     setStatus(`Starting the board at ${fmtTestTime(t)}…`);
     const r = await postPreview({ t, seconds: secs });
@@ -114,9 +116,9 @@
     } catch (e) { /* off-board — leave status blank */ }
   }
 
+  // Resume only shows while a board test is actually running (refreshStatus).
   function syncMode() {
-    const board = onBoard();
-    showResume(board);
+    showResume(false);
     refreshStatus();
   }
 
@@ -138,11 +140,11 @@
     if (live) live.addEventListener('click', () => window.open(previewUrl(null), '_blank'));
 
     const resume = $('#preview-resume-live');
-    if (resume) resume.addEventListener('click', () => { resumeLive(); showResume(onBoard()); });
+    if (resume) resume.addEventListener('click', () => { resumeLive(); showResume(false); });
     const run = $('#preview-run-time');
     if (run) run.addEventListener('click', runTimeOnBoard);
 
-    const cb = $('#preview-on-board');
+    const cb = $('#preview-here');
     if (cb) cb.addEventListener('change', syncMode);
 
     document.addEventListener('sb-tab-shown', e => { if (e.detail.tab === 'preview') refreshStatus(); });
