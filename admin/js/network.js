@@ -155,6 +155,49 @@
     if (cancel) cancel.addEventListener('click', () => { $('#wifi-connect').hidden = true; });
   }
 
+  // ── Version (what code the board is running) ─────────────
+  // From serve.py's GET /api/version (git commit at server start = since
+  // boot, plus what's on disk after an update). Off the board there is no
+  // API, so it says so instead of guessing.
+  function fmtVersion(v) {
+    const d = new Date(v.date);
+    const when = isNaN(d) ? '' : d.toLocaleString('en-GB', {
+      day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true,
+    });
+    return when ? `${when} · ${v.short}` : v.short;
+  }
+  async function refreshVersion() {
+    const set = (id, text) => { const el = document.getElementById(id); if (el) el.textContent = text; };
+    const show = (id, on) => { const el = document.getElementById(id); if (el) el.hidden = !on; };
+    let info = null;
+    try {
+      const res = await fetch('/api/version', { cache: 'no-store' });
+      if (res.ok) info = await res.json();
+    } catch (e) { /* not on the board device */ }
+    if (!info || !info.available || !info.running) {
+      set('version-running', 'Unknown');
+      set('version-note', info
+        ? 'This copy was not installed from GitHub, so it has no version information.'
+        : 'Version information is available only on the board device.');
+      show('version-note', true);
+      show('version-change-row', false);
+      show('version-branch-row', false);
+      return;
+    }
+    const run = info.running;
+    set('version-running', fmtVersion(run));
+    set('version-subject', run.subject || '');
+    show('version-change-row', !!run.subject);
+    set('version-branch', run.branch || '');
+    show('version-branch-row', !!run.branch && run.branch !== 'HEAD');
+    if (info.rebootNeeded && info.installed) {
+      set('version-note', `A newer version is downloaded (${fmtVersion(info.installed)}). Reboot the board to start using it.`);
+      show('version-note', true);
+    } else {
+      show('version-note', false);
+    }
+  }
+
   // ── Software update (git pull) + reboot ──────────────────
   function wireUpdate() {
     const upStatus = m => { const el = $('#update-status'); if (el) el.textContent = m; };
@@ -165,6 +208,7 @@
       upStatus('Updating from GitHub…');
       const r = await post('/api/update');
       upBtn.disabled = false;
+      refreshVersion();
       if (r.ok) {
         upStatus(r.output && /already up to date/i.test(r.output)
           ? 'Already up to date.'
@@ -182,7 +226,7 @@
     });
   }
 
-  document.addEventListener('sb-tab-shown', e => { if (e.detail.tab === 'network') refresh(); });
+  document.addEventListener('sb-tab-shown', e => { if (e.detail.tab === 'network') { refresh(); refreshVersion(); } });
 
   wire();
   wireWifi();

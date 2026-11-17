@@ -117,6 +117,14 @@ html, body {
   color: var(--a-fg-dim);
 }
 
+/* Software update → version block */
+.version-info { margin: 0 0 1rem; display: flex; flex-direction: column; gap: .35rem; }
+.version-row { display: flex; gap: 1rem; font-size: .92rem; align-items: baseline; }
+.version-row[hidden], .version-info [hidden] { display: none; }
+.version-key { flex: 0 0 8.5rem; color: var(--a-fg-dim); }
+.version-val { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
+.version-info .readonly-status { margin: .3rem 0 0; }
+
 .notice-card { position: relative; }
 
 .btn {
