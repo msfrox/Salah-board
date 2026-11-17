@@ -322,9 +322,8 @@
     refreshPrimaryLangOptions(langs);
 
     // Jumu'ah bayan enabled toggle
-    const bayanEnabled = !!config.jumuah.bayan;
-    $('#bayan-enabled').checked = bayanEnabled;
-    $('#bayan-details').classList.toggle('hidden', !bayanEnabled);
+    $('#bayan-details').classList.toggle('hidden', !$('#bayan-enabled').checked);
+    updateJumuahSummary();
     $('#bayan-date').value = config.jumuah.bayanDate || '';
     // Last Friday's speaker/topic clears itself: once its Jumu'ah is over the
     // fields open empty (the board already stopped showing them), so the
@@ -401,8 +400,7 @@
       ? [primary, ...enabled.filter(l => l !== primary)]
       : ['en'];
 
-    // Jumu'ah bayan: null when disabled
-    config.jumuah.bayan = $('#bayan-enabled').checked ? inputValueToAmpm($('#bayan-time').value) : null;
+    config.jumuah.bayan = !!config.jumuah.bayan;
     config.jumuah.bayanSpeaker = String(config.jumuah.bayanSpeaker || '').trim();
     config.jumuah.bayanTopic = String(config.jumuah.bayanTopic || '').trim();
     config.jumuah.bayanDate = $('#bayan-date').value || null;
@@ -482,7 +480,9 @@
       if (!(Number(config.screens.salahDuration[p.key]) > 0)) errors.push(`Salah duration for ${p.label} must be more than 0.`);
     });
     if (config.jumuah.enabled) {
-      if (!config.jumuah.iqamah) errors.push("Jumu'ah iqamah time is required when Jumu'ah mode is enabled.");
+      if (!config.jumuah.khutbah) errors.push("Khutbah start time is required when Jumu'ah mode is enabled.");
+      if (!(Number(config.jumuah.khutbahMinutes) > 0)) errors.push("Khutbah length must be more than 0 minutes.");
+      if (!(Number(config.jumuah.sunnahMinutes) >= 0)) errors.push("Sunnah reminder must be 0 minutes or more.");
       if (!(Number(config.jumuah.salahDuration) > 0)) errors.push("Jumu'ah salah duration must be more than 0.");
     }
     if (config.jumuah.bayanDate) {
@@ -532,13 +532,27 @@
 
   // ── Bayan speaker/topic: one Friday at a time ───────────
   const isoDate = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  // When that Friday's Jumu'ah is over: iqamah + salah duration (the same
-  // moment the board stops showing the speaker/topic). Fallback: 3 PM.
+  // When that Friday's Jumu'ah is over: iqamah (= khutbah + khutbah length)
+  // + salah duration — the same moment the board stops showing the
+  // speaker/topic. Fallback: 3 PM.
   function jumuahEnd(config, day) {
     const E = window.SBEngine;
-    const iq = E && config.jumuah.iqamah ? E.parseTime(config.jumuah.iqamah, day) : null;
-    if (iq) return E.addMinutes(iq, Number(config.jumuah.salahDuration) || 0);
+    const k = E && config.jumuah.khutbah ? E.parseTime(config.jumuah.khutbah, day) : null;
+    if (k) return E.addMinutes(k, (Number(config.jumuah.khutbahMinutes) || 7) + (Number(config.jumuah.salahDuration) || 0));
     const d = new Date(day); d.setHours(15, 0, 0, 0); return d;
+  }
+  // Live line under the khutbah fields: the iqamah time they give.
+  function updateJumuahSummary() {
+    const el = $('#jumuah-summary');
+    if (!el) return;
+    const v = $('#khutbah-time').value;                 // "HH:MM" (24h) from the time input
+    const len = Number($('#khutbah-minutes').value);
+    if (!v || !(len > 0)) { el.textContent = 'Set the khutbah start time and length to see the iqamah time.'; return; }
+    const [h, m] = v.split(':').map(Number);
+    const t = h * 60 + m + len;
+    const hh = Math.floor(t / 60) % 24, mm = t % 60;
+    const fmt = (H, M) => `${H % 12 === 0 ? 12 : H % 12}:${String(M).padStart(2, '0')} ${H < 12 ? 'AM' : 'PM'}`;
+    el.textContent = `Iqamah: ${fmt(hh, mm)} (khutbah ${fmt(h, m)} + ${len} min). The bayan starts after the azan screen and the sunnah reminder.`;
   }
   // Today if it's Friday and Jumu'ah isn't over yet, otherwise next Friday.
   function comingFriday(config, now = new Date()) {
@@ -630,6 +644,7 @@
       if (e.target.id === 'bayan-enabled') {
         $('#bayan-details').classList.toggle('hidden', !e.target.checked);
       }
+      if (e.target.id === 'khutbah-time' || e.target.id === 'khutbah-minutes') updateJumuahSummary();
       if (e.target.classList.contains('ramadan-override-enabled')) {
         e.target.closest('.subcard').querySelector('.ramadan-override-body').classList.toggle('hidden', !e.target.checked);
       }
@@ -645,6 +660,7 @@
     document.addEventListener('input', e => { if (e.target.classList.contains('layout-range')) refreshLayoutValues(); });
     document.addEventListener('input', e => {
       if (e.target.matches('[data-path="jumuah.bayanSpeaker"], [data-path="jumuah.bayanTopic"], #bayan-date')) updateBayanDateNote();
+      if (e.target.id === 'khutbah-time' || e.target.id === 'khutbah-minutes') updateJumuahSummary();
     });
     $('#layout-groups').addEventListener('click', e => {
       const groupReset = e.target.closest('.layout-group-reset');

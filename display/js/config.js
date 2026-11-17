@@ -76,11 +76,11 @@
       { key: 'nightClock', label: 'Clock', selector: '.night-clock' },
       { key: 'nightFajr', label: "Tomorrow's Fajr", selector: '.night-next-fajr' },
     ] },
-    { id: 'jumuah', title: "Bayan (Jumu'ah)", state: 'jumuah', store: 'screens', items: [
-      { key: 'bayanTitle', label: '"Bayan in progress"', selector: '.jumuah-banner' },
+    { id: 'jumuah', title: "Jumu'ah sunnah & bayan", state: 'jumuah', store: 'screens', items: [
+      { key: 'bayanTitle', label: '"Bayan in progress" / "Sunnah prayer"', selector: '.jumuah-banner' },
       { key: 'bayanSpeaker', label: 'Speaker', selector: '.jumuah-speaker' },
-      { key: 'bayanTopic', label: 'Topic', selector: '.jumuah-topic' },
-      { key: 'bayanEtiquette', label: 'Etiquette card', selector: '.screen--jumuah .card--etiquette' },
+      { key: 'bayanTopic', label: 'Topic / sunnah reminder', selector: '.jumuah-topic' },
+      { key: 'bayanTimes', label: 'Khutbah & iqamah times, minutes left', selector: '.jumuah-times, .jumuah-countdown' },
     ] },
     { id: 'khutbah', title: 'Khutbah', state: 'khutbah', store: 'screens', items: [
       { key: 'khutbahLine', label: '"Khutbah in progress" line', selector: '.khutbah-line' },
@@ -94,11 +94,36 @@
   }
 
   // Older saved configs had one "banners" size for all three NORMAL banners.
+  // "1:00 PM" ± minutes → "12:53 PM" (config-only helper; the engine isn't
+  // loaded yet when the display reads its config).
+  function shiftAmpm(str, minutes) {
+    const m = /^\s*(\d{1,2}):(\d{2})\s*([AP]M)\s*$/i.exec(String(str || ''));
+    if (!m) return null;
+    let h = Number(m[1]) % 12 + (m[3].toUpperCase() === 'PM' ? 12 : 0);
+    let t = ((h * 60 + Number(m[2]) + minutes) % 1440 + 1440) % 1440;
+    h = Math.floor(t / 60);
+    const ap = h < 12 ? 'AM' : 'PM';
+    return `${h % 12 === 0 ? 12 : h % 12}:${String(t % 60).padStart(2, '0')} ${ap}`;
+  }
+
   function migrateStored(stored) {
     const s = stored && stored.layout && stored.layout.normal && stored.layout.normal.sizes;
     if (s && s.banners !== undefined) {
       ['jumuahBanner', 'pinnedBanner', 'ramadanBlock'].forEach(k => { if (s[k] === undefined) s[k] = s.banners; });
       delete s.banners;
+    }
+    // Jumu'ah used to have a fixed bayan TIME (before azan) and a fixed iqamah
+    // TIME. Now: bayan on/off, and a khutbah start time + length. Keep the
+    // masjid's iqamah exactly where it was: khutbah = old iqamah − length.
+    const j = stored && stored.jumuah;
+    if (j) {
+      if (typeof j.bayan === 'string' || j.bayan === null) j.bayan = !!j.bayan;
+      if (j.khutbah === undefined && typeof j.iqamah === 'string') {
+        const len = Number(j.khutbahMinutes) > 0 ? Number(j.khutbahMinutes) : 7;
+        const k = shiftAmpm(j.iqamah, -len);
+        if (k) { j.khutbah = k; j.khutbahMinutes = len; }
+      }
+      delete j.iqamah;
     }
     return stored;
   }
@@ -131,10 +156,17 @@
         salahDuration: { fajr: 10, luhr: 10, asr: 10, magrib: 10, isha: 12 },
       },
 
+      // Friday sequence: azan (that Friday's luhr time) → azan screen →
+      // sunnah reminder (sunnahMinutes) → bayan until `khutbah` → khutbah
+      // (khutbahMinutes) → iqamah. So bayan starts at azan + screens.azan +
+      // sunnahMinutes, and iqamah = khutbah + khutbahMinutes — neither is
+      // set separately.
       jumuah: {
         enabled: true,
-        bayan: '12:30 PM',       // fixed set time; null = no bayan card
-        iqamah: '1:15 PM',       // fixed set time (azan is that Friday's luhr time)
+        bayan: true,             // show a bayan between the sunnah reminder and the khutbah
+        khutbah: '12:45 PM',     // fixed set time the khutbah starts
+        khutbahMinutes: 7,       // khutbah length → iqamah = khutbah + this
+        sunnahMinutes: 5,        // "pray the sunnah" screen after the azan screen
         salahDuration: 15,
         // Who gives the bayan and on what — shown in the "Jumu'ah today"
         // banner and on the bayan screen, until Jumu'ah salah ends.

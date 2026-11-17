@@ -76,6 +76,12 @@ html[data-sb-hide~="cards"]      .screen--normal .card--etiquette { display: non
 /* Corner clock (azan, iqamah, Luha… screens): AM/PM at full clock size. */
 .corner-ampm { margin-left: .3em; }
 
+/* ── Jumu'ah sunnah / bayan screens: the times line and minutes countdown.
+   Quiet on purpose (dim, modest size) so they never pull eyes from the
+   speaker. :where() → zero specificity, so a theme can restyle them. */
+:where(.jumuah-times) { font-size: 2.6rem; font-weight: 600; color: var(--sb-fg-dim); font-variant-numeric: tabular-nums; }
+:where(.jumuah-countdown) { font-size: 2.2rem; font-weight: 500; color: var(--sb-fg-dim); opacity: .75; }
+
 /* ── "Next prayer" head ──────────────────────────────────────────
    Wraps the label + name. By default it's invisible to layout (its children
    behave exactly as before); a theme opts in by styling .np-head itself —

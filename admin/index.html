@@ -164,16 +164,16 @@
           <input type="checkbox" data-path="jumuah.enabled">
           <span>Enable Jumu'ah mode on Fridays</span>
         </label>
-        <p class="hint">Jumu'ah azan is always that Friday's Zuhr azan time from the timetable — it isn't set separately here.</p>
+        <p class="hint">Order on Fridays: azan → sunnah prayer reminder → bayan → khutbah → iqamah. The azan is always that Friday's Zuhr azan time from the timetable.</p>
+        <label class="field">
+          <span>Sunnah prayer reminder after the azan (minutes)</span>
+          <input type="number" min="0" step="1" data-path="jumuah.sunnahMinutes" data-number>
+        </label>
         <label class="field checkbox-field">
-          <input type="checkbox" id="bayan-enabled">
-          <span>Show a bayan (pre-khutbah talk)</span>
+          <input type="checkbox" id="bayan-enabled" data-path="jumuah.bayan">
+          <span>Show a bayan (from after the sunnah reminder until the khutbah)</span>
         </label>
         <div id="bayan-details">
-          <label class="field">
-            <span>Bayan start time</span>
-            <input type="time" id="bayan-time" data-path="jumuah.bayan" data-time="ampm">
-          </label>
           <label class="field">
             <span>Bayan by (speaker's name — optional)</span>
             <input type="text" data-path="jumuah.bayanSpeaker" placeholder="e.g. Moulavi Ahmed Rizwan">
@@ -190,9 +190,14 @@
           </label>
         </div>
         <label class="field">
-          <span>Iqamah time (fixed, e.g. 1:15 PM)</span>
-          <input type="time" data-path="jumuah.iqamah" data-time="ampm">
+          <span>Khutbah starts at</span>
+          <input type="time" id="khutbah-time" data-path="jumuah.khutbah" data-time="ampm">
         </label>
+        <label class="field">
+          <span>Khutbah length (minutes)</span>
+          <input type="number" min="1" step="1" id="khutbah-minutes" data-path="jumuah.khutbahMinutes" data-number>
+        </label>
+        <p class="readonly-status" id="jumuah-summary"></p>
         <label class="field">
           <span>Jumu'ah salah duration (minutes)</span>
           <input type="number" min="1" step="1" data-path="jumuah.salahDuration" data-number>

@@ -24,6 +24,7 @@
     ['luha-wait', 'Luha wait'],
     ['luha-open', 'Luha open'],
     ['night', 'Night'],
+    ['sunnah', "Jumu'ah sunnah"],
     ['jumuah', "Jumu'ah (bayan)"],
     ['khutbah', 'Khutbah'],
   ];

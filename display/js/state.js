@@ -66,11 +66,13 @@
     const jumuahAlerts = isJumuahDay && !(todayAsr && now >= todayAsr);
     const bayanInfo = jumuahAlerts ? resolveBayanInfo(config, timeline, now) : null;
     const ramadan = (config.ramadan.enabled && todayRow) ? E.ramadanTimes(todayRow, timeline.dates.today, config) : null;
+    // Today's Jumu'ah timings (bayan start, khutbah, iqamah) for the banner.
+    const jumuahPlan = isJumuahDay ? E.jumuahPlan(timeline.dates.today, todayRow, config) : null;
 
     const luhaNext = resolveLuhaNext(config, timeline, now);
 
     const base = {
-      now, hijri, isJumuahDay, jumuahAlerts, bayanInfo, ramadan, luhaNext,
+      now, hijri, isJumuahDay, jumuahAlerts, bayanInfo, ramadan, luhaNext, jumuahPlan,
       nextAzan: next, prevAzan: prev,
       rows: timeline.rows, dates: timeline.dates,
     };
@@ -92,7 +94,10 @@
   // render sensibly; never used outside ?state= debug mode.
   function forceState(result, stateParam, config) {
     const E = global.SBEngine;
-    const key = String(stateParam).toUpperCase().replace(/-/g, '_');
+    let key = String(stateParam).toUpperCase().replace(/-/g, '_');
+    // "sunnah" previews the Jumu'ah sunnah-reminder screen (a JUMUAH phase).
+    const sunnahPreview = key === 'SUNNAH';
+    if (sunnahPreview) key = 'JUMUAH';
     if (!VALID_STATES.includes(key)) return result;
     const now = result.now;
     const overlay = ['LUHA_WAIT', 'LUHA_OPEN', 'NIGHT'].includes(key);
@@ -103,7 +108,13 @@
     if (key === 'BETWEEN') meta = { iqamahTime: fakeEnd };
     else if (key === 'NIGHT') meta = { nextFajr: fakeEnd };
     else if (key === 'AZAN' && prayer === 'luhr' && result.isJumuahDay) meta = { jumuah: true };
-    else if (key === 'JUMUAH') meta = { phase: 'bayan' };
+    else if (key === 'JUMUAH' || key === 'KHUTBAH') {
+      // Show this Friday's real times when we have them, else plausible ones.
+      const p = result.jumuahPlan || E.jumuahPlan(result.dates.today, result.rows && result.rows.today, config) || {};
+      meta = { jumuah: true, phase: sunnahPreview ? 'sunnah' : 'bayan',
+        bayanStart: p.bayanStart || E.addMinutes(now, 4), khutbah: p.khutbah || E.addMinutes(now, 30),
+        iqamahTime: p.iqamah || E.addMinutes(now, 37) };
+    }
     // Previewing the bayan / Jumu'ah screens on any weekday should still show
     // the configured speaker & topic, so the caretaker can check them.
     let bayanInfo = result.bayanInfo;

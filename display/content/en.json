@@ -5,7 +5,8 @@
     "magrib": "Maghrib", "isha": "Isha", "jumuah": "Jumu'ah",
     "azan": "Azan", "iqamah": "Iqamah", "imsak": "Imsak", "iftar": "Iftar",
     "luha": "Luha", "nextPrayer": "Next prayer", "timeTo": "Time remaining",
-    "today": "Today", "bayan": "Bayan", "hijriEra": "AH", "jumuahToday": "Jumu'ah today"
+    "today": "Today", "bayan": "Bayan", "hijriEra": "AH", "jumuahToday": "Jumu'ah today",
+    "khutbah": "Khutbah", "sunnahPrayer": "Sunnah prayer", "inMinutes": "{name} in {n} min"
   },
   "hijriMonths": ["Muharram", "Safar", "Rabi' al-Awwal", "Rabi' al-Thani", "Jumada al-Ula", "Jumada al-Akhirah", "Rajab", "Sha'ban", "Ramadan", "Shawwal", "Dhu al-Qi'dah", "Dhu al-Hijjah"],
   "azanReply": {

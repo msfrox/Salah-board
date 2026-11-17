@@ -377,13 +377,21 @@
 
     let jumuahBanner = '';
     if (result.jumuahAlerts) {
+      // Morning (until Luha begins): "Jumu'ah today · Azan · Bayan". After
+      // Luha the big numbers already show the Jumu'ah azan, so the banner
+      // gives what comes next instead: "Jumu'ah today · Bayan · Khutbah".
       const todayRow = result.rows.today;
-      const bayanPart = config.jumuah.bayan
-        ? ` · ${escapeHtml(label(content, 'bayan'))} ${escapeHtml(E.formatTime(E.parseTime(config.jumuah.bayan, result.dates.today), config))}`
-        : '';
-      const jumuahAzanTime = todayRow ? fmtRowTime(todayRow.luhr, config, result) : '--:--';
-      const mainLine = `<span class="jdb-main">${escapeHtml(label(content, 'jumuahToday'))}` +
-        `${bayanPart} · ${escapeHtml(label(content, 'azan'))} ${escapeHtml(jumuahAzanTime)}</span>`;
+      const plan = result.jumuahPlan;
+      const part = (key, date) => ` · ${escapeHtml(label(content, key))} ${escapeHtml(date ? E.formatTime(date, config) : '--:--')}`;
+      const sunrise = todayRow ? E.parseTime(todayRow.sunrise, result.dates.today) : null;
+      const luhaStart = sunrise ? E.addMinutes(sunrise, Math.max(0, Number(config.luha && config.luha.waitAfterSunrise) || 0)) : null;
+      const afterLuha = luhaStart && result.now >= luhaStart;
+      const azanDate = todayRow ? E.parseTime(todayRow.luhr, result.dates.today) : null;
+      const bayanPart = plan && plan.bayan ? part('bayan', plan.bayanStart) : '';
+      const parts = afterLuha
+        ? bayanPart + part('khutbah', plan && plan.khutbah)
+        : part('azan', azanDate) + bayanPart;
+      const mainLine = `<span class="jdb-main">${escapeHtml(label(content, 'jumuahToday'))}${parts}</span>`;
       jumuahBanner = result.bayanInfo
         ? jumuahCarouselHtml([mainLine, bayanInfoLine(result.bayanInfo)], result.now)
         : `<div class="jumuah-day-banner">${mainLine}</div>`;
@@ -566,16 +574,47 @@
     return `<span class="jdb-bayan">${parts.join('<span class="jdb-sep"> · </span>')}</span>`;
   }
 
+  // Jumu'ah between azan and khutbah, in phases (engine buildJumuahCycle):
+  //   sunnah — "Sunnah prayer" reminder, then the bayan (or khutbah) time;
+  //   bayan  — "Bayan in progress", speaker/topic, khutbah & iqamah times;
+  //   wait   — bayan turned off: the same quiet screen without the title.
+  // Deliberately calm while someone is speaking: no rotating cards, and the
+  // countdown is in whole minutes (no ticking seconds).
   function renderJumuah(config, result, contentByLang) {
     const content = primaryContent(contentByLang, config);
-    const info = result.bayanInfo;
-    const speaker = info && info.speaker ? `<div class="jumuah-speaker">${escapeHtml(info.speaker)}</div>` : '';
-    const topic = info && info.topic ? `<div class="jumuah-topic">${escapeHtml(info.topic)}</div>` : '';
+    const E = global.SBEngine;
+    const m = result.meta || {};
+    const phase = m.phase || 'bayan';
+    const t = d => (d ? E.formatTime(d, config) : '--:--');
+    const inMinutes = (key, target) => {
+      const n = target ? Math.max(1, Math.ceil((target - result.now) / 60000)) : '–';
+      return label(content, 'inMinutes').replace('{name}', label(content, key)).replace('{n}', n);
+    };
+    const line = (cls, html) => `<div class="${cls}">${html}</div>`;
+    if (phase === 'sunnah') {
+      // Next is the bayan, or the khutbah when there's no bayan.
+      const nextKey = m.bayan !== false && m.bayanStart && m.bayanStart < m.khutbah ? 'bayan' : 'khutbah';
+      const nextAt = nextKey === 'bayan' ? m.bayanStart : m.khutbah;
+      const reminder = (content.sunnahReminder || {}).text;
+      return `
+      <div class="screen screen--jumuah screen--jumuah-sunnah">
+        <div class="jumuah-banner">${escapeHtml(label(content, 'sunnahPrayer'))}</div>
+        ${reminder ? line('jumuah-topic', escapeHtml(reminder)) : ''}
+        ${line('jumuah-times', `${escapeHtml(label(content, nextKey))} ${escapeHtml(t(nextAt))}`)}
+        ${line('jumuah-countdown', escapeHtml(inMinutes(nextKey, nextAt)))}
+      </div>`;
+    }
+    const info = phase === 'bayan' ? result.bayanInfo : null;
+    const speaker = info && info.speaker ? line('jumuah-speaker', escapeHtml(info.speaker)) : '';
+    const topic = info && info.topic ? line('jumuah-topic', escapeHtml(info.topic)) : '';
+    const title = phase === 'bayan' ? (content.jumuahBayan || {}).text : label(content, 'jumuah');
     return `
       <div class="screen screen--jumuah">
-        <div class="jumuah-banner">${escapeHtml((content.jumuahBayan || {}).text)}</div>
+        <div class="jumuah-banner">${escapeHtml(title)}</div>
         ${speaker}${topic}
-        ${jumuahEtiquetteCardHtml(content, config, result)}
+        ${line('jumuah-times', `${escapeHtml(label(content, 'khutbah'))} ${escapeHtml(t(m.khutbah))}` +
+          ` <span class="date-sep">·</span> ${escapeHtml(label(content, 'iqamah'))} ${escapeHtml(t(m.iqamahTime))}`)}
+        ${line('jumuah-countdown', escapeHtml(inMinutes('khutbah', m.khutbah)))}
       </div>`;
   }
 
@@ -607,7 +646,11 @@
     // AM/PM at the clock's own size here (board feedback) — the corner clock
     // is small already, so a reduced suffix would be hard to read.
     const period = ampmOf(config, result.now);
-    return `<div class="corner-clock">${escapeHtml(global.SBEngine.formatClock(result.now, config))}` +
+    // During the bayan and the khutbah the seconds would be the only thing
+    // moving on a deliberately calm screen — show hours:minutes there.
+    const calm = result.state === 'JUMUAH' || result.state === 'KHUTBAH';
+    const clockCfg = calm ? Object.assign({}, config, { clock: Object.assign({}, config.clock, { showSeconds: false }) }) : config;
+    return `<div class="corner-clock">${escapeHtml(global.SBEngine.formatClock(result.now, clockCfg))}` +
       (period ? `<span class="corner-ampm">${period}</span>` : '') + `</div>`;
   }
 

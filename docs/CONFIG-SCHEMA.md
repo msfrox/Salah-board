@@ -35,9 +35,18 @@ breaking change via `configVersion`.
 
   "jumuah": {
     "enabled": true,
-    "bayan": "12:30 PM",               // fixed set time; null = no bayan card
-    "iqamah": "1:15 PM",               // fixed set time (khutbah runs until this)
+    "bayan": true,                     // show a bayan between the sunnah reminder
+                                       // and the khutbah (false: same window, quiet
+                                       // screen without the bayan title)
+    "khutbah": "12:45 PM",             // fixed set time the khutbah starts
+    "khutbahMinutes": 7,               // khutbah length → iqamah = khutbah + this
+    "sunnahMinutes": 5,                // "Sunnah prayer" screen after the azan screen
     "salahDuration": 15,
+    // Sequence: azan (that Friday's luhr) → azan screen (screens.azan) →
+    // sunnah reminder → bayan until `khutbah` → khutbah → iqamah. Bayan start
+    // and iqamah are derived, not set. Migration (config.js migrateStored):
+    // old "bayan": "<time>"/null → true/false; old fixed "iqamah" →
+    // khutbah = iqamah − khutbahMinutes, so the masjid's iqamah doesn't move.
     "bayanSpeaker": "",                // optional, e.g. "Moulavi Ahmed Rizwan"
     "bayanTopic": "",                  // optional, e.g. "Patience in hardship"
     "bayanDate": null                  // ISO Friday "2026-11-13": speaker/topic show
@@ -127,7 +136,7 @@ breaking change via `configVersion`.
         "afterArabic": 100, "afterText": 100,
         "luhaLabel": 100, "luhaCountdown": 100, "luhaOpen": 100,
         "nightClock": 100, "nightFajr": 100,
-        "bayanTitle": 100, "bayanSpeaker": 100, "bayanTopic": 100, "bayanEtiquette": 100,
+        "bayanTitle": 100, "bayanSpeaker": 100, "bayanTopic": 100, "bayanTimes": 100,
         "khutbahLine": 100
       }
     }

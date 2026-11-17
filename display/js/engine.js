@@ -161,33 +161,45 @@
     ].filter(s => s.end > s.start);
   }
 
-  // Jumu'ah azan is Zuhr's own azan time for that day (masjid convention —
-  // there's no separate Jumu'ah azan clock). Iqamah is a fixed wall-clock
-  // time set by the masjid (like bayan), not an offset from khutbah length,
-  // since khutbah runs however long the imam takes.
+  // Jumu'ah timings for one Friday. Azan is Zuhr's own azan time that day
+  // (no separate Jumu'ah azan clock). Then, per masjid practice:
+  //   azan screen → sunnah reminder (sunnahMinutes) → bayan until the fixed
+  //   khutbah time → khutbah (khutbahMinutes) → iqamah.
+  // So bayan = azan + screens.azan + sunnahMinutes and iqamah = khutbah +
+  // khutbahMinutes; neither is set separately. Sanity: the khutbah can't
+  // start before the azan screen ends, and the bayan never starts after it.
+  function jumuahPlan(dateObj, row, config) {
+    const azan = row ? parseTime(row.luhr, dateObj) : null;
+    if (!azan) return null;
+    const j = config.jumuah || {};
+    const azanEnd = addMinutes(azan, config.screens.azan);
+    let khutbah = parseTime(j.khutbah, dateObj);
+    if (!khutbah || khutbah < azanEnd) khutbah = azanEnd;
+    const sunnahEnd = addMinutes(azanEnd, Math.max(0, Number(j.sunnahMinutes) || 0));
+    const bayanStart = sunnahEnd < khutbah ? sunnahEnd : khutbah;
+    const len = Number(j.khutbahMinutes) > 0 ? Number(j.khutbahMinutes) : 7;
+    const iqamah = addMinutes(khutbah, len);
+    return { azan, azanEnd, bayanStart, khutbah, iqamah, bayan: j.bayan !== false };
+  }
+
   function buildJumuahCycle(dateObj, row, config) {
-    const segs = [];
-    const azanDate = row ? parseTime(row.luhr, dateObj) : null;
-    if (!azanDate) return segs;
-    const azanEnd = addMinutes(azanDate, config.screens.azan);
-    const iqamahDate = computeIqamah(azanEnd, { mode: 'fixed', time: config.jumuah.iqamah });
-    const iqamahWarnEnd = addMinutes(iqamahDate, config.screens.iqamahWarning);
+    const plan = jumuahPlan(dateObj, row, config);
+    if (!plan) return [];
+    const { azan, azanEnd, bayanStart, khutbah, iqamah } = plan;
+    const iqamahWarnEnd = addMinutes(iqamah, config.screens.iqamahWarning);
     const salahEnd = addMinutes(iqamahWarnEnd, config.jumuah.salahDuration);
     const afterEnd = addMinutes(salahEnd, config.screens.after);
-    const jm = { jumuah: true, iqamahTime: iqamahDate };
-    if (config.jumuah.bayan) {
-      const bayanDate = parseTime(config.jumuah.bayan, dateObj);
-      if (bayanDate && bayanDate < azanDate) {
-        segs.push({ state: 'JUMUAH', start: bayanDate, end: azanDate, prayer: 'luhr', meta: Object.assign({ phase: 'bayan' }, jm) });
-      }
-    }
-    segs.push(
-      { state: 'AZAN', start: azanDate, end: azanEnd, prayer: 'luhr', meta: jm },
-      { state: 'KHUTBAH', start: azanEnd, end: iqamahDate, prayer: 'luhr', meta: jm },
-      { state: 'IQAMAH', start: iqamahDate, end: iqamahWarnEnd, prayer: 'luhr', meta: jm },
+    const jm = { jumuah: true, iqamahTime: iqamah, bayanStart, khutbah, bayan: plan.bayan };
+    const segs = [
+      { state: 'AZAN', start: azan, end: azanEnd, prayer: 'luhr', meta: jm },
+      { state: 'JUMUAH', start: azanEnd, end: bayanStart, prayer: 'luhr', meta: Object.assign({ phase: 'sunnah' }, jm) },
+      // Bayan off: same window, same quiet screen without the bayan title.
+      { state: 'JUMUAH', start: bayanStart, end: khutbah, prayer: 'luhr', meta: Object.assign({ phase: plan.bayan ? 'bayan' : 'wait' }, jm) },
+      { state: 'KHUTBAH', start: khutbah, end: iqamah, prayer: 'luhr', meta: jm },
+      { state: 'IQAMAH', start: iqamah, end: iqamahWarnEnd, prayer: 'luhr', meta: jm },
       { state: 'SALAH', start: iqamahWarnEnd, end: salahEnd, prayer: 'luhr', meta: jm },
       { state: 'AFTER', start: salahEnd, end: afterEnd, prayer: 'luhr', meta: jm },
-    );
+    ];
     return segs.filter(s => s.end > s.start);
   }
 
@@ -338,7 +350,7 @@
   global.SBEngine = {
     DATA_BASE, MON_SHORT, PRAYERS, SALAH, LUHA_OPEN_MINUTES,
     pad2, padZone,
-    parseTime, addMinutes, addDays, roundUpTo,
+    parseTime, addMinutes, addDays, roundUpTo, jumuahPlan,
     formatTime, formatClock, fmtCountdown,
     loadMonth, rowForDate, loadRowForDate,
     resolveIqamahRule, computeIqamah,
