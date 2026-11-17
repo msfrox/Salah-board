@@ -33,6 +33,9 @@ the LAN-only device endpoints the admin panel uses:
   POST /api/preview         -> push {state, t?, seconds?} to the board (auto-expires)
   GET  /api/version         -> the code version running now (git commit at
                                server start) + what is on disk after an update
+  POST /api/restart         -> "Reload board": restart this server (picks up
+                               updated code) and make the board page reload
+                               itself — no full device reboot
 
 Config is stored OUTSIDE the repo (default ~/.config/salahboard/config.json,
 override with $SALAHBOARD_CONFIG) so a `git pull` update never touches the
@@ -104,10 +107,28 @@ def git_version():
         return None
 
 
-# The version the board is RUNNING: read once when the server starts (at
-# boot). An update (`git pull`) changes the files on disk, but the board keeps
-# running the old code until it reboots — /api/version reports both.
+# The version the board is RUNNING: read once when the server starts. An
+# update (`git pull`) changes the files on disk, but the board keeps running
+# the old code until "Reload board" (or a reboot) — /api/version reports both.
 RUNNING_VERSION = git_version()
+
+# Changes every time this server starts. The board reads it from every
+# /api/preview poll (every 2 s) and reloads its page when it changes, so a
+# server restart ("Reload board", an update, a crash-restart) always brings
+# the screen onto the code now on disk.
+INSTANCE_ID = f"{os.getpid()}-{time.time():.3f}"
+
+
+def restart_server(delay=0.5):
+    """Replace this process with a fresh copy of serve.py (same port/args),
+    after a short delay so the HTTP reply gets out first. Works with or
+    without systemd; the listening socket isn't inherited (PEP 446), so the
+    new process binds the port cleanly."""
+    def _go():
+        time.sleep(delay)
+        sys.stdout.flush()
+        os.execv(sys.executable, [sys.executable, os.path.abspath(__file__)] + sys.argv[1:])
+    threading.Thread(target=_go, daemon=True).start()
 
 
 def lan_ip():
@@ -238,10 +259,11 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             with _PREVIEW_LOCK:
                 remaining = _PREVIEW["until"] - time.time()
                 if remaining <= 0:
-                    return self._json(200, {"active": False})
+                    return self._json(200, {"active": False, "instance": INSTANCE_ID})
                 return self._json(200, {
                     "active": True, "state": _PREVIEW["state"],
                     "t": _PREVIEW["t"], "remaining": int(remaining),
+                    "instance": INSTANCE_ID,
                 })
 
         if path == "/api/wifi/scan":
@@ -290,7 +312,12 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if parts == ["api", "update"]:
             return self._update()
 
-        # /api/reboot  -> reboot the board (applies updated code)
+        # /api/restart  -> "Reload board": fresh server + the board page reloads
+        if parts == ["api", "restart"]:
+            restart_server()
+            return self._json(200, {"ok": True})
+
+        # /api/reboot  -> reboot the whole device
         if parts == ["api", "reboot"]:
             ok, out, err = run_helper(REBOOT_SH, timeout=10)
             return self._json(200 if ok else 500, {"ok": ok, "output": out,

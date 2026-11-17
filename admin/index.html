@@ -363,10 +363,11 @@
           <div class="version-row" id="version-branch-row" hidden><span class="version-key">Branch</span><span class="version-val" id="version-branch"></span></div>
           <p class="readonly-status" id="version-note" hidden></p>
         </div>
-        <p class="hint">Fetch the latest Salah Board code from GitHub and apply it. The board must be connected to the internet. (Board device only.)</p>
+        <p class="hint">Fetch the latest Salah Board code from GitHub, then press <strong>Reload board</strong> to start using it (takes a few seconds; the screen reloads by itself). <strong>Reboot device</strong> restarts the whole computer — only needed if something is stuck. The board must be connected to the internet to update. (Board device only.)</p>
         <div class="hotspot-btns">
           <button type="button" class="btn btn--primary" id="update-btn">Update from GitHub</button>
-          <button type="button" class="btn btn--secondary" id="reboot-btn">Reboot board</button>
+          <button type="button" class="btn btn--secondary" id="reload-btn">Reload board</button>
+          <button type="button" class="btn btn--secondary" id="reboot-btn">Reboot device</button>
         </div>
         <p class="readonly-status" id="update-status"></p>
       </section>

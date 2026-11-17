@@ -191,7 +191,7 @@
     set('version-branch', run.branch || '');
     show('version-branch-row', !!run.branch && run.branch !== 'HEAD');
     if (info.rebootNeeded && info.installed) {
-      set('version-note', `A newer version is downloaded (${fmtVersion(info.installed)}). Reboot the board to start using it.`);
+      set('version-note', `A newer version is downloaded (${fmtVersion(info.installed)}). Press Reload board to start using it.`);
       show('version-note', true);
     } else {
       show('version-note', false);
@@ -212,14 +212,33 @@
       if (r.ok) {
         upStatus(r.output && /already up to date/i.test(r.output)
           ? 'Already up to date.'
-          : 'Updated. Reboot the board to apply the new code.');
+          : 'Updated. Press Reload board to start using the new code.');
       } else {
         upStatus('Update failed — ' + (r.error || 'board device with internet only.'));
       }
     });
+    // Reload board: restart serve.py (new code) — the board page notices the
+    // new server instance and reloads itself. No device reboot.
+    const rlBtn = $('#reload-btn');
+    if (rlBtn) rlBtn.addEventListener('click', async () => {
+      rlBtn.disabled = true;
+      upStatus('Reloading the board…');
+      const r = await post('/api/restart');
+      if (!r.ok) {
+        rlBtn.disabled = false;
+        upStatus('Could not reload — ' + (r.error || 'board device only.'));
+        return;
+      }
+      // Give the server a moment to come back, then show the version it runs.
+      setTimeout(async () => {
+        await refreshVersion();
+        rlBtn.disabled = false;
+        upStatus('Board reloaded. The screen refreshes within a few seconds.');
+      }, 3000);
+    });
     const rbBtn = $('#reboot-btn');
     if (rbBtn) rbBtn.addEventListener('click', async () => {
-      if (!confirm('Reboot the board now?')) return;
+      if (!confirm('Reboot the whole device now? The screen goes blank for a minute or two.')) return;
       upStatus('Rebooting…');
       const r = await post('/api/reboot');
       if (!r.ok) upStatus('Could not reboot — ' + (r.error || 'board device only.'));

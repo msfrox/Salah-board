@@ -162,11 +162,19 @@
   // Poll the preview channel; re-anchor the fake clock only when the directive
   // actually changes, so a preview with ?t= keeps advancing smoothly instead of
   // jumping back to `t` on every poll.
+  // The server's instance id (deploy/serve.py) rides along on this poll. It
+  // changes whenever the server restarts — "Reload board" in admin, after an
+  // update — and the board then reloads itself onto the code now on disk.
+  let serverInstance = null;
   async function pollPreview() {
     try {
       const res = await fetch('/api/preview', { cache: 'no-store' });
       if (!res.ok) { if (preview) { preview = null; lastPreviewSig = null; } return; }
       const p = await res.json();
+      if (p && p.instance) {
+        if (serverInstance && p.instance !== serverInstance) { location.reload(); return; }
+        serverInstance = p.instance;
+      }
       if (!p || !p.active) { if (preview) { preview = null; lastPreviewSig = null; } return; }
       const sig = (p.state || '') + '|' + (p.t || '');
       if (sig !== lastPreviewSig) {
