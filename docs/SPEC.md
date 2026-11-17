@@ -11,7 +11,7 @@ All times below are display-time (see Time Correction in ARCHITECTURE.md).
 | Iqamah | Second call, immediately before congregation starts |
 | Jumu'ah | Friday congregational prayer (replaces Luhr on Fridays) |
 | Bayan | Pre-khutbah talk on Fridays (Sri Lanka convention) |
-| Ishraq / Luha | Sunrise; Luha (Duha) prayer becomes valid ~20 min after sunrise |
+| Ishraq / Luha | Sunrise; Luha prayer becomes valid ~20 min after sunrise |
 | Imsak | End of suhoor in Ramadan (ACJU: 2 min before Fajr) |
 
 ## Display state machine
@@ -32,7 +32,7 @@ Then back to NORMAL. After Fajr's AFTER screen the board stays on NORMAL until s
 | State | When | Screen shows |
 |---|---|---|
 | LUHA_WAIT | sunrise → +`luha.waitAfterSunrise` (default 20 min) | "Luha prayer in MM:SS" countdown |
-| LUHA_OPEN | wait ends | Brief "Luha (Duha) prayer time has begun" card, then NORMAL |
+| LUHA_OPEN | wait ends | Brief "Luha prayer time has begun" card, then NORMAL |
 | NIGHT | Isha AFTER + `night.afterIshaMinutes` → Fajr − `night.beforeFajrMinutes` | Dimmed (config `night.brightness`), small clock + tomorrow's Fajr time |
 | JUMUAH | Fridays, from `jumuah.bayan` time | See Jumu'ah mode below |
 
