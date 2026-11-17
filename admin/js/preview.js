@@ -29,7 +29,14 @@
     ['khutbah', 'Khutbah'],
   ];
   const LABELS = Object.fromEntries(STATES);
-  const PREVIEW_SECONDS = 300; // board auto-reverts to live after this
+  // How long a board test lasts before the board reverts to live (serve.py
+  // caps it at 1 hour).
+  const previewSeconds = () => Number(($('#preview-duration') || {}).value) || 300;
+  const minutesText = s => (s >= 3600 ? '1 hour' : `${Math.round(s / 60)} min`);
+  const fmtTestTime = t => {
+    const d = new Date(t);
+    return isNaN(d) ? t : d.toLocaleString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit', hour12: true });
+  };
 
   const onBoard = () => $('#preview-on-board') && $('#preview-on-board').checked;
   function setStatus(msg) { const el = $('#preview-board-status'); if (el) el.textContent = msg || ''; }
@@ -60,13 +67,31 @@
   async function sendToBoard(state) {
     setStatus(`Sending "${LABELS[state] || state}" to the board…`);
     const t = ($('#preview-time') && $('#preview-time').value) || undefined;
-    const r = await postPreview({ state, t, seconds: PREVIEW_SECONDS });
+    const secs = previewSeconds();
+    const r = await postPreview({ state, t, seconds: secs });
     if (r.ok && r.active) {
-      setStatus(`Board is showing "${LABELS[state] || state}" (reverts to live in ${PREVIEW_SECONDS / 60} min). Use "Resume live board" to stop now.`);
+      setStatus(`Board is showing "${LABELS[state] || state}" (reverts to live in ${minutesText(secs)}). Use "Resume live board" to stop now.`);
+      showResume(true);
     } else {
       setStatus('Could not preview on the board — ' + (r.error || 'board device only.'));
     }
   }
+
+  // Time only: the board runs live from that moment — no screen is forced.
+  async function runTimeOnBoard() {
+    const t = $('#preview-time') && $('#preview-time').value;
+    if (!t) { setStatus('Pick a date and time above first.'); return; }
+    const secs = previewSeconds();
+    setStatus(`Starting the board at ${fmtTestTime(t)}…`);
+    const r = await postPreview({ t, seconds: secs });
+    if (r.ok && r.active) {
+      setStatus(`Board is running from ${fmtTestTime(t)} and ticking on (back to live in ${minutesText(secs)}). Use "Resume live board" to stop now.`);
+      showResume(true);
+    } else {
+      setStatus('Could not run the board at that time — ' + (r.error || 'board device only.'));
+    }
+  }
+  function showResume(on) { const el = $('#preview-resume-live'); if (el) el.hidden = !on; }
 
   async function resumeLive() {
     setStatus('Resuming the live board…');
@@ -79,16 +104,20 @@
     try {
       const res = await fetch('/api/preview', { cache: 'no-store' });
       const j = await res.json();
-      if (j && j.active) setStatus(`Board is currently previewing "${LABELS[j.state] || j.state}" (${j.remaining}s left).`);
-      else setStatus('');
+      if (j && j.active) {
+        showResume(true);
+        const left = minutesText(Math.max(60, j.remaining));
+        setStatus(j.state
+          ? `Board is currently previewing "${LABELS[j.state] || j.state}" (about ${left} left).`
+          : `Board is running a test from ${fmtTestTime(j.t)} (about ${left} left).`);
+      } else setStatus('');
     } catch (e) { /* off-board — leave status blank */ }
   }
 
   function syncMode() {
     const board = onBoard();
-    const resume = $('#preview-resume-live');
-    if (resume) resume.hidden = !board;
-    if (board) refreshStatus(); else setStatus('');
+    showResume(board);
+    refreshStatus();
   }
 
   function build() {
@@ -109,12 +138,14 @@
     if (live) live.addEventListener('click', () => window.open(previewUrl(null), '_blank'));
 
     const resume = $('#preview-resume-live');
-    if (resume) resume.addEventListener('click', resumeLive);
+    if (resume) resume.addEventListener('click', () => { resumeLive(); showResume(onBoard()); });
+    const run = $('#preview-run-time');
+    if (run) run.addEventListener('click', runTimeOnBoard);
 
     const cb = $('#preview-on-board');
     if (cb) cb.addEventListener('change', syncMode);
 
-    document.addEventListener('sb-tab-shown', e => { if (e.detail.tab === 'preview' && onBoard()) refreshStatus(); });
+    document.addEventListener('sb-tab-shown', e => { if (e.detail.tab === 'preview') refreshStatus(); });
     syncMode();
   }
 

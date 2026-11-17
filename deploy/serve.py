@@ -390,21 +390,25 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return self._json(400, {"ok": False, "error": f"bad hotspot action: {action}"})
 
     def _preview(self):
-        """Push a forced state to the board (or clear it). Auto-expires."""
+        """Push a forced state and/or a test time to the board (or clear it).
+        Time only (no state) = the board runs LIVE as if it were that time —
+        every screen changes by itself, the clock keeps ticking. Auto-expires."""
         obj = self._read_body() or {}
-        if obj.get("clear") or not obj.get("state"):
+        t = obj.get("t")
+        if obj.get("clear") or not (obj.get("state") or t):
             with _PREVIEW_LOCK:
                 _PREVIEW.update(state=None, t=None, until=0.0)
             return self._json(200, {"ok": True, "active": False})
-        state = str(obj.get("state")).strip().lower()
-        if state not in VALID_PREVIEW_STATES:
+        state = str(obj.get("state") or "").strip().lower() or None
+        if state and state not in VALID_PREVIEW_STATES:
             return self._json(400, {"ok": False, "error": f"unknown state: {state}"})
+        if t is not None and not (isinstance(t, str) and len(t) <= 25 and t[:4].isdigit() and "T" in t):
+            return self._json(400, {"ok": False, "error": "bad time"})
         try:
             seconds = int(obj.get("seconds") or PREVIEW_DEFAULT_SECONDS)
         except (TypeError, ValueError):
             seconds = PREVIEW_DEFAULT_SECONDS
         seconds = max(5, min(PREVIEW_MAX_SECONDS, seconds))
-        t = obj.get("t")
         with _PREVIEW_LOCK:
             _PREVIEW.update(state=state, t=(str(t) if t else None),
                             until=time.time() + seconds)

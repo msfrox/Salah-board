@@ -125,6 +125,14 @@ html, body {
 .version-val { font-weight: 600; min-width: 0; overflow-wrap: anywhere; }
 .version-info .readonly-status { margin: .3rem 0 0; }
 
+/* Preview tab: run-from-time button + resume, with the status right below */
+.preview-run { display: flex; gap: .5rem; flex-wrap: wrap; margin: .2rem 0 .6rem; }
+.preview-run .btn { flex: 1 1 12rem; }
+/* .btn sets display, which would override the hidden attribute. */
+.btn[hidden] { display: none; }
+#preview-board-status:empty { display: none; }
+.preview-run-hint { margin-top: .6rem; }
+
 .notice-card { position: relative; }
 
 .btn {

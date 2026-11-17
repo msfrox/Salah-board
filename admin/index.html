@@ -386,16 +386,29 @@
         <p class="hint">Force the board into any state without waiting for that time of day — great for checking the theme and content. Save your settings first so the preview reflects them.</p>
         <label class="field checkbox-field">
           <input type="checkbox" id="preview-on-board">
-          <span>Show on the board screen (instead of opening a new tab here). Board device only — reverts to live automatically after 5&nbsp;minutes.</span>
+          <span>Show on the board screen (instead of opening a new tab here). Board device only — reverts to live automatically after the time chosen below.</span>
         </label>
         <label class="field">
           <span>Pretend the time is (optional — drives clocks &amp; countdowns)</span>
           <input type="datetime-local" step="60" id="preview-time">
         </label>
+        <label class="field">
+          <span>Board test lasts</span>
+          <select id="preview-duration">
+            <option value="300">5 minutes</option>
+            <option value="900" selected>15 minutes</option>
+            <option value="1800">30 minutes</option>
+            <option value="3600">1 hour</option>
+          </select>
+        </label>
+        <div class="preview-run">
+          <button type="button" class="btn btn--primary" id="preview-run-time">Run the board from this time</button>
+          <button type="button" class="btn btn--secondary" id="preview-resume-live" hidden>Resume live board</button>
+        </div>
+        <p class="readonly-status" id="preview-board-status"></p>
+        <p class="hint preview-run-hint">Runs the real board as if the clock showed the time above, then keeps ticking — every screen changes by itself (e.g. set a Friday 11:55 to watch azan → sunnah → bayan → khutbah). Goes back to live after the time chosen, or press "Resume live board". The screen buttons below show one screen only.</p>
         <div class="preview-grid" id="preview-grid"></div>
         <button type="button" class="btn btn--primary" id="preview-open-live">Open board (live) in a new tab</button>
-        <button type="button" class="btn btn--secondary" id="preview-resume-live" hidden>Resume live board</button>
-        <p class="readonly-status" id="preview-board-status"></p>
       </section>
     </div>
 
