@@ -162,19 +162,19 @@
   }
 
   // Jumu'ah timings for one Friday. Azan is Zuhr's own azan time that day
-  // (no separate Jumu'ah azan clock). The masjid fixes two times: the bayan
-  // start (`bayan`, null = no bayan) and the iqamah; the khutbah lasts
-  // khutbahMinutes and ends at the iqamah. Normally:
-  //   azan → azan screen → sunnah reminder until the bayan → bayan → khutbah
-  //   → iqamah.
-  // The azan moves through the year (zone 01: 11:56–12:26) while the bayan
-  // time is fixed, so on Fridays where the bayan time comes before the azan
-  // screen ends there's no sunnah screen: the bayan screen starts at its time
-  // (even before the azan), the azan screen interrupts it, and the bayan
-  // screen carries on until the khutbah. No bayan → the sunnah reminder runs
-  // until the khutbah. Sanity: iqamah must be after the azan screen (else
-  // azan + 10 min, the regular-iqamah rule) and the khutbah can't start
-  // before the azan screen ends.
+  // (no separate Jumu'ah azan clock). The masjid fixes the IQAMAH (it must
+  // fit office lunch hours, so it doesn't move through the year) and a bayan
+  // time (`bayan`, null = no bayan); the khutbah lasts khutbahMinutes and
+  // ends at the iqamah. Order: azan → azan screen → sunnah reminder → bayan
+  // → khutbah → iqamah.
+  // The azan moves through the year (zone 01: 11:56–12:26), so the bayan
+  // starts at its set time OR once the azan screen and at least
+  // sunnahMinutes of sunnah time have passed — whichever is later. That's
+  // what masjids do in the late-azan months (the bayan starts later, the
+  // iqamah stays). It never starts after the khutbah. No bayan → the sunnah
+  // reminder runs until the khutbah. Sanity: iqamah must be after the azan
+  // screen (else azan + 10 min, the regular-iqamah rule) and the khutbah
+  // can't start before the azan screen ends.
   function jumuahPlan(dateObj, row, config) {
     const azan = row ? parseTime(row.luhr, dateObj) : null;
     if (!azan) return null;
@@ -185,9 +185,12 @@
     let khutbah = addMinutes(iqamah, -len);
     if (khutbah < azanEnd) khutbah = azanEnd;
     let bayan = j.bayan ? parseTime(j.bayan, dateObj) : null;
-    if (bayan && bayan > khutbah) bayan = khutbah;        // bayan never starts after the khutbah
-    // When the sunnah screen hands over to the bayan (or the khutbah).
-    const sunnahEnd = bayan ? (bayan > azanEnd ? bayan : azanEnd) : khutbah;
+    if (bayan) {
+      const earliest = addMinutes(azanEnd, Math.max(0, Number(j.sunnahMinutes) || 0));
+      if (bayan < earliest) bayan = earliest;             // late-azan Fridays: bayan starts later
+      if (bayan > khutbah) bayan = khutbah;               // never after the khutbah
+    }
+    const sunnahEnd = bayan || khutbah;                  // sunnah reminder runs until here
     return { azan, azanEnd, bayan, sunnahEnd, khutbah, iqamah };
   }
 
@@ -198,16 +201,13 @@
     const iqamahWarnEnd = addMinutes(iqamah, config.screens.iqamahWarning);
     const salahEnd = addMinutes(iqamahWarnEnd, config.jumuah.salahDuration);
     const afterEnd = addMinutes(salahEnd, config.screens.after);
-    // bayanStart: when the bayan screen next begins (for "Bayan in N min").
-    const jm = { jumuah: true, iqamahTime: iqamah, bayanStart: bayan ? sunnahEnd : null, khutbah, bayan: !!bayan };
+    const jm = { jumuah: true, iqamahTime: iqamah, bayanStart: bayan, khutbah, bayan: !!bayan };
     const phase = p => Object.assign({ phase: p }, jm);
-    const segs = [];
-    if (bayan && bayan < azan) segs.push({ state: 'JUMUAH', start: bayan, end: azan, prayer: 'luhr', meta: phase('bayan') });
-    segs.push(
+    const segs = [
       { state: 'AZAN', start: azan, end: azanEnd, prayer: 'luhr', meta: jm },
       { state: 'JUMUAH', start: azanEnd, end: sunnahEnd, prayer: 'luhr', meta: phase('sunnah') },
-    );
-    if (bayan) segs.push({ state: 'JUMUAH', start: sunnahEnd, end: khutbah, prayer: 'luhr', meta: phase('bayan') });
+    ];
+    if (bayan) segs.push({ state: 'JUMUAH', start: bayan, end: khutbah, prayer: 'luhr', meta: phase('bayan') });
     segs.push(
       { state: 'KHUTBAH', start: khutbah, end: iqamah, prayer: 'luhr', meta: jm },
       { state: 'IQAMAH', start: iqamah, end: iqamahWarnEnd, prayer: 'luhr', meta: jm },

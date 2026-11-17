@@ -64,14 +64,13 @@ Rules:
 Timeline driven by `config.jumuah`. Jumu'ah azan is **not** separately
 configured — it's that Friday's own `luhr` azan time from the zone data
 (masjids don't ring a distinct Jumu'ah clock). The masjid sets a fixed
-`bayan` start time (default 12:15 PM; null = no bayan), a fixed `iqamah`
-time and the khutbah length (`khutbahMinutes`, default 7): azan → azan
-screen → sunnah reminder until the bayan → bayan → khutbah (starts at
-iqamah − length) → iqamah. The azan moves through the year (zone 01:
-11:56–12:26) while the bayan time is fixed; on Fridays where the bayan
-time comes before the azan screen ends, there is no sunnah screen — the
-bayan screen starts at its time, the azan screen interrupts it, and the
-bayan screen carries on until the khutbah.
+`iqamah` time (it must fit office lunch hours, so it doesn't move through
+the year), the usual `bayan` start (default 12:15 PM; null = no bayan) and
+the khutbah length (`khutbahMinutes`, default 7): azan → azan screen →
+sunnah reminder → bayan → khutbah (starts at iqamah − length) → iqamah.
+The azan moves through the year (zone 01: 11:56–12:26); on late-azan
+Fridays the bayan starts after the azan screen + `sunnahMinutes` (default
+5) instead of its usual time — later bayan, same iqamah.
 
 1. From morning, NORMAL shows "Jumu'ah today · Azan · Bayan" (in time
    order) and rotating Jumu'ah etiquette cards (ghusl,

@@ -119,11 +119,9 @@
     const j = stored && stored.jumuah;
     if (j) {
       // The bayan is a fixed TIME again (it was on/off for a few days):
-      // on → the default 12:15 PM, off → null (no bayan). The sunnah screen
-      // now simply fills the time from the azan to the bayan.
+      // on → the default 12:15 PM, off → null (no bayan).
       if (j.bayan === true) j.bayan = '12:15 PM';
       else if (j.bayan === false) j.bayan = null;
-      delete j.sunnahMinutes;
       if (typeof j.khutbah === 'string') {
         if (typeof j.iqamah !== 'string') {
           const len = Number(j.khutbahMinutes) > 0 ? Number(j.khutbahMinutes) : 7;
@@ -165,12 +163,14 @@
       },
 
       // Friday sequence: azan (that Friday's luhr time) → azan screen →
-      // sunnah reminder until the fixed bayan time → bayan → khutbah
-      // (khutbahMinutes, ending at the fixed iqamah) → iqamah. The khutbah
-      // start is iqamah − khutbahMinutes; it isn't set separately.
+      // sunnah reminder → bayan → khutbah (khutbahMinutes, ending at the
+      // fixed iqamah) → iqamah. The bayan starts at its set time, or after
+      // the azan screen + sunnahMinutes if that's later (late-azan months);
+      // the iqamah never moves. Khutbah start = iqamah − khutbahMinutes.
       jumuah: {
         enabled: true,
-        bayan: '12:15 PM',       // fixed bayan start time; null = no bayan
+        bayan: '12:15 PM',       // bayan start time; null = no bayan
+        sunnahMinutes: 5,        // at least this much sunnah time after the azan screen
         iqamah: '1:00 PM',       // fixed set time
         khutbahMinutes: 7,       // khutbah length → khutbah starts at iqamah − this
         salahDuration: 15,

@@ -113,7 +113,7 @@
       const p = result.jumuahPlan || E.jumuahPlan(result.dates.today, result.rows && result.rows.today, config) || {};
       const hasBayan = !!(config && config.jumuah && config.jumuah.bayan);
       meta = { jumuah: true, phase: sunnahPreview ? 'sunnah' : 'bayan', bayan: hasBayan,
-        bayanStart: hasBayan ? (p.sunnahEnd || E.addMinutes(now, 4)) : null,
+        bayanStart: hasBayan ? (p.bayan || E.addMinutes(now, 4)) : null,
         khutbah: p.khutbah || E.addMinutes(now, 30), iqamahTime: p.iqamah || E.addMinutes(now, 37) };
     }
     // Previewing the bayan / Jumu'ah screens on any weekday should still show

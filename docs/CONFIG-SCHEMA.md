@@ -35,21 +35,22 @@ breaking change via `configVersion`.
 
   "jumuah": {
     "enabled": true,
-    "bayan": "12:15 PM",               // fixed bayan start time; null = no bayan
+    "bayan": "12:15 PM",               // usual bayan start time; null = no bayan
+    "sunnahMinutes": 5,                // at least this much sunnah time after the
+                                       // azan screen (late-azan Fridays: the bayan
+                                       // starts later instead)
     "iqamah": "1:00 PM",               // fixed set time
     "khutbahMinutes": 7,               // khutbah length → khutbah starts at
                                        // iqamah − this
     "salahDuration": 15,
     // Sequence: azan (that Friday's luhr) → azan screen (screens.azan) →
     // sunnah reminder until the bayan → bayan → khutbah → the fixed `iqamah`.
-    // The sunnah reminder fills whatever time is left between the azan
-    // screen and the bayan; khutbah start is derived. On Fridays where the
-    // azan is later than the bayan time (zone 01: Dec–Apr, Jun–Sep), the
-    // bayan screen starts at its time, the azan interrupts it, and it
-    // carries on until the khutbah (no sunnah screen). Migration
+    // The bayan starts at its time, or after the azan screen + sunnahMinutes
+    // if that's later (zone 01: late Dec–Apr, Jun–early Sep) — the iqamah
+    // never moves (office lunch hours). Khutbah start is derived. Migration
     // (config.js migrateStored): "bayan": true/false (used briefly) →
-    // "12:15 PM"/null; "sunnahMinutes" dropped; a stored "khutbah" start
-    // (used briefly) → iqamah = khutbah + khutbahMinutes.
+    // "12:15 PM"/null; a stored "khutbah" start (used briefly) → iqamah =
+    // khutbah + khutbahMinutes.
     "bayanSpeaker": "",                // optional, e.g. "Moulavi Ahmed Rizwan"
     "bayanTopic": "",                  // optional, e.g. "Patience in hardship"
     "bayanDate": null                  // ISO Friday "2026-11-13": speaker/topic show
