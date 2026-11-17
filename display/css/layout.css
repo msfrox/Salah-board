@@ -64,6 +64,15 @@ html[data-sb-hide~="cards"]      .screen--normal .card--etiquette { display: non
 .honorific { font-size: 1.6em; line-height: 0; vertical-align: -.15em; }
 .arabic .honorific { font-size: inherit; vertical-align: baseline; }
 
+/* ── AM/PM on the main clock ──────────────────────────────────────
+   Inside .clock-big, sized in em so it follows the clock in every theme,
+   on banner days and with the admin "Clock" size slider. Sits on the
+   digits' baseline, dimmed so the time itself stays the focus. */
+.clock-ampm {
+  font-size: .26em; font-weight: 700; letter-spacing: .04em;
+  margin-left: .25em; opacity: .55;
+}
+
 /* ── "Next prayer" head ──────────────────────────────────────────
    Wraps the label + name. By default it's invisible to layout (its children
    behave exactly as before); a theme opts in by styling .np-head itself —

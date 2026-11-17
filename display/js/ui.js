@@ -276,6 +276,10 @@
     const E = global.SBEngine;
     const lang = langs(config)[0];
     const clockStr = E.formatClock(result.now, config);
+    // Small AM/PM after the main clock (12-hour only): "4:06" alone could be
+    // morning or afternoon. Latin AM/PM in every language, like the digits.
+    const ampm = config.clock && config.clock.format === '24h' ? ''
+      : `<span class="clock-ampm">${result.now.getHours() < 12 ? 'AM' : 'PM'}</span>`;
     const next = result.nextAzan;
     let azanTime = next ? E.formatTime(next.time, config) : '--:--';
     let iqamahTime = next && next.iqamahTime ? E.formatTime(next.iqamahTime, config) : '--:--';
@@ -332,7 +336,7 @@
         ${ramadanBlock}
         <div class="hero-row">
           <div class="card hero-clock">
-            <div class="clock-big">${clockStr}</div>
+            <div class="clock-big">${clockStr}${ampm}</div>
           </div>
           <div class="card hero-next">
             <div class="np-head">
