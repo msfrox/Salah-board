@@ -27,7 +27,7 @@ States, in the order they occur around each of the 5 daily prayers:
 | 5 | SALAH | after IQAMAH | +`salahDuration[prayer]` | Near-black screen, tiny clock, "Salah in progress — phones off". Minimum light spill in the hall |
 | 6 | AFTER | after SALAH | +`afterScreen.minutes` (default 10) | Post-salah adhkar rotation (Astaghfirullah ×3, Ayat al-Kursi reminder, tasbih 33/33/34) |
 
-Then back to NORMAL. After Fajr's AFTER screen the board stays on NORMAL until sunrise (there is no separate sunrise countdown screen — sunrise is already in the timetable strip). Special overlay states:
+Then back to NORMAL. After Fajr's AFTER screen the board stays on NORMAL until sunrise (there is no separate sunrise countdown screen). With `luha.showOnMain` (default on), NORMAL's hero shows **Next prayer: Luha** from Fajr azan until Luha begins, with **Sunrise | Luha** (sunrise + `luha.waitAfterSunrise`) as the two big times in place of Azan | Iqamah, counting down to sunrise and then to Luha; the timetable highlights Sunrise. Special overlay states:
 
 | State | When | Screen shows |
 |---|---|---|

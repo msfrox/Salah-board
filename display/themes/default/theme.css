@@ -273,8 +273,10 @@ html, body {
   }
   .hero-next { display: contents; }
   .hero-clock { grid-area: clock; justify-self: end; align-self: center; margin-bottom: .5rem; }
-  .np-label { grid-area: label; justify-self: start; }
-  .np-name { grid-area: name; justify-self: start; }
+  /* One line, left-aligned: longer names (Tamil "Luha (Duha)") used to wrap
+     and centre onto two lines, pushing the big numbers down. */
+  .np-label { grid-area: label; justify-self: start; text-align: left; white-space: nowrap; }
+  .np-name { grid-area: name; justify-self: start; text-align: left; white-space: nowrap; }
   .np-times { grid-area: times; }
   .np-countdown { grid-area: cd; }
 

@@ -49,8 +49,13 @@ breaking change via `configVersion`.
     // luhr azan time from the zone data (there's no distinct Jumu'ah clock).
   },
 
-  "luha": { "enabled": true, "waitAfterSunrise": 20 },   // minutes
-                                      // (no sunrise countdown: NORMAL runs until sunrise)
+  "luha": {
+    "enabled": true,                  // full-screen "Luha in MM:SS" countdown, sunrise → Luha
+    "showOnMain": true,               // NORMAL, Fajr azan → Luha: next prayer = Luha,
+                                      // big times = Sunrise | Luha (instead of Azan | Iqamah),
+                                      // countdown to sunrise then to Luha; timetable highlights Sunrise
+    "waitAfterSunrise": 20            // minutes; Luha time = sunrise + this (used by both)
+  },
 
   "ramadan": {
     "enabled": false,                 // manual toggle only (moon sighting)
