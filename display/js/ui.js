@@ -73,7 +73,24 @@
     _npFit = { key, size: el.style.fontSize };
   }
 
-  // Both fits above cache their result. If a web font (e.g. Tamil) finishes
+  // Shrink any Jumu'ah banner slide that's wider than the banner (down to
+  // 75%); past that, CSS ends it with "…" (layout.css .jdb-slide).
+  let _slideFit = {};
+  function fitBannerSlides(root) {
+    root.querySelectorAll('.jdb-carousel .jdb-slide').forEach(el => {
+      const key = `${el.textContent}|${el.parentElement.clientWidth}`;
+      if (key in _slideFit) { if (_slideFit[key]) el.style.fontSize = _slideFit[key]; return; }
+      const base = parseFloat(getComputedStyle(el).fontSize);
+      let size = base;
+      for (let i = 0; i < 12 && el.scrollWidth > el.clientWidth + 1 && size > base * 0.75; i++) {
+        size *= 0.97;
+        el.style.fontSize = size + 'px';
+      }
+      _slideFit[key] = el.style.fontSize;
+    });
+  }
+
+  // All fits above cache their result. If a web font (e.g. Tamil) finishes
   // loading after the first fit, the text was measured in a narrower fallback
   // font and would stay clipped — so forget the cached fits whenever fonts
   // finish loading; the next render (≤ 1 s) measures again with real fonts.
@@ -81,6 +98,7 @@
     document.fonts.addEventListener('loadingdone', () => {
       _fitCache = { name: null, avail: 0, factor: 1 };
       _npFit = { key: null, size: '' };
+      _slideFit = {};
     });
   }
 
@@ -526,7 +544,7 @@
       .replace(/[\uFDF0-\uFDFF]/g, '<span class="honorific">$&</span>');
     container.innerHTML = html;
     container.className = `screen-root theme-${config.theme} state-${result.state.toLowerCase()}`;
-    if (result.state === 'NORMAL') { fitMasjidName(container, config); fitNextName(container); }
+    if (result.state === 'NORMAL') { fitMasjidName(container, config); fitNextName(container); fitBannerSlides(container); }
   }
 
   function applyNightDim(overlayEl, active, brightnessPercent) {

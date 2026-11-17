@@ -46,15 +46,6 @@ html[data-sb-hide~="cards"]      .screen--normal .card--etiquette { display: non
   100%  { opacity: 0; }
 }
 .jumuah-day-banner .jdb-sep { opacity: .6; }
-/* Two slides: each visible for its half of the cycle, 0.5 s fades. */
-@keyframes jdb-cycle {
-  0%    { opacity: 0; }
-  4%    { opacity: 1; }
-  46%   { opacity: 1; }
-  50%   { opacity: 0; }
-  100%  { opacity: 0; }
-}
-.jumuah-day-banner .jdb-sep { opacity: .6; }
 /* Each slide stays on ONE line. A long "Speaker · Topic" used to wrap to two
    lines, and since the banner is as tall as its tallest slide, it doubled the
    banner's height every Friday and squeezed the azan/iqamah numbers. ui.js
