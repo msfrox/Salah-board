@@ -64,6 +64,28 @@
   unicode-range: U+0B80-0BFF;
 }
 
+/* Arabic honorific ligatures (ﷺ U+FDFA, ﷻ, ﷲ … U+FDF0–FDFF) inside
+   normal Latin/Tamil/Sinhala text, e.g. "upon the Prophet ﷺ". Without this
+   the UI font has no glyph and the TV draws an empty box. Borrowed from the
+   bundled Naskh file (it has them — checked with fontTools); one face for
+   all weights so bold text doesn't get a faux-bold smear. */
+@font-face {
+  font-family: 'Salah Sans';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('./noto-naskh-arabic/noto-naskh-arabic-400.woff2') format('woff2');
+  unicode-range: U+FDF0-FDFF;
+}
+@font-face {
+  font-family: 'Salah Sans';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('./noto-naskh-arabic/noto-naskh-arabic-400.woff2') format('woff2');
+  unicode-range: U+FDF0-FDFF;
+}
+
 @font-face {
   font-family: 'Salah Arabic';
   font-style: normal;

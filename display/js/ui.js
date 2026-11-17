@@ -518,7 +518,13 @@
 
   function render(container, result, config, contentByLang) {
     const fn = RENDERERS[result.state] || renderNormal;
-    container.innerHTML = cornerClockHtml(config, result) + fn(config, result, contentByLang);
+    // Arabic honorific ligatures (ﷺ ﷻ … U+FDF0–FDFF) pack a whole phrase into
+    // one character, unreadable at text size — wrap them so CSS can enlarge
+    // them (layout.css .honorific). Text is already escaped, so these
+    // characters can only be in text, never inside a tag.
+    const html = (cornerClockHtml(config, result) + fn(config, result, contentByLang))
+      .replace(/[\uFDF0-\uFDFF]/g, '<span class="honorific">$&</span>');
+    container.innerHTML = html;
     container.className = `screen-root theme-${config.theme} state-${result.state.toLowerCase()}`;
     if (result.state === 'NORMAL') { fitMasjidName(container, config); fitNextName(container); }
   }

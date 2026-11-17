@@ -46,6 +46,32 @@ html[data-sb-hide~="cards"]      .screen--normal .card--etiquette { display: non
   100%  { opacity: 0; }
 }
 .jumuah-day-banner .jdb-sep { opacity: .6; }
+/* Two slides: each visible for its half of the cycle, 0.5 s fades. */
+@keyframes jdb-cycle {
+  0%    { opacity: 0; }
+  4%    { opacity: 1; }
+  46%   { opacity: 1; }
+  50%   { opacity: 0; }
+  100%  { opacity: 0; }
+}
+.jumuah-day-banner .jdb-sep { opacity: .6; }
+/* Each slide stays on ONE line. A long "Speaker · Topic" used to wrap to two
+   lines, and since the banner is as tall as its tallest slide, it doubled the
+   banner's height every Friday and squeezed the azan/iqamah numbers. ui.js
+   (fitBannerSlides) shrinks a long slide's text first; anything still too
+   long ends in "…". The full speaker/topic shows on the bayan screen. */
+.jdb-carousel .jdb-slide {
+  max-width: 100%; min-width: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* ── Arabic honorifics (ﷺ ﷻ) in running text ─────────────────────
+   One character holds a whole phrase in 2–3 stacked lines of calligraphy,
+   so at text size it's a smudge from across the hall. Enlarge it without
+   making the line taller (line-height: 0). Inside Arabic text it already
+   sits at the right size. Glyph: fonts.css borrows it from Noto Naskh. */
+.honorific { font-size: 1.6em; line-height: 0; vertical-align: -.15em; }
+.arabic .honorific { font-size: inherit; vertical-align: baseline; }
 
 /* ── "Next prayer" head ──────────────────────────────────────────
    Wraps the label + name. By default it's invisible to layout (its children
