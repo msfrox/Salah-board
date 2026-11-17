@@ -50,7 +50,11 @@ Last updated: November 2026.
 - **During the bayan and khutbah the screen must be calm** — it must never
   draw eyes away from the speaker: no rotating cards, minutes not seconds,
   no ticking seconds on the clock. During the khutbah show **only** the
-  "remain silent" notice and the time.
+  "remain silent" notice, the phones notice and the time.
+- The sunnah, bayan and khutbah screens are **one designed set** (same
+  layout) and all carry a **"switch off your mobile phones · please remain
+  silent"** footer with the no-phone icon (khutbah: phones only — "Remain
+  silent" is already its main message).
 
 ## 3. Prayer names and religious text
 
@@ -66,8 +70,9 @@ Last updated: November 2026.
   All three language packs are still `"reviewed": false` — they need a
   scholar's review before wider rollout.
 - **Hijri date follows ACJU moon sighting**, so it can differ from the
-  calculated calendar by a day (the pilot board uses an offset of −1 in
-  Nov 2026). This needs checking every month.
+  calculated calendar by a day; the offset is set by hand in settings and
+  needs checking every month (the pilot board is back on offset 0 as of
+  late Nov 2026).
 
 ## 4. Display design preferences (owner-approved)
 

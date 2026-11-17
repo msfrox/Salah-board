@@ -80,10 +80,13 @@
       { key: 'bayanTitle', label: '"Bayan in progress" / "Sunnah prayer"', selector: '.jumuah-banner' },
       { key: 'bayanSpeaker', label: 'Speaker', selector: '.jumuah-speaker' },
       { key: 'bayanTopic', label: 'Topic / sunnah reminder', selector: '.jumuah-topic' },
-      { key: 'bayanTimes', label: 'Khutbah & iqamah times, minutes left', selector: '.jumuah-times, .jumuah-countdown' },
+      { key: 'bayanTimes', label: 'Times & minutes left', selector: '.jumuah-times, .jumuah-countdown' },
+      { key: 'jumuahQuiet', label: '"Switch off your phones · remain silent"', selector: '.screen--jumuah .jm-quiet' },
     ] },
     { id: 'khutbah', title: 'Khutbah', state: 'khutbah', store: 'screens', items: [
-      { key: 'khutbahLine', label: '"Khutbah in progress" line', selector: '.khutbah-line' },
+      { key: 'khutbahTitle', label: '"Khutbah in progress"', selector: '.khutbah-title' },
+      { key: 'khutbahLine', label: '"Remain silent"', selector: '.khutbah-line' },
+      { key: 'khutbahQuiet', label: '"Switch off your phones"', selector: '.screen--khutbah .jm-quiet' },
     ] },
   ];
 

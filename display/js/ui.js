@@ -165,6 +165,33 @@
     _heroFit = { key, size: f + 'px', compact };
   }
 
+  // Jumu'ah footer: stack its two messages if they don't fit on one line.
+  // Last resort (very narrow screens, e.g. portrait Tamil): shrink to 75%,
+  // then let a message wrap rather than run off the screen.
+  let _quietFit = {};
+  function fitQuiet(root) {
+    const q = root.querySelector('.jm-quiet');
+    if (!q) return;
+    const key = `${q.textContent}|${root.clientWidth}|${document.documentElement.style.cssText}`;
+    const apply = f => {
+      q.classList.toggle('jm-quiet--stack', f.stack);
+      q.classList.toggle('jm-quiet--wrap', f.wrap);
+      q.style.fontSize = f.size;
+    };
+    if (key in _quietFit) { apply(_quietFit[key]); return; }
+    const f = { stack: false, wrap: false, size: '' };
+    apply(f);
+    const limit = root.clientWidth * 0.94;
+    const msgs = q.querySelectorAll('.jm-msg');
+    const oneLine = msgs.length < 2 || Math.abs(msgs[0].getBoundingClientRect().top - msgs[1].getBoundingClientRect().top) < 2;
+    if (msgs.length > 1 && (!oneLine || q.getBoundingClientRect().width > limit)) { f.stack = true; apply(f); }
+    const base = parseFloat(getComputedStyle(q).fontSize);
+    let size = base;
+    for (let i = 0; i < 10 && q.scrollWidth > limit && size > base * 0.75; i++) { size *= 0.97; f.size = size + 'px'; apply(f); }
+    if (q.scrollWidth > limit) { f.wrap = true; apply(f); }
+    _quietFit[key] = f;
+  }
+
   // All fits above cache their result. If a web font (e.g. Tamil) finishes
   // loading after the first fit, the text was measured in a narrower fallback
   // font and would stay clipped — so forget the cached fits whenever fonts
@@ -175,6 +202,7 @@
       _npFit = { key: null, size: '' };
       _slideFit = {};
       _heroFit = { key: null, size: '', compact: false };
+      _quietFit = {};
     });
   }
 
@@ -576,55 +604,81 @@
     return `<span class="jdb-bayan">${parts.join('<span class="jdb-sep"> · </span>')}</span>`;
   }
 
-  // Jumu'ah between azan and khutbah, in phases (engine buildJumuahCycle):
-  //   sunnah — "Sunnah prayer" reminder, then the bayan (or khutbah) time;
-  //   bayan  — "Bayan in progress", speaker/topic, khutbah & iqamah times;
-  //   wait   — bayan turned off: the same quiet screen without the title.
-  // Deliberately calm while someone is speaking: no rotating cards, and the
-  // countdown is in whole minutes (no ticking seconds).
+  // ── Jumu'ah: sunnah → bayan → khutbah ─────────────────────
+  // One shared layout so the three screens read as a set:
+  //   body   — what's happening now (title) + its detail;
+  //   sched  — sunnah/bayan only: the next times and minutes until the next
+  //            step (whole minutes — nothing ticking while someone speaks);
+  //   quiet  — the same footer on all three: no-phone icon + "switch off
+  //            your phones · please remain silent" (khutbah: phones only —
+  //            "remain silent" is already its main message).
+  // Deliberately calm: no rotating cards, no seconds (corner clock too).
+  // Each message is one unbreakable piece. Side by side with a dot when they
+  // fit on one line; otherwise ui.js fitQuiet stacks them as two clean lines
+  // (long Tamil/Sinhala wording, portrait) instead of breaking mid-phrase.
+  function jumuahQuietHtml(content, withSilent) {
+    const msg = key => `<span class="jm-msg">${escapeHtml(label(content, key))}</span>`;
+    const text = msg('phonesOff') + (withSilent ? `<span class="jm-dot" aria-hidden="true">·</span>${msg('remainSilent')}` : '');
+    return `<div class="jm-quiet"><span class="jm-quiet-icon">${ICON_NO_PHONE}</span><span class="jm-quiet-text">${text}</span></div>`;
+  }
+
   function renderJumuah(config, result, contentByLang) {
     const content = primaryContent(contentByLang, config);
     const E = global.SBEngine;
     const m = result.meta || {};
     const phase = m.phase || 'bayan';
     const t = d => (d ? E.formatTime(d, config) : '--:--');
+    const pair = (key, d) => `<span class="jm-pair"><span class="jm-key">${escapeHtml(label(content, key))}</span> ${escapeHtml(t(d))}</span>`;
+    const sep = '<span class="date-sep jm-sep">·</span>';
     const inMinutes = (key, target) => {
       const n = target ? Math.max(1, Math.ceil((target - result.now) / 60000)) : '–';
       return label(content, 'inMinutes').replace('{name}', label(content, key)).replace('{n}', n);
     };
-    const line = (cls, html) => `<div class="${cls}">${html}</div>`;
+    const schedule = (pairs, key, target) => `
+        <div class="jm-sched">
+          <div class="jumuah-times">${pairs.join(sep)}</div>
+          <div class="jumuah-countdown">${escapeHtml(inMinutes(key, target))}</div>
+        </div>`;
+
+    let title, detail, sched;
     if (phase === 'sunnah') {
-      // Next is the bayan, or the khutbah when there's no bayan.
-      const nextKey = m.bayan !== false && m.bayanStart && m.bayanStart < m.khutbah ? 'bayan' : 'khutbah';
-      const nextAt = nextKey === 'bayan' ? m.bayanStart : m.khutbah;
+      // Next step: the bayan, or the khutbah when there's no bayan.
+      const toBayan = m.bayan !== false && m.bayanStart && m.bayanStart < m.khutbah;
       const reminder = (content.sunnahReminder || {}).text;
-      return `
-      <div class="screen screen--jumuah screen--jumuah-sunnah">
-        <div class="jumuah-banner">${escapeHtml(label(content, 'sunnahPrayer'))}</div>
-        ${reminder ? line('jumuah-topic', escapeHtml(reminder)) : ''}
-        ${line('jumuah-times', `${escapeHtml(label(content, nextKey))} ${escapeHtml(t(nextAt))}`)}
-        ${line('jumuah-countdown', escapeHtml(inMinutes(nextKey, nextAt)))}
-      </div>`;
+      title = label(content, 'sunnahPrayer');
+      detail = reminder ? `<div class="jumuah-topic">${escapeHtml(reminder)}</div>` : '';
+      sched = toBayan
+        ? schedule([pair('bayan', m.bayanStart), pair('iqamah', m.iqamahTime)], 'bayan', m.bayanStart)
+        : schedule([pair('khutbah', m.khutbah), pair('iqamah', m.iqamahTime)], 'khutbah', m.khutbah);
+    } else {
+      const info = result.bayanInfo;
+      title = (content.jumuahBayan || {}).text;
+      detail = (info && info.speaker ? `<div class="jumuah-speaker">${escapeHtml(info.speaker)}</div>` : '') +
+        (info && info.topic ? `<div class="jumuah-topic">${escapeHtml(info.topic)}</div>` : '');
+      sched = schedule([pair('khutbah', m.khutbah), pair('iqamah', m.iqamahTime)], 'khutbah', m.khutbah);
     }
-    const info = phase === 'bayan' ? result.bayanInfo : null;
-    const speaker = info && info.speaker ? line('jumuah-speaker', escapeHtml(info.speaker)) : '';
-    const topic = info && info.topic ? line('jumuah-topic', escapeHtml(info.topic)) : '';
-    const title = phase === 'bayan' ? (content.jumuahBayan || {}).text : label(content, 'jumuah');
     return `
-      <div class="screen screen--jumuah">
-        <div class="jumuah-banner">${escapeHtml(title)}</div>
-        ${speaker}${topic}
-        ${line('jumuah-times', `${escapeHtml(label(content, 'khutbah'))} ${escapeHtml(t(m.khutbah))}` +
-          ` <span class="date-sep">·</span> ${escapeHtml(label(content, 'iqamah'))} ${escapeHtml(t(m.iqamahTime))}`)}
-        ${line('jumuah-countdown', escapeHtml(inMinutes('khutbah', m.khutbah)))}
+      <div class="screen screen--jumuah jm jm--${phase === 'sunnah' ? 'sunnah' : 'bayan'}">
+        <div class="jm-body">
+          <div class="jumuah-banner">${escapeHtml(title)}</div>
+          ${detail}
+          ${sched}
+        </div>
+        ${jumuahQuietHtml(content, true)}
       </div>`;
   }
 
   function renderKhutbah(config, result, contentByLang) {
     const content = primaryContent(contentByLang, config);
+    const k = content.khutbahScreen || {};
+    // Older/partial packs only have the combined line.
+    const body = k.title && k.silent
+      ? `<div class="khutbah-title">${escapeHtml(k.title)}</div><div class="khutbah-line">${escapeHtml(k.silent)}</div>`
+      : `<div class="khutbah-line">${escapeHtml(k.line)}</div>`;
     return `
-      <div class="screen screen--khutbah">
-        <div class="khutbah-line">${escapeHtml((content.khutbahScreen || {}).line)}</div>
+      <div class="screen screen--khutbah jm jm--khutbah">
+        <div class="jm-body">${body}</div>
+        ${jumuahQuietHtml(content, false)}
       </div>`;
   }
 
@@ -683,6 +737,7 @@
     container.innerHTML = html;
     container.className = `screen-root theme-${config.theme} state-${result.state.toLowerCase()}`;
     if (result.state === 'NORMAL') { fitMasjidName(container, config); fitNextName(container); fitBannerSlides(container); fitHero(container); }
+    if (result.state === 'JUMUAH' || result.state === 'KHUTBAH') fitQuiet(container);
   }
 
   function applyNightDim(overlayEl, active, brightnessPercent) {

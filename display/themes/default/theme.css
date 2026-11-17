@@ -235,16 +235,33 @@ html, body {
 .night-clock { font-size: 5.5rem; font-weight: 700; font-variant-numeric: tabular-nums; color: var(--sb-fg-dimmer); }
 .night-next-fajr { font-size: 1.8rem; font-weight: 600; color: #3a444f; letter-spacing: .04em; }
 
-/* ── JUMUAH (bayan) / KHUTBAH — gold, never red ─────────────── */
-.screen--jumuah { justify-content: center; align-items: center; text-align: center; gap: 2rem; }
-.jumuah-banner { font-size: 4.5rem; font-weight: 700; color: var(--sb-accent); }
-.jumuah-speaker { font-size: 2.8rem; font-weight: 700; color: var(--sb-fg); }
-.jumuah-topic { font-size: 2rem; font-weight: 500; color: var(--sb-fg-dim); max-width: 85vw; }
+/* ── JUMU'AH: sunnah → bayan → khutbah (one set, see ui.js .jm) ─────────
+   Hierarchy, same on all three: what's happening now (big) → its detail →
+   a quiet schedule line → the phones/silence footer. Gold, never red. */
+.screen--jumuah, .screen--khutbah { gap: 1rem; padding-bottom: 1.2rem; }
+.jm-body { gap: 1.1rem; }
+.jumuah-banner { font-size: 5rem; font-weight: 700; line-height: 1.05; color: var(--sb-accent); }
+.jm--sunnah .jumuah-banner { color: var(--sb-gold-2); }
+.jumuah-speaker { font-size: 3.2rem; font-weight: 700; color: var(--sb-fg); }
+.jumuah-topic { font-size: 2.4rem; font-weight: 500; color: var(--sb-fg-dim); max-width: 80vw; line-height: 1.3; }
+/* Schedule: a hairline above, then times; minutes-left under them. */
+.jm-sched { margin-top: 1.4rem; padding-top: 1.4rem; border-top: 1px solid var(--sb-border); min-width: 50vw; }
+.jumuah-times { font-size: 3rem; font-weight: 600; color: var(--sb-fg); letter-spacing: .01em; }
+.jumuah-times .jm-key { color: var(--sb-fg-dim); font-weight: 500; }
+.jumuah-times .date-sep { margin: 0 .5em; opacity: .5; }
+.jumuah-countdown { font-size: 2.2rem; color: var(--sb-fg-dim); opacity: 1; }
+/* Footer pill: identical on all three Jumu'ah screens. */
+.jm-quiet {
+  font-size: 2.2rem; font-weight: 500; color: var(--sb-fg-dim);
+  border: 1px solid var(--sb-border); border-radius: 999px; padding: .55rem 1.6rem .55rem 1.2rem;
+}
+.jm-quiet--stack { border-radius: 1.4rem; padding: .7rem 2rem .7rem 1.4rem; }
 .screen--khutbah {
-  justify-content: center; align-items: center; text-align: center;
   background: radial-gradient(ellipse at center, #231a05 0%, var(--sb-bg) 74%);
 }
-.khutbah-line { font-size: 5rem; font-weight: 800; color: var(--sb-danger); }
+.khutbah-title { font-size: 3rem; font-weight: 600; color: var(--sb-fg-dim); letter-spacing: .02em; }
+.khutbah-line { font-size: 7rem; font-weight: 800; line-height: 1.05; color: var(--sb-danger); }
+.screen--khutbah .jm-quiet { border-color: rgba(230, 180, 85, .3); color: #b99a5c; }
 
 /* ── Landscape hero layout ─────────────────────────────────────
    "NEXT PRAYER / name" sits in the left-hand column (left-aligned, under

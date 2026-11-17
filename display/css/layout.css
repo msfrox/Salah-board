@@ -76,11 +76,42 @@ html[data-sb-hide~="cards"]      .screen--normal .card--etiquette { display: non
 /* Corner clock (azan, iqamah, Luha… screens): AM/PM at full clock size. */
 .corner-ampm { margin-left: .3em; }
 
-/* ── Jumu'ah sunnah / bayan screens: the times line and minutes countdown.
-   Quiet on purpose (dim, modest size) so they never pull eyes from the
-   speaker. :where() → zero specificity, so a theme can restyle them. */
+/* ── Jumu'ah sunnah / bayan / khutbah: shared structure (ui.js .jm) ─────
+   body (centred, takes the room) + the same quiet footer on all three.
+   Structure only, at zero specificity (:where) so every theme gets a sane
+   layout and can restyle any of it. Quiet on purpose: dim, modest sizes —
+   nothing here should pull eyes from the speaker. */
+:where(.jm) { justify-content: space-between; align-items: center; text-align: center; }
+:where(.jm-body) {
+  flex: 1; min-height: 0; width: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1.2rem;
+}
+:where(.jm-sched) { display: flex; flex-direction: column; align-items: center; gap: .3rem; margin-top: .8rem; }
 :where(.jumuah-times) { font-size: 2.6rem; font-weight: 600; color: var(--sb-fg-dim); font-variant-numeric: tabular-nums; }
 :where(.jumuah-countdown) { font-size: 2.2rem; font-weight: 500; color: var(--sb-fg-dim); opacity: .75; }
+:where(.khutbah-title) { font-size: 2.6rem; font-weight: 600; color: var(--sb-fg-dim); }
+:where(.jm-quiet) {
+  display: inline-flex; align-items: center; gap: .7em; flex: none;
+  font-size: 2.2rem; color: var(--sb-fg-dim); line-height: 1.2;
+  max-width: 94vw;
+}
+:where(.jm-quiet-icon) { display: inline-flex; font-size: 1.5em; flex: none; }
+/* Messages never break inside; they sit side by side (with a dot)… */
+.jm-quiet-text { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: center; }
+.jm-msg { white-space: nowrap; }
+.jm-dot { margin: 0 .5em; opacity: .5; }
+/* …or, when they don't fit (ui.js fitQuiet), stack as two centred lines. */
+.jm-quiet--stack .jm-quiet-text { flex-direction: column; align-items: center; row-gap: .15em; }
+.jm-quiet--stack .jm-dot { display: none; }
+.jm-quiet--wrap .jm-msg { white-space: normal; text-align: center; }
+/* Schedule pairs ("Khutbah 12:53") never split; on narrow screens they
+   stack instead of wrapping mid-pair. */
+.jumuah-times { display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; }
+.jm-pair { white-space: nowrap; }
+@media (orientation: portrait) {
+  .jumuah-times { flex-direction: column; align-items: center; row-gap: .2em; }
+  .jumuah-times .jm-sep { display: none; }
+}
 
 /* ── "Next prayer" head ──────────────────────────────────────────
    Wraps the label + name. By default it's invisible to layout (its children

@@ -163,6 +163,15 @@ html, body {
 .jumuah-topic { font-size: 4rem; font-weight: 500; color: var(--sb-fg-dim); max-width: 85vw; }
 .screen--khutbah { justify-content: center; align-items: center; text-align: center; background: radial-gradient(ellipse at center, #2a0f0f 0%, var(--sb-bg) 70%); }
 .khutbah-line { font-size: 7.5rem; font-weight: 800; color: var(--sb-danger); }
+/* Jumu'ah sunnah/bayan/khutbah set (ui.js .jm): proportionate to this theme. */
+.jumuah-times { font-size: 4.4rem; font-weight: 600; color: var(--sb-fg); }
+.jumuah-times .jm-key { color: var(--sb-fg-dim); font-weight: 500; }
+.jumuah-times .date-sep { margin: 0 .5em; opacity: .5; }
+.jumuah-countdown { font-size: 3.4rem; color: var(--sb-fg-dim); }
+.jm-sched { margin-top: 2rem; }
+.khutbah-title { font-size: 4.4rem; color: var(--sb-fg-dim); }
+.jm-quiet { font-size: 3.4rem; border: 1px solid var(--sb-border); border-radius: 999px; padding: .6rem 2rem .6rem 1.4rem; margin-bottom: 1.5rem; }
+.jm-quiet--stack { border-radius: 2rem; }
 
 /* ── Short landscape panels (e.g. 768p) with banners stacked on
    NORMAL: shrink the clock (the one font-size exception) and trim

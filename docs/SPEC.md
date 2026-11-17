@@ -86,16 +86,21 @@ Fridays the bayan starts after the azan screen + `sunnahMinutes` (default
    themselves after that Jumu'ah, so a previous week's speaker is never
    shown by mistake.
 2. Azan (today's `luhr` time) → AZAN state as usual.
+   Steps 3–5 are one designed set sharing a layout: what's happening now
+   (big) → its detail → a quiet schedule line → the same footer: no-phone
+   icon + "Switch off your mobile phones · Please remain silent" (wording
+   reused from the iqamah/salah screens). Deliberately calm: no rotating
+   cards, minutes not seconds, and the corner clock drops its seconds.
 3. Azan screen ends → JUMUAH (phase `sunnah`) until the bayan: "Sunnah
-   prayer" with the sourced reminder (Bukhari 627) and the bayan time +
-   minutes until it (no bayan: until the khutbah, showing its time).
+   prayer" with the sourced reminder (Bukhari 627), "Bayan · Iqamah" times
+   and minutes until the bayan (no bayan: "Khutbah · Iqamah", until the
+   khutbah).
 4. → JUMUAH (phase `bayan`) until the khutbah: "Bayan in progress", speaker
-   and topic, one dim line "Khutbah · Iqamah" times and "Khutbah in N min".
-   Deliberately calm: no rotating cards, minutes not seconds, and the corner
-   clock drops its seconds.
-5. Khutbah start (iqamah − `khutbahMinutes`) → KHUTBAH state: ONLY "Khutbah in progress — remain silent"
-   (talking during khutbah forfeits the reward — Bukhari 934) and the
-   corner clock without seconds. No countdowns, no rotation.
+   and topic, "Khutbah · Iqamah" times and "Khutbah in N min".
+5. Khutbah start (iqamah − `khutbahMinutes`) → KHUTBAH state: "Khutbah in
+   progress" above a large "Remain silent" (talking during khutbah forfeits
+   the reward — Bukhari 934), the phones footer and the corner clock without
+   seconds. Nothing else: no countdowns, no rotation.
 6. `iqamah` → IQAMAH → SALAH → AFTER as normal. Sanity: if `iqamah` ≤
    azan + `screens.azan`, fall back to azan + 10 min (same rule as regular
    iqamah); the khutbah can't start before the azan screen ends, and the

@@ -141,7 +141,8 @@ breaking change via `configVersion`.
         "luhaLabel": 100, "luhaCountdown": 100, "luhaOpen": 100,
         "nightClock": 100, "nightFajr": 100,
         "bayanTitle": 100, "bayanSpeaker": 100, "bayanTopic": 100, "bayanTimes": 100,
-        "khutbahLine": 100
+        "jumuahQuiet": 100,                           // phones/silence footer (sunnah, bayan)
+        "khutbahTitle": 100, "khutbahLine": 100, "khutbahQuiet": 100
       }
     }
   },
