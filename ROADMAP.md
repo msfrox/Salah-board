@@ -32,7 +32,7 @@ One line per item. Full cards are in `TASKS.md`. The original milestone specs (M
 | SB-6 | Content review sheets (en, ta, si; duas) | Sonnet | after Sakina SK-1 |
 | SB-7 | Release by tag; update to newest tag; RELEASING.md | Opus | done 2026-11-18 (not verified on the board) |
 | SB-8 | Theme sizing in the hall; caretaker guide | Opus | needs Shehan at the board |
-| SB-9 | Android: box checklist now; finish the shell once a box is found | Opus | part 1 ready; part 2 needs a box |
+| SB-9 | Android: box checklist now; finish the shell once a box is found | Opus | part 1 done 2026-11-18 (`docs/HARDWARE.md`); part 2 needs a box |
 | SB-10 | Ready for other masjids: first-run setup, no masjid-specific defaults, setup guide | Opus | ready |
 
 `PT-1`, `PT-3` are Prayer-Time-Site cards; `SK-1` is a Sakina card.

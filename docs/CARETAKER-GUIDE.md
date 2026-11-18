@@ -2,6 +2,13 @@
 
 *One page. Print this. No technical knowledge needed.*
 
+> **Which board is this for?** The board in use **today** is the Linux
+> kiosk (a spare PC or tablet). The Android box is the target and is still
+> waiting for a suitable box to be chosen (ADR 0001, Amendment 1). Each
+> section below is marked **Linux board (today)**, **Android box (later)**
+> or **Both**. The Android sections apply once a box is chosen. Buying one?
+> See "Choosing an Android box" in `docs/HARDWARE.md`.
+
 > **Tamil/Sinhala translations of this guide are not included yet** — they
 > need a native-speaking reviewer, same as the on-screen content packs
 > (`display/content/ta.json` / `si.json`, both marked `"reviewed": false`).
@@ -9,12 +16,16 @@
 
 ## What you need
 
+*For: Android box (later). Linux board (today): see `deploy/README.md` for the hardware.*
+
 - The Salah Board box (any Android TV box, 2GB+ RAM) and a TV/monitor
 - The remote that came with the box
 - Power for both, on the same switch
 - *Optional:* a phone, and masjid WiFi (or none — see step 5)
 
 ## Setup
+
+*For: Android box (later).*
 
 1. **Connect** the box to the TV (HDMI) and power. Turn both on.
 2. **Install the app**, if not already installed: use a USB stick with
@@ -48,6 +59,8 @@
 
 ## If the clock was wrong after a power cut
 
+*For: Both (the on-screen prompt is the same; the remote buttons are Android box, later).*
+
 Cheap boxes without a battery-backed clock can forget the time after a
 power cut. Salah Board detects this on its own: if the clock looks wrong
 and there's no internet, the settings screen (step 4) opens by itself
@@ -56,6 +69,8 @@ or scan the QR from your phone — either way, prayer times shown are
 never wrong, the screen just waits for you to confirm the time.
 
 ## Settings PIN (Linux kiosk)
+
+*For: Linux board (today).*
 
 The settings page asks for a PIN of 6 to 12 digits, so nobody on the masjid
 WiFi can change the board. The display itself never needs it.
@@ -74,6 +89,8 @@ WiFi can change the board. The display itself never needs it.
   the same command over SSH.) The settings page then asks for a new PIN.
 
 ## Getting help
+
+*For: Both.*
 
 This is free, open-source software with no company behind it. For setup
 problems, check the project's GitHub page (the same place you got the
