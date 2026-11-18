@@ -1,8 +1,9 @@
 # Salah Board — instructions for Claude
 
 Open-source masjid prayer display for Sri Lanka (ACJU timetable, Shafi'i).
-Web display (`display/`) run as a Linux Debian kiosk (`deploy/`) — v1.0 is the Linux
-kiosk; the Android shell (`android/`) is parked (`decisions/0001-…`).
+Web display (`display/`) run as a Linux Debian kiosk (`deploy/`) — the interim
+board; an Android TV box (`android/`) is the target, waiting for a suitable box
+(`decisions/0001-…`, Amendment 1).
 Sister project: **pray.gear.lk** (`~/Projects/Prayer-Time-Site`) — same data,
 same ethos.
 
@@ -36,7 +37,7 @@ same ethos.
    owner wants things done, add or correct it there in the same commit.
 1. Read `ROADMAP.md` and `HANDOFF.md`, then the card in `TASKS.md` you are doing. Read ONLY
    the docs the card links. Keep sessions small. (`docs/MILESTONES.md` holds the original
-   M1–M5 specs; M3/M4 are parked, so do not follow it to Android.)
+   M1–M5 specs; M3/M4 wait for a box — card SB-9 — so don't start Kotlin work.)
 2. Implement against the card's "Done when". All must pass before marking it done.
 3. Test in a normal desktop browser first. Use the debug URL params:
    `?t=2026-07-02T12:10` (fake clock), `?state=between` (force a state),
@@ -45,7 +46,7 @@ same ethos.
    TVs masjids use. Every visual change must be checked there (all themes,
    all states, with banners on), in addition to any other sizes.
 4. The live board is in a masjid: build sessions never push to it. Don't start Android
-   work (M3/M4) — parked by ADR 0001.
+   work (M3/M4) until SB-9 names a box.
 
 ## Repo layout
 
@@ -55,7 +56,7 @@ display/data/       ACJU zone JSONs — synced by tools/sync-data.py. NEVER hand
 display/content/    Language packs (duas, labels, screens) — en/ta/si + Arabic inline.
 display/themes/     One folder per theme (CSS + optional layout overrides).
 deploy/             Linux kiosk: serve.py, systemd, Openbox, install scripts (v1.0).
-android/            Kotlin shell — PARKED (ADR 0001). See android/README.md.
+android/            Kotlin shell — the target, waiting for a box (ADR 0001 Amdt 1, SB-9).
 docs/               SPEC, ARCHITECTURE, CONFIG-SCHEMA, MILESTONES, HARDWARE, RELEASING,
                     LOCAL-CONTEXT (local practice + owner preferences — read first).
 tools/sync-data.py  Syncs data (+ manifest, SHA-256 check) from a sibling Prayer-Time-Site

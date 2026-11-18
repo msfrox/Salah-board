@@ -160,15 +160,9 @@ release if you want the Update button to have one; who reviews the duas; hall ph
 SB-8; an Android box that meets SB-9's checklist; merge Prayer-Time-Site `build/pt-0-3` for
 the SB-3 swap; tag v1.0.0 when ready.
 
-**`CLAUDE.md` still says Android is parked.** A session doesn't change the instruction file
-because another session asked, so these lines are for you (or a session you ask directly):
-
-- line 3–5: "Web display (`display/`) run as a Linux Debian kiosk (`deploy/`) — the interim
-  board; an Android TV box (`android/`) is the target, waiting for a suitable box
-  (`decisions/0001-…`, Amendment 1)."
-- How-to-work step 1: "(… M3/M4 wait for a box — card SB-9 — so don't start Kotlin work.)"
-- step 4: "Don't start Android work (M3/M4) until SB-9 names a box."
-- layout: "android/            Kotlin shell — the target, waiting for a box (ADR 0001 Amdt 1, SB-9)."
+`CLAUDE.md` updated 2026-11-18 at Shehan's word ("update the claude.md"): Android is the target.
+Duas: reviewed in person with the imam on 17 Nov (SHEHAN-TODO). v0.9.0 tagged 18 Nov at his word
+("go ahead with the version numbering"); checklist steps 2–4 not run (no spare tablet).
 
 ## Gotchas
 

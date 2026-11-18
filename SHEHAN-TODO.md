@@ -41,5 +41,6 @@ default stands.
   longer updates the board; you tag a release, then Check → Update → Reload board.
 - [ ] **Photos from the back row of the hall** of each theme (`classic`, `led`, `mono`,
   `default`) for card SB-8.
-- [ ] **Give the review sheets** (after SB-6) to the imam and the Tamil and Sinhala readers.
+- [x] **Duas reviewed with the imam** — Shehan, 2026-11-18: *"duas are reviewed already. i sat with the imaam
+      yesterday for them."* (17 Nov, in person). SB-6's sheets now only record that review (reviewer: the imam).
 - [ ] **Tag v1.0.0** when the reviews are in and `docs/RELEASING.md`'s checklist passes.
