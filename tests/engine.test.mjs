@@ -29,7 +29,7 @@ const sandbox = {
 };
 sandbox.window = sandbox;
 vm.createContext(sandbox);
-for (const f of ['config.js', 'engine.js', 'state.js']) {
+for (const f of ['config.js', 'pt-core.js', 'engine.js', 'state.js']) {
   vm.runInContext(fs.readFileSync(path.join(DISPLAY, 'js', f), 'utf8'), sandbox, { filename: f });
 }
 const E = sandbox.SBEngine, S = sandbox.SBState, C = sandbox.SBConfig;
