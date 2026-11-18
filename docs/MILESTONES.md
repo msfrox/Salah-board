@@ -1,8 +1,9 @@
 # Milestones — build order for Claude Code (Sonnet)
 
 > **2026-11-16:** the live tracker is `ROADMAP.md` and the next cards are in `TASKS.md`.
-> `decisions/0001-linux-kiosk-is-v1-android-is-parked.md` (proposed) makes the Linux kiosk
-> v1.0 and parks M3 and M4. This file keeps the milestone specs.
+> ADR 0001 with **Amendment 1 (2026-11-18)**: Android is the target, the Linux kiosk is the
+> interim board. M3 and M4 wait for a suitable Android box (card SB-9), not a decision.
+> This file keeps the milestone specs.
 
 Work top to bottom. One milestone (or one sub-step) per session. Each is
 independently useful. Tick checkboxes as acceptance criteria pass. Read only
@@ -65,7 +66,7 @@ Acceptance:
 - [x] Export/import round-trips; garbage import rejected with clear error
 - [x] Notices CRUD with date ranges
 
-## M3 — Android shell APK  `[ ] PARKED (ADR 0001)`
+## M3 — Android shell APK  `[ ] waits for a box (ADR 0001 Amendment 1, SB-9)`
 **Read:** ARCHITECTURE.md (D2–D8, shell responsibilities), android/README.md.
 
 Kotlin, minSdk 26, single activity + WebView. HOME intent filter,
@@ -81,7 +82,7 @@ Acceptance:
 - [ ] WebView crash/App kill → back on screen within 10 s
 - [ ] Release workflow: signed APK via GitHub Actions on tag
 
-## M4 — Time correction + hotspot  `[ ] PARKED (ADR 0001)`
+## M4 — Time correction + hotspot  `[ ] waits for a box (ADR 0001 Amendment 1, SB-9)`
 **Read:** ARCHITECTURE.md D4, D5.
 
 SNTP client → `time.offsetMs`; periodic re-sync; boot sanity screen with

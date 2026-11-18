@@ -13,7 +13,8 @@ cd android
 ./gradlew :app:assembleRelease    # release build; unsigned unless SALAH_KEYSTORE_* env vars are set
 ```
 
-Signed releases are built by `.github/workflows/release.yml` on a `v*` tag,
+Signed releases are built by `.github/workflows/release.yml` on an `android-v*` tag
+(plain `vX.Y.Z` tags are Linux-kiosk releases, `docs/RELEASING.md`),
 using these repo secrets: `SALAH_KEYSTORE_BASE64` (base64 of the `.jks`),
 `SALAH_KEYSTORE_PASSWORD`, `SALAH_KEY_ALIAS`, `SALAH_KEY_PASSWORD`.
 

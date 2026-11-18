@@ -3,7 +3,7 @@ name: Android release
 on:
   push:
     tags:
-      - "android-v*"   # board releases are vX.Y.Z (docs/RELEASING.md); Android is parked
+      - "android-v*"   # APK builds; vX.Y.Z tags are Linux-kiosk releases (docs/RELEASING.md). SB-9 settles shared numbering
 
 jobs:
   build-and-sign:

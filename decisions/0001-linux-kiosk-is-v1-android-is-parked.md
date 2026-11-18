@@ -1,6 +1,7 @@
 # 0001 — The Linux kiosk is v1.0; the Android shell is parked
 
-- **Status:** proposed — pending Shehan's answers (fable-sprint `S15-PLAN.md`, Q19, Q20, Q22)
+- **Status:** accepted with Amendment 1 (2026-11-18, below): Android is the target, the Linux
+  kiosk the interim board. Read the amendment first.
 - **Date:** 2026-11-16
 
 ## Context
@@ -50,3 +51,30 @@ writing Kotlin.
 - The PIN is a small barrier for a small threat (a curious person on the WiFi). It is not
   hardening against an attacker with the device in hand, and the docs say so.
 - If Shehan answers Q19 with "Android first", points 1 and 2 swap, and points 3 to 7 stand.
+
+## Amendment 1 — 2026-11-18: Android is the target; the Linux kiosk is the interim board
+
+- **Status of this ADR:** points 1–2 superseded by this amendment; points 3–7 accepted.
+- **Shehan, 18 Nov 2026 (answer to Q19):** "android is not parked. the linux is a stop gap
+  till i find the right android box. sadly still havent found it yet."
+- **Shehan, 18 Nov 2026 (Q20):** "yes right now only one masjidh but make it so i can give
+  this to others so they can use in their masjidhs as well."
+- **Shehan, 18 Nov 2026 (Q22, the PIN):** yes — "i had issues of the masjidh untrained staff
+  trying to do things"; "lets add a pin to the board so no one tries to be clever or a hero".
+
+What changes:
+
+1. **Android is the target platform.** The Linux kiosk (`deploy/`) is the **interim board**:
+   it is what runs in the masjid until a suitable Android TV box is found, and it keeps
+   getting fixes and releases meanwhile. Point 1's "v1.0 is the Linux kiosk" becomes "the
+   first releases run on the Linux kiosk"; v1.0 is not tied to either platform.
+2. **Android (M3, M4) is not parked; it waits on hardware.** The work is "find a box that
+   meets the requirements, then finish and verify the shell" (card SB-9 in `TASKS.md`).
+   `android/` stays as it is until then.
+3. Points 3–7 stand. Point 4's release tags apply to the kiosk now; APK builds use
+   `android-vX.Y.Z` tags (`.github/workflows/release.yml`) until SB-9 decides whether the two
+   share version numbers. Point 7 ("written for a stranger") is now a card of its own
+   (SB-10): Shehan wants other masjids to be able to set up their own board.
+4. Rule for sessions: build features in `display/` and `admin/` (they run on both); keep
+   `deploy/` changes to what the interim board needs; don't start Kotlin work before SB-9
+   names a box.

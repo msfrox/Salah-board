@@ -6,31 +6,39 @@ The full question sheet is `fable-sprint/S15-PLAN.md` (Q19–Q22). A blank answe
 default stands.
 
 1. **Linux kiosk as v1.0, Android parked (Q19)?** Default: yes. ADR 0001.
-   → 
+   → **Answered 18 Nov:** "android is not parked. the linux is a stop gap till i find the
+   right android box. sadly still havent found it yet." (ADR 0001 Amendment 1; card SB-9.)
 2. **One masjid, or offered to others (Q20)?** Default: one now, written for a stranger.
-   → 
+   → **Answered 18 Nov:** "yes right now only one masjidh but make it so i can give this to
+   others so they can use in their masjidhs as well." (Card SB-10.)
 3. **Who signs off the duas and reminders (Q21)?** Default: the masjid's imam, or an ‘alim
    you name. Name:
    → 
 4. **A caretaker PIN on the settings page (Q22)?** Default: yes.
-   → 
+   → **Answered 18 Nov:** yes — "i had issues of the masjidh untrained staff trying to do
+   things"; "lets add a pin to the board so no one tries to be clever or a hero". (Built, SB-4.)
 
 ## Steps only you can do
 
-- [ ] **Change the board's login password and save it in your password manager — now
-  urgent.** The old one (and the board's address) is in git history, and the live board's
-  old server hands its whole `.git` folder to anyone on the masjid WiFi
-  (`http://<board>:8080/.git/…`). The update below closes that, but the old password stays
-  in the public history.
-- [ ] **Update the live board** to the SB-4/SB-7 code: push `main`, then the exact steps in
-  `HANDOFF.md` → "Updating the live board" (set the PIN before the reboot). Build sessions
-  never push to it.
+- [ ] **Update the live board** to the SB-4/SB-7 code when convenient: the exact steps are
+  in `HANDOFF.md` → "Updating the live board" (they set the PIN before the board restarts).
+  Only you can do it: the board is reachable only on your hotspot. This also gives the
+  board the PIN you asked for.
+- [ ] **Change the board's login password** some time and keep it in your password manager.
+  Not urgent (18 Nov: "no one accesses it. it only ever connects to my phones hotspot or i
+  use its hotspot(so no masjidh wifi)"), but the old one is in the repo's public git
+  history, and the board's old server shows its `.git` folder to whoever is on its network
+  until the update.
+- [ ] **When you find an Android box**: check it against card SB-9's list in `TASKS.md`
+  (Home app can be changed, turns on after a power cut, Android 8+, 2 GB RAM, hotspot).
+- [ ] **Change four lines in `CLAUDE.md`** that still say Android is parked (exact text in
+  `HANDOFF.md` → "Waiting on Shehan"), or ask a session to do it.
 - [ ] **Optional: tag a pre-1.0 release** (e.g. `v0.9.0`) after `docs/RELEASING.md`'s
   checklist, so the board's Update button has a release to move to. Until a `vX.Y.Z` tag
   exists, Update says "no release yet".
-- [ ] **Review the 15 "Decided on default" items** in `HANDOFF.md` (6–15 are new: first
-  PIN, lockout counting, reset, sessions, release rules; 14 is where SB-7 changes how you
-  update the board, per your LOCAL-CONTEXT).
+- [ ] **Skim "Decided on default" in `HANDOFF.md`**, now in plain words (what each means for
+  you or a caretaker at the board). The one that changes your routine: pushing to `main` no
+  longer updates the board; you tag a release, then Check → Update → Reload board.
 - [ ] **Photos from the back row of the hall** of each theme (`classic`, `led`, `mono`,
   `default`) for card SB-8.
 - [ ] **Give the review sheets** (after SB-6) to the imam and the Tamil and Sinhala readers.

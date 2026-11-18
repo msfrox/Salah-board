@@ -22,6 +22,14 @@ Last updated: 18 November 2026 (release tags and the settings PIN, §1).
 - Hardware: a small x86 tablet/PC running the **Debian kiosk** (`deploy/`),
   driving an ordinary LED TV over HDMI at **1366×768**. Viewed from across the
   hall, mounted high.
+- **The Linux tablet is a stop-gap; an Android TV box is the target** (owner,
+  18 Nov 2026: "the linux is a stop gap till i find the right android box").
+  The box requirements are in `TASKS.md` SB-9.
+- **Network:** the board joins only the owner's phone hotspot, or runs its own
+  hotspot — it is never on the masjid's WiFi, and nobody else has used the
+  device. The settings PIN is still wanted, because untrained masjid staff
+  have tried to change things (owner: "so no one tries to be clever or a
+  hero").
 - Updating the board: Settings → Network → **Check for a new version** →
   **Update to vX.Y.Z**, then **Reload board** (restarts the board program; the
   screen reloads itself). **Reboot device** only when something is stuck. The
@@ -132,6 +140,10 @@ Last updated: 18 November 2026 (release tags and the settings PIN, §1).
   them for problems beyond the one asked about.
 
 ## 7. Open ideas (not built yet)
+
+- **Other masjids should be able to use it** (owner, 18 Nov 2026): keep this
+  masjid's practice in its own config and in this file, not in built-in
+  defaults (card SB-10).
 
 - **"This Hijri month began on [date]"** setting, entered from ACJU's
   announcement, instead of a manual day offset — recommended next.

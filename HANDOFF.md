@@ -2,7 +2,14 @@
 
 _Replace this file at the end of every session; git history keeps the old versions._
 
-## Current state (2026-11-18 — SB-4 and SB-7 done, origin/main merged; local commits only, nothing pushed)
+## Current state (2026-11-18 — SB-4 and SB-7 done, origin/main merged, Shehan's answers recorded)
+
+- **Shehan's answers of 18 Nov are recorded** (below, and in `SHEHAN-TODO.md`): Android is
+  the target and the Linux kiosk the interim board (ADR 0001 **Amendment 1**; README,
+  MILESTONES, ARCHITECTURE, RELEASING, `release.yml`, `android/README.md`, ROADMAP, TASKS
+  updated); other masjids should be able to use it (new card **SB-10**); the PIN stays
+  (wanted against untrained staff). New card **SB-9** (Android box checklist, then the
+  shell). `CLAUDE.md` still says "parked": the lines to change are under "Waiting on Shehan".
 
 - **Read `docs/LOCAL-CONTEXT.md` first** (Shehan's file, came in with the merge): local
   Jumu'ah practice, the live board, his preferences. Keep it current in the same commit.
@@ -18,8 +25,9 @@ _Replace this file at the end of every session; git history keeps the old versio
 - **What runs:** the Linux Debian kiosk (`deploy/serve.py` + systemd + Openbox + Chromium
   `--kiosk`), live in a masjid. **It runs Shehan's `main` from before this work** (probably
   `f4bea7d` or close; Settings → Network → Running version shows it): no PIN, Update pulls
-  `main`, and it serves the whole repo, `.git` included, to the masjid WiFi. Nothing from
-  this session is on it. Steps for Shehan are below.
+  `main`, and it serves the whole repo, `.git` included, to whoever is on its network. That
+  network is only Shehan's phone hotspot or the board's own hotspot (never the masjid WiFi),
+  so this is low risk; the update closes it. Nothing from this session is on it.
 - **SB-1, SB-2 done** (earlier today). **SB-3:** characterisation tests done; the swap waits
   for Prayer-Time-Site PT-3 on its `main`.
 - **SB-4 done (`a3e0c59`)**: caretaker PIN. `deploy/pinauth.py` (PBKDF2 hash in
@@ -48,8 +56,8 @@ _Replace this file at the end of every session; git history keeps the old versio
 
 ## Resume
 
-**Model: Opus 5.5. Effort: medium.** Ready cards: none that need nothing from Shehan.
-SB-3's swap once PT-3 is on the site's `main` (vendor with
+**Model: Opus 5.5. Effort: medium.** Ready now: **SB-10** (ready for other masjids) and
+**SB-9 part 1** (the Android box checklist into `docs/HARDWARE.md`). Then SB-3's swap once PT-3 is on the site's `main` (vendor with
 `python3 tools/sync-data.py --from ../Prayer-Time-Site/data --engine`, reduce `engine.js`,
 tests green before and after, `?t=` day walk at 1366×768). SB-5 is blocked (needs PT-1/PT-3
 live; its routes go behind the PIN, `release.py` is a model for its swap-and-verify). SB-6
@@ -58,7 +66,7 @@ PIN" section is a start; the rest of that guide is still Android-era).
 
 ```text
 Continue Salah-board according to /project-playbook — read ROADMAP.md and HANDOFF.md in ~/Projects/Salah-board, then do
-SB-3's swap if Prayer-Time-Site PT-3 is on its main, else SB-8 with Shehan's photos. Check docs/general/RESEARCH-INDEX.md
+SB-10 (ready for other masjids), then SB-9 part 1 (Android box checklist). Check docs/general/RESEARCH-INDEX.md
 before researching (it does not exist yet). Delegate sweeps to Haiku Explore agents.
 Model: opus · Effort: medium — set both before sending.
 
@@ -69,7 +77,7 @@ Context you won't get from the files: nothing is pushed to the live board by a b
 
 The board's current Update button pulls `main`, so the first update must go through `main`;
 after that it follows tags. Set the PIN **before** the board restarts on the new code, so
-there is no window where anyone on the WiFi can set it first.
+nobody else can choose it first.
 
 1. On your machine: `git push origin main` (and, if you want boards on the release path
    now, tag a pre-1.0 release after `docs/RELEASING.md`'s checklist, e.g.
@@ -85,7 +93,7 @@ there is no window where anyone on the WiFi can set it first.
    ```
    (Or, without SSH: settings → Network → Update from GitHub → Reload board, then
    **straight away** open settings on the board's screen and set the PIN.)
-3. Check from a phone on the masjid WiFi: `http://<board>:8080/admin/` asks for the PIN;
+3. Check from a phone on the board's network (your hotspot): `http://<board>:8080/admin/` asks for the PIN;
    `http://<board>:8080/.git/config` is "not found"; the display still updates.
 4. If you tagged in step 1: settings → Network → Software update should say "Running
    v0.9.0" after `python3 deploy/release.py update` (or the button) and Reload board.
@@ -97,62 +105,70 @@ there is no window where anyone on the WiFi can set it first.
 
 Nothing. Local commits on `main` (`a3e0c59`, `29d1fcd` and this HANDOFF), not pushed.
 
-## Decided on default — for Shehan to review
+## Shehan's answers (18 Nov 2026)
 
-(Shehan, 18 Nov: "use the recommended option and continue".) Items 1–5 are from earlier
-today and are also in `SHEHAN-TODO.md`.
+1. **Android or Linux (Q19, D5):** "android is not parked. the linux is a stop gap till i
+   find the right android box. sadly still havent found it yet." → ADR 0001 Amendment 1;
+   card SB-9.
+2. **One masjid or others (Q20, D6):** "yes right now only one masjidh but make it so i can
+   give this to others so they can use in their masjidhs as well." → card SB-10.
+3. **Who reviews the duas (Q21):** still open.
+4. **PIN (Q22, D7):** yes — "i had issues of the masjidh untrained staff trying to do
+   things"; "lets add a pin to the board so no one tries to be clever or a hero". Built (SB-4).
+5. **The `.git` exposure:** not urgent — "even though the board is in the masjidh no one
+   accesses it. it only ever connects to my phones hotspot or i use its hotspot(so no
+   masjidh wifi)… no one ever had access to that device earlier either."
 
-1. **Linux kiosk as v1.0, Android parked (Q19)?** Picked: Linux first (ADR 0001). Reverse:
-   ADR 0001 points 1 and 2 swap.
-2. **One masjid or offered to others (Q20)?** Picked: one now, written for a stranger.
-3. **Who signs off the duas (Q21)?** Not picked: needs a name. Only matters for SB-6.
-4. **Caretaker PIN (Q22)?** Yes — built in SB-4.
-5. **SB-2 manifest scope:** display files only. Reverse: widen `WANTED` in `sync-data.py`.
-6. **Who may set the first PIN?** Options: anyone while none is set / only the board's own
-   screen / only at install. Picked: **anyone while none is set**, plus the installer asks
-   when run from a terminal. Why: the card requires a hotspot-only masjid to reach settings
-   from a phone, and the "set a PIN" screen instead of a lock-out. Risk: someone on the WiFi
-   sets it first; the fix is the reset file. Reverse: in `pinauth.change_pin`, refuse the
-   first PIN unless `bucket == "local"`.
-7. **Wrong-PIN counting:** Options: one global count / per client IP / board screen and
-   network apart. Picked: **apart**. Why: a global count lets a phone lock out the caretaker
-   at the board; per-IP is beaten by changing IP. Reverse: `_bucket()` in `serve.py`.
-8. **PIN reset:** a file over SSH or the board's console only; no USB-stick detection (the
-   kiosk does not auto-mount). Reverse: add a check of `/media/*/*/salahboard-reset-pin` in
-   `pinauth._check_reset`.
-9. **Sessions:** in memory, 30 min idle, 12 h max; a reboot logs everyone out. Reverse:
-   `SESSION_IDLE` / `SESSION_MAX` in `pinauth.py`.
-10. **`GET /api/whoami` behind the PIN** (the card's "all but three"). It only gives the
-    board's LAN address. Reverse: add it to `OPEN_GET` in `serve.py`.
-11. **A board on an untagged commit** (like the live one) updates to the newest tag even if
-    that tag is older code. Why: releases are the point; main may hold half-done work.
-    Reverse: in `release.status`, make `updateAvailable` false when the tag is an ancestor of
-    HEAD.
-12. **Go back is not gated by the data check** (the version already ran here). Reverse:
-    `verify=True` in `release.rollback`.
-13. **Android release workflow** now triggers on `android-v*` tags, not `v*`, so a board
-    release doesn't start the parked APK build (which needs keystore secrets). Reverse: one
-    line in `.github/workflows/release.yml`.
+## Decided on default — for Shehan to review (in plain words)
 
-14. **LOCAL-CONTEXT vs SB-7 (from the merge).** `docs/LOCAL-CONTEXT.md` §1 described updating
-    the board with "Update from GitHub" (pull `main`) and §6 says Shehan pushes straight to
-    `main`; SB-7 (ADR 0001 point 4) makes boards follow release tags only. Options: tags
-    only / keep pulling `main` / a per-board "channel" setting. Picked: **tags only**, and
-    LOCAL-CONTEXT §1 and §6 updated to say so. Why: it is the card's purpose and a second
-    masjid must never get half-done work; for Shehan the change is one extra step (tag a
-    patch release after pushing a fix). Reverse: in `release.update`, fall back to
-    `git pull --ff-only` when the board is on a branch, or add a `channel` key to config.
-15. **Reload board ends PIN sessions** (sessions live in server memory; Reload restarts the
-    server). The card says so and the lock screen returns. Reverse: persist sessions to a
-    file in `~/.config/salahboard/` (`pinauth.Auth._sessions`).
+Each of these is already built and can be changed later. Nothing here needs an answer
+unless one sounds wrong.
+
+- **Timetable checklist (was item 5).** The board keeps a checklist, with a fingerprint for
+  each file, of the prayer-time files it carries, and it lists only the files the screen
+  uses: 13 zones × 12 months and the zone list. If it were wider, the board would also carry
+  pray.gear.lk's zone map and technical notes. Nothing on screen would change; the board
+  would just hold a few files it never opens.
+- **Setting the first PIN.** Until a PIN is set, whoever opens settings first chooses it, so
+  a new board can be set up from a phone on its hotspot. On your board, the update steps set
+  it before anyone else can. If a stranger ever sets it, it can be cleared at the board.
+- **Wrong PINs.** After four wrong tries, settings make you wait 30 seconds, then longer each
+  time (up to an hour). Wrong tries on a phone never make the board's own screen wait, so
+  nobody can lock you out at the board.
+- **Forgotten PIN.** Clearing it needs the board itself: a keyboard plugged into it, or SSH.
+  A USB stick alone won't do it.
+- **Staying unlocked.** Settings stay open until 30 minutes pass unused (12 hours at most).
+  **Reload board** and a reboot also lock them: type the PIN again.
+- **"Connect a phone" link** (the QR) needs the PIN too.
+- **First update.** Your board runs the latest `main` today. The first update through the
+  new button moves it to the newest *release*, even if that is slightly older than what it
+  runs. After that it only moves forward to newer releases.
+- **Go back** returns to the version that ran before, without re-checking its timetable
+  files (they already worked on this board).
+- **How you update the board changes.** Pushing a fix to `main` no longer reaches the board
+  by itself. After pushing, you tag a release (e.g. `v0.9.1`), then on the board: Check for a
+  new version → Update → Reload board. This keeps half-finished work off every masjid's
+  screen, yours and anyone else's.
+- **Android builds** start only from tags named like `android-v1.2.3`, so releasing the
+  board never starts an Android build by accident.
 
 ## Waiting on Shehan
 
-`SHEHAN-TODO.md`. New today: **the live board serves its `.git` folder to the masjid WiFi**
-(old code), so the old board password in git history is readable by anyone there until it
-is updated: changing that password is now urgent. Then update the board (steps above) and,
-if wanted, tag a pre-1.0 release. Still: who reviews the duas; hall photos for SB-8; merge
-Prayer-Time-Site `build/pt-0-3` to its `main` for the SB-3 swap; tag v1.0.0 when ready.
+`SHEHAN-TODO.md`: update the board when convenient (steps above; low urgency, it is only on
+your hotspot); change the board's old login password (it is in public git history); tag a
+release if you want the Update button to have one; who reviews the duas; hall photos for
+SB-8; an Android box that meets SB-9's checklist; merge Prayer-Time-Site `build/pt-0-3` for
+the SB-3 swap; tag v1.0.0 when ready.
+
+**`CLAUDE.md` still says Android is parked.** A session doesn't change the instruction file
+because another session asked, so these lines are for you (or a session you ask directly):
+
+- line 3–5: "Web display (`display/`) run as a Linux Debian kiosk (`deploy/`) — the interim
+  board; an Android TV box (`android/`) is the target, waiting for a suitable box
+  (`decisions/0001-…`, Amendment 1)."
+- How-to-work step 1: "(… M3/M4 wait for a box — card SB-9 — so don't start Kotlin work.)"
+- step 4: "Don't start Android work (M3/M4) until SB-9 names a box."
+- layout: "android/            Kotlin shell — the target, waiting for a box (ADR 0001 Amdt 1, SB-9)."
 
 ## Gotchas
 

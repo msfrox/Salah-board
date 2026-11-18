@@ -10,10 +10,11 @@ tracking, and works fully offline. Any masjid, anywhere in Sri Lanka, can
 set one up for roughly the cost of a small Linux box or old tablet and
 any HDMI screen.
 
-> **Status: pre-1.0, running in a masjid.** The web display, the settings panel and the
-> Debian kiosk (`deploy/`) are built and live. v1.0 is the Linux kiosk
-> ([ADR 0001](decisions/0001-linux-kiosk-is-v1-android-is-parked.md)); the Android shell
-> (`android/`) is parked. What is next: [`ROADMAP.md`](ROADMAP.md).
+> **Status: pre-1.0, running in a masjid.** The web display and the settings panel are
+> built and live on the **Linux kiosk** (`deploy/`), which is the interim board. The target
+> is an **Android TV box** (`android/`); that waits until a box that meets the requirements
+> is found ([ADR 0001, Amendment 1](decisions/0001-linux-kiosk-is-v1-android-is-parked.md)).
+> What is next: [`ROADMAP.md`](ROADMAP.md).
 
 ---
 
@@ -44,9 +45,10 @@ any HDMI screen.
 display/   Pure HTML/CSS/JS web app — the actual screen. No framework,
            no build step. Runs in ANY browser (dev, Pi, smart TV) and
            in Chromium --kiosk on the Linux board in production.
-deploy/    The Linux kiosk (v1.0): serve.py (static server + settings API),
+deploy/    The Linux kiosk (interim board, live today): serve.py (static server + settings API),
            systemd, Openbox, hotspot, WiFi, install scripts.
-android/   PARKED (ADR 0001). Thin Kotlin shell: HOME-launcher kiosk, boot receiver, WebView,
+android/   The target platform, waiting for a suitable box (ADR 0001 Amendment 1, card SB-9).
+           Thin Kotlin shell: HOME-launcher kiosk, boot receiver, WebView,
            keep-screen-on, embedded admin HTTP server, LocalOnlyHotspot,
            NTP time offset, crash watchdog. No display logic lives here.
 admin/     (served by serve.py) settings panel web UI, edited from a phone.

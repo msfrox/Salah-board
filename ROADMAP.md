@@ -6,7 +6,8 @@ One line per item. Full cards are in `TASKS.md`. The original milestone specs (M
 | To do this | Read |
 |---|---|
 | Anything | `CLAUDE.md` (golden rules), `HANDOFF.md` |
-| Understand what v1.0 is | `decisions/0001-linux-kiosk-is-v1-android-is-parked.md` |
+| Local practice and Shehan's preferences | `docs/LOCAL-CONTEXT.md` (read first) |
+| Which platform (Linux interim, Android target) | `decisions/0001-…` **Amendment 1** |
 | Touch the timetable data or the engine | `decisions/0002-…`, `docs/ARCHITECTURE.md` D6 |
 | Display behaviour | `docs/SPEC.md`, `docs/CONFIG-SCHEMA.md` |
 | Themes and look | `README-designs.md` |
@@ -19,7 +20,7 @@ One line per item. Full cards are in `TASKS.md`. The original milestone specs (M
 - Linux Debian kiosk (sessions 1–4): `serve.py`, hotspot, WiFi join, clock, update and
   reboot buttons, board preview, HDMI hot-plug. Live in a masjid.
 
-## Phase: v1.0 — the Linux kiosk release (ADR 0001, ADR 0002)
+## Phase: releases on the interim Linux board; Android when a box is found (ADR 0001 Amdt 1, ADR 0002)
 
 | ID | What | Model | Status |
 |---|---|---|---|
@@ -31,12 +32,15 @@ One line per item. Full cards are in `TASKS.md`. The original milestone specs (M
 | SB-6 | Content review sheets (en, ta, si; duas) | Sonnet | after Sakina SK-1 |
 | SB-7 | Release by tag; update to newest tag; RELEASING.md | Opus | done 2026-11-18 (not verified on the board) |
 | SB-8 | Theme sizing in the hall; caretaker guide | Opus | needs Shehan at the board |
+| SB-9 | Android: box checklist now; finish the shell once a box is found | Opus | part 1 ready; part 2 needs a box |
+| SB-10 | Ready for other masjids: first-run setup, no masjid-specific defaults, setup guide | Opus | ready |
 
 `PT-1`, `PT-3` are Prayer-Time-Site cards; `SK-1` is a Sakina card.
 
-## Parked
+## Waiting on hardware
 
-M3 Android shell · M4 Android time correction and hotspot (ADR 0001).
+M3 Android shell · M4 Android time correction and hotspot: the target platform, picked up by
+SB-9 when a suitable box is found (ADR 0001 Amendment 1).
 
 ## Later
 

@@ -11,7 +11,8 @@ a timetable revision, MAJOR for anything that needs the installer re-run
 (new sudoers rule, new package). `v1.0.0` is Shehan's call, after SB-8 and the
 content reviews (`SHEHAN-TODO.md`). Only `vX.Y.Z` counts: `v1.0`, `v1.0.0-rc1`
 and `debug-latest` are ignored by boards. Android tags are `android-vX.Y.Z`
-(the parked APK workflow; ADR 0001).
+(the APK workflow; Android is the target platform once a box is found, ADR 0001
+Amendment 1, card SB-9).
 
 ## Checklist
 

@@ -133,12 +133,74 @@ Done when: Shehan says each theme reads from the back of the hall; the guide cov
 settings tab.
 Don't: apply the default theme's 2.05× to the others (their layouts were not designed for it).
 
+### SB-9 — Android: find the box, then finish the shell     [Opus] · effort medium · ~1 h now, more later
+**Needs Shehan to find a box.** Shehan, 18 Nov 2026: "android is not parked. the linux is a
+stop gap till i find the right android box. sadly still havent found it yet." (ADR 0001,
+Amendment 1.)
+Why: Android is the target; the Linux kiosk is the interim board.
+Context to read: ADR 0001 Amendment 1, `docs/HARDWARE.md`, `android/README.md` ("What's
+unverified"), `docs/MILESTONES.md` M3 and M4, `docs/LOCAL-CONTEXT.md` §1 and §7.
+**The box must** (a checklist Shehan can take to a shop; part 1 of this card writes it into
+`docs/HARDWARE.md`):
+- Android 8.0 or newer (the shell's `minSdk 26`, the floor for the no-WiFi hotspot), 2 GB RAM
+  or more, HDMI out at 1366×768 or 1920×1080, WiFi that can run a hotspot.
+- Let you install an APK from a USB stick or a download (sideloading not locked), and let
+  you pick a different **Home app** and keep it ("Always"). Some TV boxes lock their
+  launcher; those can't be used.
+- Have an Android System WebView (or Chrome) that can be updated, recent enough to run the
+  display: test by opening the board's display page in the box's browser before buying.
+- **Turn itself on when power returns** after a full cut (LOCAL-CONTEXT §7: the tablet
+  doesn't, and that is the main weakness of the interim board).
+- Nice to have: a clock battery, Ethernet, a remote with a Menu key.
+Do (once a box is in hand): run `android/README.md`'s "What's unverified" list and M3/M4's
+acceptance on it; port SB-4 (PIN) and SB-7 (release by tag) to the shell's server so both
+platforms share `admin/api.md` exactly; decide whether APK versions share the `vX.Y.Z`
+numbers (today APKs use `android-vX.Y.Z`); a migration note for moving a masjid from the
+Linux board (export config, PIN set again).
+Done when (part 1, can be done now): the checklist above is in `docs/HARDWARE.md` and
+`docs/CARETAKER-GUIDE.md` says which board each section is for. (Part 2: M3/M4 acceptance
+ticked on the chosen box.)
+Don't: start Kotlin work before a box is chosen. Don't move display logic into Kotlin.
+
+### SB-10 — Ready for other masjids                         [Opus] · effort medium · ~3 h
+Shehan, 18 Nov 2026: "yes right now only one masjidh but make it so i can give this to
+others so they can use in their masjidhs as well."
+Why: today some of this masjid's choices are built in as defaults, and the setup guides
+assume Shehan.
+Context to read: `docs/LOCAL-CONTEXT.md`, `display/js/config.js` (defaults),
+`deploy/linux/preseed.cfg`, `deploy/linux/install-kiosk.sh`, `docs/CARETAKER-GUIDE.md`,
+`docs/HARDWARE.md`.
+Masjid-specific spots known on 18 Nov 2026:
+- **Jumu'ah defaults are this masjid's practice** (`config.js`): bayan 12:15 PM, iqamah fixed
+  1:00 PM, khutbah 7 min, sunnah 5 min, and the order azan → sunnah → bayan → khutbah. Other
+  masjids put the bayan before the azan, or derive the iqamah from the azan.
+- **Iqamah defaults** (Fajr +30, Luhr/Asr +20 rounded to 5, Magrib +10, Isha fixed 7:15 PM),
+  Luha 20 min after sunrise, Ramadan Magrib +20: this masjid's, presented as everyone's.
+- **Zone 01 and English** as defaults; the masjid name is blank (good).
+- **The default theme's sizes were tuned in this hall** ("field-tuned landscape sizes the
+  defaults") and its background is **this masjid's rosette** (`display/themes/default/assets/`).
+- **The automated installer** (`preseed.cfg`) sets a **fixed login password for every board**
+  (user `board`), clones from `msfrox/Salah-board`, and assumes `/home/board/Salah-board`.
+- Hijri offset is set by hand every month (LOCAL-CONTEXT §3, §7 open idea).
+- `docs/CARETAKER-GUIDE.md` is Android-era and assumes a helper who knows the project.
+Do: a **first-run setup** on the settings page (masjid name, zone, language, then Jumu'ah
+and iqamah practice with the current values offered as one example, not silently assumed);
+the installer asks for the login password (or forces a change at first login); a
+`docs/SETUP-GUIDE.md` a stranger can follow from "buy a box" to "board on the wall",
+including the PIN; LOCAL-CONTEXT stays as *this* masjid's record and the defaults point to
+it as an example.
+Done when: a fresh install with no config walks through first-run setup before showing
+times; no default silently encodes this masjid's Jumu'ah practice; the preseed has no fixed
+password; someone who has never met Shehan can follow the guide (have a Sonnet agent with
+only the repo walk it and list where it got stuck).
+Don't: change this masjid's live behaviour: its saved config keeps its values.
+
 ---
 
-## Parked (ADR 0001)
+## Waiting on hardware (ADR 0001 Amendment 1)
 
 - **M3 — Android shell APK** and **M4 — time correction and hotspot on Android**: specs
-  stay in `docs/MILESTONES.md`.
+  stay in `docs/MILESTONES.md`; picked up through SB-9 once a box is found.
 
 ## Later
 

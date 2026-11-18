@@ -2,6 +2,12 @@
 
 ## Layers
 
+Two shells around the same `display/` and `admin/` (ADR 0001, Amendment 1, 2026-11-18):
+the **Linux kiosk** (`deploy/`: `serve.py`, systemd, Openbox, Chromium `--kiosk`) is the
+interim board that runs in the masjid today; the **Android shell** below is the target, and
+waits for a suitable box (card SB-9). Both serve the same files and the same `/api/*`
+contract (`admin/api.md`), so display and settings work is shared.
+
 ```
 ┌─────────────────────────────────────────────────────────┐
 │ Android shell (Kotlin, thin)                             │
