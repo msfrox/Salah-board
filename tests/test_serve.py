@@ -46,6 +46,10 @@ PROTECTED = [
     ("POST", "/api/rollback", None),
     ("POST", "/api/reboot", None),
     ("POST", "/api/restart", None),
+    ("GET", "/api/data", None),
+    ("POST", "/api/data/check", None),
+    ("POST", "/api/data/refresh", None),
+    ("POST", "/api/data/rollback", None),
 ]
 DISPLAY_ROUTES = ["/api/config", "/api/preview", "/api/time"]
 
@@ -71,6 +75,7 @@ class ServerTest(unittest.TestCase):
         serve.run_helper = _stub_helper
         serve.restart_server = lambda delay=0.5: None   # never exec the test process
         serve.Handler._release = lambda self, fn: self._json(200, {"ok": True, "stub": fn.__name__})
+        serve.Handler._data = lambda self, action: self._json(200, {"ok": True, "stub": action})
         serve.Handler._display = lambda self, mode: self._json(200, {"ok": True, "mode": mode})
         serve.Handler._wifi_scan = lambda self: self._json(200, {"available": True, "networks": []})
         cls.httpd = serve.Server(("127.0.0.1", 0), serve.Handler)

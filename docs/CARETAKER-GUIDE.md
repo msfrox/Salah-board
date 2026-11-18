@@ -73,6 +73,24 @@ WiFi can change the board. The display itself never needs it.
   `touch ~/.config/salahboard/reset-pin`, then `Ctrl+Alt+F1` to go back. (Or
   the same command over SSH.) The settings page then asks for a new PIN.
 
+## Updating the prayer timetable (Linux board)
+
+The board already has the ACJU prayer times inside it and never needs the
+internet to show them. If ACJU publishes revised times, you can bring them in
+without updating the whole program:
+
+1. Make sure the board is on the internet (phone hotspot or WiFi).
+2. Settings → Network → **Prayer timetable** → **Check for a newer timetable**.
+3. If one is found, press **Update timetable to …** and confirm. The prayer
+   times on the screen may change, and the screen reloads by itself.
+4. If something looks wrong, press **Go back to …** to return to the
+   previous timetable (or the one that came with the board).
+
+The board never updates its timetable by itself. If the download fails or
+does not check out, nothing changes and the old timetable keeps running. If
+the board is not on the internet the card says so and everything else works
+as normal.
+
 ## Getting help
 
 This is free, open-source software with no company behind it. For setup

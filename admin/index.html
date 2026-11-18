@@ -407,6 +407,21 @@
         </div>
         <p class="readonly-status" id="update-status"></p>
       </section>
+
+      <section class="card" id="data-card">
+        <h2>Prayer timetable</h2>
+        <div class="version-info">
+          <div class="version-row"><span class="version-key">Timetable in use</span><span class="version-val" id="data-active">Checking…</span></div>
+        </div>
+        <p class="readonly-status" id="data-status"></p>
+        <p class="hint">The board comes with the ACJU prayer times already inside, so it works with no internet. <strong>Check for a newer timetable</strong> asks pray.gear.lk whether ACJU times have been revised (the board needs internet). Nothing changes until you press <strong>Update timetable</strong>, and you can <strong>Go back</strong> afterwards. (Board device only.)</p>
+        <div class="hotspot-btns">
+          <button type="button" class="btn btn--secondary" id="data-check-btn">Check for a newer timetable</button>
+          <button type="button" class="btn btn--primary" id="data-update-btn" hidden>Update timetable</button>
+          <button type="button" class="btn btn--secondary" id="data-back-btn" hidden>Go back</button>
+        </div>
+        <p class="readonly-status" id="data-msg"></p>
+      </section>
     </div>
 
     <!-- ══ PREVIEW ══════════════════════════════════════════ -->

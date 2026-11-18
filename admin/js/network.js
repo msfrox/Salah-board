@@ -270,9 +270,71 @@
     });
   }
 
-  document.addEventListener('sb-tab-shown', e => { if (e.detail.tab === 'network') { refresh(); refreshVersion(); } });
+  // ── Prayer timetable (SB-5): check / update / go back ────
+  // From serve.py's /api/data*. Plain words; offline is a normal answer, not an error.
+  const OFFLINE_MSG = 'Not connected to the internet — the board keeps using its timetable.';
+  function showData(d) {
+    const set = (id, t) => { const el = document.getElementById(id); if (el) el.textContent = t; };
+    const upBtn = $('#data-update-btn'), backBtn = $('#data-back-btn');
+    if (!d || !d.active) {
+      set('data-active', 'Unknown');
+      set('data-status', 'Timetable information is available only on the board device.');
+      if (upBtn) upBtn.hidden = true;
+      if (backBtn) backBtn.hidden = true;
+      return;
+    }
+    set('data-active', `${d.active.revision} (${d.active.source === 'refreshed' ? 'updated from pray.gear.lk' : 'came with the board'})`);
+    let msg;
+    if (!d.lastChecked) msg = 'Not checked yet. Press Check to see if a newer timetable is available.';
+    else if (!d.online) msg = OFFLINE_MSG;
+    else if (d.updateAvailable) msg = `A newer timetable is available: ${d.latest.revision}.`;
+    else msg = 'This is the newest timetable.';
+    if (d.lastChecked) msg += ` (last checked ${d.lastChecked.replace('T', ' ').slice(0, 16)})`;
+    set('data-status', msg);
+    if (upBtn) { upBtn.hidden = !(d.online && d.updateAvailable); upBtn.textContent = `Update timetable to ${d.latest ? d.latest.revision : ''}`; }
+    if (backBtn) { backBtn.hidden = !d.previous; backBtn.textContent = d.previous ? `Go back to ${d.previous.revision}` : 'Go back'; }
+  }
+  async function refreshData() {
+    let d = null;
+    try {
+      const res = await fetch('/api/data', { cache: 'no-store' });
+      if (res.ok) d = await res.json();
+    } catch (e) { /* not on the board device */ }
+    showData(d);
+  }
+  function wireData() {
+    const msg = m => { const el = $('#data-msg'); if (el) el.textContent = m; };
+    const btns = ['#data-check-btn', '#data-update-btn', '#data-back-btn'].map(s => $(s));
+    async function act(path, busy) {
+      btns.forEach(b => { if (b) b.disabled = true; });
+      msg(busy);
+      const res = await fetch(path, { method: 'POST' }).catch(() => null);
+      const j = res ? await res.json().catch(() => ({})) : {};
+      btns.forEach(b => { if (b) b.disabled = false; });
+      await refreshData();
+      return { ok: !!(res && res.ok && j.ok), j };
+    }
+    const [checkBtn, upBtn, backBtn] = btns;
+    if (checkBtn) checkBtn.addEventListener('click', async () => {
+      const r = await act('/api/data/check', 'Looking for a newer timetable…');
+      msg(r.ok ? '' : (r.j.error || OFFLINE_MSG));
+    });
+    if (upBtn) upBtn.addEventListener('click', async () => {
+      if (!confirm(upBtn.textContent + '? The prayer times shown on the screen may change. You can go back afterwards.')) return;
+      const r = await act('/api/data/refresh', 'Downloading and checking the new timetable… this takes a moment.');
+      msg(r.ok ? r.j.message : ((r.j.error || 'Could not update.') + ' The board is still using its old timetable.'));
+    });
+    if (backBtn) backBtn.addEventListener('click', async () => {
+      if (!confirm(backBtn.textContent + '? The prayer times shown on the screen may change.')) return;
+      const r = await act('/api/data/rollback', 'Going back…');
+      msg(r.ok ? r.j.message : ('Could not go back — ' + (r.j.error || 'board device only.')));
+    });
+  }
+
+  document.addEventListener('sb-tab-shown', e => { if (e.detail.tab === 'network') { refresh(); refreshVersion(); refreshData(); } });
 
   wire();
   wireWifi();
   wireUpdate();
+  wireData();
 })();

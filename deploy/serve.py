@@ -52,9 +52,19 @@ cookie (POST /api/login with the PIN) and answers 401 without it.
                                updated code) and make the board page reload
                                itself — no full device reboot. Ends PIN sessions.
   POST /api/reboot          -> reboot the whole device
+  GET  /api/data            -> prayer timetable: bundled / in-use / previous / newest
+                               revision, last check, online (no network; SB-5)
+  POST /api/data/check      -> fetch the manifest only, then the same
+  POST /api/data/refresh    -> download, verify and swap in the newest timetable
+  POST /api/data/rollback   -> go back to the previous timetable (or the bundled one)
 
 Only /display/ and /admin/ are served as files; the rest of the repo (.git,
 deploy/, docs) is not reachable over the network.
+
+A refreshed timetable lives OUTSIDE the repo too (~/.config/salahboard/data/,
+deploy/datarefresh.py). When a complete verified set exists there, requests for
+/display/data/<file> are answered from it instead of the bundled display/data/;
+the display's own code is unchanged. Nothing ever writes inside the repo.
 
 Config is stored OUTSIDE the repo (default ~/.config/salahboard/config.json,
 override with $SALAHBOARD_CONFIG) so an update never touches the
@@ -75,6 +85,7 @@ import time
 import urllib.parse
 from http.cookies import SimpleCookie
 
+import datarefresh
 import pinauth
 import release
 
@@ -114,6 +125,7 @@ CONFIG_PATH = os.environ.get("SALAHBOARD_CONFIG") or os.path.join(
 )
 MAX_CONFIG_BYTES = 512 * 1024  # generous; config is a couple of KB in practice
 
+DATA = datarefresh.Store()   # which timetable the display is served from (SB-5)
 AUTH = pinauth.Auth(os.path.dirname(os.path.abspath(CONFIG_PATH)))
 # The display polls these with no session; they must never carry a secret.
 OPEN_GET = {"/api/config", "/api/preview", "/api/time", "/api/auth"}
@@ -216,6 +228,18 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         # Never cache: a data refresh or config edit shows up on reload.
         self.send_header("Cache-Control", "no-store")
         super().end_headers()
+
+    def translate_path(self, path):
+        # A refreshed timetable (verified, complete) replaces display/data/ for the
+        # display; DATA.active_dir is decided at startup and after each change.
+        d = DATA.active_dir
+        if d:
+            p = urllib.parse.unquote(path.split("?", 1)[0].split("#", 1)[0])
+            if p.startswith("/display/data/"):
+                name = p[len("/display/data/"):]
+                if datarefresh.SERVED.match(name) and os.path.isfile(os.path.join(d, name)):
+                    return os.path.join(d, name)
+        return super().translate_path(path)
 
     def log_message(self, *args):
         pass  # keep the console quiet on the kiosk
@@ -364,6 +388,8 @@ class Handler(http.server.SimpleHTTPRequestHandler):
                                      and installed["commit"] != RUNNING_VERSION["commit"]),
                 **self._safe_status(),   # release tags (SB-7)
             })
+        if path == "/api/data":
+            return self._json(200, DATA.status())
         if path == "/api/config":
             cfg = read_config()
             if cfg is None:
@@ -465,6 +491,10 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if parts == ["api", "rollback"]:
             return self._release(release.rollback)
 
+        # /api/data/{check,refresh,rollback}  -> the on-board timetable (SB-5)
+        if len(parts) == 3 and parts[:2] == ["api", "data"] and parts[2] in ("check", "refresh", "rollback"):
+            return self._data(parts[2])
+
         # /api/restart  -> "Reload board": fresh server + the board page reloads
         if parts == ["api", "restart"]:
             restart_server()
@@ -489,6 +519,22 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         except release.ReleaseError as e:
             return self._json(409, {"ok": False, "error": str(e), **self._safe_status()})
         except (OSError, subprocess.SubprocessError) as e:
+            return self._json(500, {"ok": False, "error": str(e)})
+
+    def _data(self, action):
+        """Run a timetable action; a DataError is a message for the caretaker."""
+        global INSTANCE_ID
+        try:
+            out = getattr(DATA, action)()
+            if out.get("changed"):
+                # A new timetable is live: make the board page reload itself.
+                INSTANCE_ID = f"{os.getpid()}-{time.time():.3f}"
+            return self._json(200, {"ok": True, **out})
+        except datarefresh.Offline as e:
+            return self._json(200, {"ok": False, "offline": True, "error": str(e), **DATA.status()})
+        except datarefresh.DataError as e:
+            return self._json(409, {"ok": False, "error": str(e), **DATA.status()})
+        except OSError as e:
             return self._json(500, {"ok": False, "error": str(e)})
 
     def _safe_status(self):
@@ -642,6 +688,7 @@ if __name__ == "__main__":
     with Server(("0.0.0.0", PORT), Handler) as httpd:
         print(f"Salah Board: serving {ROOT}")
         print(f"  config:   {CONFIG_PATH}")
+        print(f"  timetable: {DATA.status()['active']['source']} ({DATA.status()['active']['revision']})")
         print(f"  PIN:      {'set' if AUTH.pin_set() else 'not set (settings page will ask)'}")
         print(f"  board:    http://localhost:{PORT}/display/")
         print(f"  settings: http://localhost:{PORT}/admin/")
