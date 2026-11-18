@@ -31,11 +31,14 @@ default stands.
   until the update.
 - [ ] **When you find an Android box**: check it against card SB-9's list in `TASKS.md`
   (Home app can be changed, turns on after a power cut, Android 8+, 2 GB RAM, hotspot).
-- [ ] **Change four lines in `CLAUDE.md`** that still say Android is parked (exact text in
-  `HANDOFF.md` → "Waiting on Shehan"), or ask a session to do it.
-- [ ] **Optional: tag a pre-1.0 release** (e.g. `v0.9.0`) after `docs/RELEASING.md`'s
-  checklist, so the board's Update button has a release to move to. Until a `vX.Y.Z` tag
-  exists, Update says "no release yet".
+- [x] **`CLAUDE.md` says Android is the target** — done 18 Nov at your word.
+- [x] **v0.9.0 tagged** 18 Nov at your word.
+- [ ] **Push the 18 Nov build commits and tag the next release** (SB-3, SB-5, SB-9, SB-10 and
+  a download fix; all local on `main`). Until they are pushed, new installs still get the
+  old preseed (with its shared password) and boards can't get the timetable refresh. The
+  commands are in `HANDOFF.md` → "Waiting on Shehan".
+- [ ] **Skim the new "Decided on default" items** in `HANDOFF.md` (setup for other masjids,
+  timetable refresh). Nothing changes on your board unless you update it.
 - [ ] **Skim "Decided on default" in `HANDOFF.md`**, now in plain words (what each means for
   you or a caretaker at the board). The one that changes your routine: pushing to `main` no
   longer updates the board; you tag a release, then Check → Update → Reload board.

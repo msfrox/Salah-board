@@ -28,7 +28,7 @@ One line per item. Full cards are in `TASKS.md`. The original milestone specs (M
 | SB-2 | `tools/sync-data.py`, manifest and checksums | Sonnet | done 2026-11-18 |
 | SB-3 | Vendor `pt-core.js`; engine as an extension; engine tests | Sonnet | done 2026-11-18 (pt-core 1.0.0 from site `67cb755`) |
 | SB-4 | Caretaker PIN on the settings API | Opus | done 2026-11-18 (not verified on the board) |
-| SB-5 | On-board timetable refresh and rollback | Opus | after PT-1 is live, SB-2, SB-4 |
+| SB-5 | On-board timetable refresh and rollback | Opus | done 2026-11-18 (live check ok; swap tested locally; not verified on the board) |
 | SB-6 | Content review sheets (en, ta, si; duas) | Sonnet | after Sakina SK-1 |
 | SB-7 | Release by tag; update to newest tag; RELEASING.md | Opus | done 2026-11-18 (not verified on the board) |
 | SB-8 | Theme sizing in the hall; caretaker guide | Opus | needs Shehan at the board |
