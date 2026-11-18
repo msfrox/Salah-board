@@ -1,39 +1,32 @@
 /* ============================================================
    Salah Board — engine.js
-   DOM-agnostic timetable engine. Adapted from the sibling project
-   pray.gear.lk's assets/js/pt-core.js (parsing, rollover, Hijri) —
-   extended with iqamah computation and full day-plan segment
-   building per docs/SPEC.md's state machine. No dependencies.
+   DOM-agnostic engine, built on the vendored pt-core.js (global `PT`,
+   copied unmodified from pray.gear.lk by tools/sync-data.py --engine;
+   see decisions/0002). PT supplies time parsing, month-data loading,
+   row lookup, prayer keys, Hijri month names. This file adds only
+   Salah-board's own logic: iqamah rules, the Jumu'ah plan, Ramadan
+   overrides, Luha, and the state segments (docs/SPEC.md), plus the
+   display-clock formatters and a Hijri formatter that takes a fake
+   clock, Maghrib flip and language-pack month names.
+   Load order: js/pt-core.js, then this file. No other dependencies.
    ============================================================ */
 (function (global) {
   'use strict';
 
+  if (!global.PT) throw new Error('engine.js needs js/pt-core.js loaded first');
+  const PT = global.PT;
   const DATA_BASE = './data';
-  const MON_SHORT = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const HIJRI_MONTHS = ['Muharram', 'Safar', "Rabi' al-Awwal", "Rabi' al-Thani", 'Jumada al-Ula',
-    'Jumada al-Akhirah', 'Rajab', "Sha'ban", 'Ramadan', 'Shawwal', "Dhu al-Qi'dah", 'Dhu al-Hijjah'];
+  PT.configure({ dataBase: DATA_BASE });   // the display's own bundled copy of the data
+  const { MON_SHORT, PRAYERS, SALAH, HIJ_MON: HIJRI_MONTHS } = PT;
 
-  const PRAYERS = ['fajr', 'sunrise', 'luhr', 'asr', 'magrib', 'isha'];
-  const SALAH = ['fajr', 'luhr', 'asr', 'magrib', 'isha'];
   const LUHA_OPEN_MINUTES = 2; // brief "Luha time has begun" card — not in config, spec calls it "brief"
 
-  const pad2 = n => String(n).padStart(2, '0');
-  const padZone = z => String(z).padStart(2, '0');
+  const pad2 = PT.pad;
+  const padZone = PT.pad;
 
   // ── Time parsing / formatting ───────────────────────────
-  // Parses a "h:mm AM" string onto the calendar date of `base` (Date).
-  function parseTime(str, base) {
-    if (!str) return null;
-    const m = String(str).match(/^(\d{1,2}):(\d{2})\s*([AP]M)$/i);
-    if (!m) return null;
-    let h = +m[1], min = +m[2];
-    const pm = m[3].toUpperCase() === 'PM';
-    if (pm && h !== 12) h += 12;
-    if (!pm && h === 12) h = 0;
-    const d = base ? new Date(base) : new Date();
-    d.setHours(h, min, 0, 0);
-    return d;
-  }
+  // "h:mm AM" onto the calendar date of `base` — PT's parser.
+  const parseTime = PT.parseTime;
 
   function addMinutes(date, mins) {
     const d = new Date(date);
@@ -99,22 +92,8 @@
   }
 
   // ── Zone data loading (cached, month-boundary aware) ────
-  const _monthCache = {};
-  async function loadMonth(zone, monthNum) {
-    const key = `${padZone(zone)}-${pad2(monthNum)}`;
-    if (_monthCache[key]) return _monthCache[key];
-    const res = await fetch(`${DATA_BASE}/zone${key}.json`);
-    if (!res.ok) throw new Error(`No data for zone${key}`);
-    const json = await res.json();
-    _monthCache[key] = json;
-    return json;
-  }
-
-  function rowForDate(monthData, dateObj) {
-    if (!monthData || !monthData.days) return null;
-    const s = `${dateObj.getDate()}-${MON_SHORT[dateObj.getMonth() + 1]}`;
-    return monthData.days.find(r => r.date === s) || null;
-  }
+  const loadMonth = PT.loadMonth;   // cached, month files from DATA_BASE
+  const rowForDate = PT.rowForDate;
 
   async function loadRowForDate(zone, dateObj) {
     const monthNum = dateObj.getMonth() + 1;
