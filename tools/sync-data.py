@@ -68,13 +68,20 @@ class DirSource:
             return f.read()
 
 
+# pray.gear.lk's edge refuses Python's default "Python-urllib/x.y" agent with a
+# 403 (found 18 Nov 2026); a named agent is let through. Shared by the board's
+# on-board refresh (deploy/datarefresh.py), which reuses this class.
+USER_AGENT = "SalahBoard-sync/1 (open-source masjid prayer display)"
+
+
 class UrlSource:
     def __init__(self, base):
         self.base = base if base.endswith("/") else base + "/"
 
     def _get(self, url):
         try:
-            with urllib.request.urlopen(url, timeout=30) as r:
+            req = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+            with urllib.request.urlopen(req, timeout=30) as r:
                 body = r.read()
                 want = r.headers.get("Content-Length")
                 if want is not None and int(want) != len(body):
