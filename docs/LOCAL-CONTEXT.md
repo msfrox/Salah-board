@@ -38,6 +38,11 @@ Last updated: 18 November 2026 (first-run setup for other masjids, §7).
   (`vX.Y.Z`), never to whatever is on `main`, so a fix pushed to `main`
   reaches the board once it is tagged (`docs/RELEASING.md`). *Go back to …*
   returns to the version before the last update.
+- **Prayer timetable** (card SB-5): Settings → Network → **Prayer timetable** can
+  bring in a revised ACJU set from pray.gear.lk (**Check**, then **Update
+  timetable**, with **Go back**). It is never automatic; the board's built-in
+  timetable keeps working offline. The refreshed set lives in
+  `~/.config/salahboard/data/`, outside the program folder.
 - **Settings PIN** (card SB-4): the settings page asks for a 6–12 digit PIN;
   the display itself never does. Reload board signs everyone out (enter the
   PIN again). A forgotten PIN is cleared at the board:

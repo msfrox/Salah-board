@@ -122,6 +122,17 @@ python3 deploy/pinauth.py set             # set or replace it (prompts twice)
 touch ~/.config/salahboard/reset-pin      # clear it; works while the server runs
 ```
 
+Refreshed prayer timetable (card SB-5, `deploy/datarefresh.py`): the settings page can download a
+newer ACJU set from pray.gear.lk. It is kept outside the repo, so a program update never touches it:
+
+```sh
+ls ~/.config/salahboard/data/             # active/  previous/  state.json
+python3 deploy/datarefresh.py status      # also: check | refresh | rollback
+rm -rf ~/.config/salahboard/data/active   # emergency: serve the bundled timetable again
+```
+
+Never refreshes by itself. `display/data/` (the bundled set) is never written.
+
 Run these as the kiosk user, not root.
 
 To leave kiosk mode temporarily: switch to another VT with
