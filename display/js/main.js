@@ -42,6 +42,7 @@
   let contentPack = {}; // primary-language content, en-fallback-merged — cached, rebuilt only on (re)load
   let timeline = null;
   let timelineDateKey = null;
+  let setupNeeded = false; // first-run setup not finished (SBConfig.needsSetup)
 
   function dateKey(d) { return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`; }
 
@@ -145,8 +146,39 @@
     timelineDateKey = key;
   }
 
+  // Read the stored config once: the merged config to run on, and whether
+  // this board still needs its first-run setup (card SB-10).
+  async function loadBoardConfig() {
+    const stored = await SBConfig.getStoredAsync();
+    setupNeeded = SBConfig.needsSetup(stored);
+    return SBConfig.applyOverrides(SBConfig.deepMerge(SBConfig.defaults(), stored));
+  }
+
+  // The first-run screen hides the times until a masjid has chosen its own
+  // zone, iqamah and Jumu'ah practice. Dev and preview views skip it so the
+  // debug params (?t= ?state= ?zone=) and admin previews keep working;
+  // ?setup=1 shows it anyway.
+  function showSetupScreen() {
+    if (dbg.setup) return true;
+    if (dbg.t || dbg.state || dbg.zone || framePreview || preview) return false;
+    return setupNeeded;
+  }
+  function renderSetup() {
+    if (root.querySelector('.screen--setup')) return;
+    root.innerHTML = `
+      <div class="screen screen--setup">
+        <h1 class="setup-title">Salah Board</h1>
+        <p class="setup-line">This board is not set up yet.</p>
+        <p class="setup-steps">Touch the screen (or click) to open the settings, then choose your masjid's
+          name, ACJU zone, iqamah times and Jumu'ah practice.<br>
+          From a phone: join the board's hotspot and open <b>/admin/</b> on the board's address, port 8080.</p>
+        <p class="setup-note">Prayer times appear here as soon as setup is finished.</p>
+      </div>`;
+    SBUi.applyNightDim(nightOverlay, false, 100);
+  }
+
   async function reloadConfig(cfg) {
-    config = cfg || await SBConfig.getConfigAsync();
+    config = cfg || await loadBoardConfig();
     applyScale();
     applyFont();
     applyTheme();
@@ -251,6 +283,7 @@
     if (ticking) return; // guard against overlapping async ticks at a date rollover
     ticking = true;
     try {
+      if (showSetupScreen()) { renderSetup(); return; }
       const n = now();
       await ensureTimeline(n);
       let result = SBState.resolve(config, timeline, n, contentPack);
@@ -265,7 +298,7 @@
   }
 
   async function boot() {
-    config = await SBConfig.getConfigAsync();
+    config = await loadBoardConfig();
     applyScale();
     applyFont();
     applyTheme();

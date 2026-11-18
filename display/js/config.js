@@ -167,6 +167,10 @@
     return stored;
   }
 
+  // The iqamah, Luha, Jumu'ah and Ramadan values below are ONE example: the
+  // practice of the first masjid to use the board (docs/LOCAL-CONTEXT.md).
+  // A new board shows them in first-run setup for the masjid to confirm or
+  // change (needsSetup below); they are never applied silently (card SB-10).
   function defaults() {
     return {
       configVersion: 1,
@@ -204,7 +208,9 @@
         enabled: true,
         bayan: '12:15 PM',       // bayan start time; null = no bayan
         sunnahMinutes: 5,        // at least this much sunnah time after the azan screen
+        iqamahMode: 'fixed',     // 'fixed' (iqamah below) or 'afterAzan' (azan + iqamahAfterAzan)
         iqamah: '1:00 PM',       // fixed set time
+        iqamahAfterAzan: 30,     // minutes after that Friday's azan, when iqamahMode is 'afterAzan'
         khutbahMinutes: 7,       // khutbah length → khutbah starts at iqamah − this
         salahDuration: 15,
         // Who gives the bayan and on what — shown in the "Jumu'ah today"
@@ -312,6 +318,7 @@
       scale: p.get('scale'),   // override display.scale, e.g. 1.3
       lang: p.get('lang'),     // reorder primary language, e.g. ta
       theme: p.get('theme'),   // override theme, e.g. led
+      setup: p.get('setup'),   // ?setup=1 shows the first-run screen anyway
     };
   }
 
@@ -365,11 +372,21 @@
     return loadStored();
   }
 
+  // First-run setup (card SB-10). A board that has never saved a config, or
+  // one part-way through setup (setupDone: false), shows "set up this board"
+  // instead of prayer times, so no masjid runs on another masjid's practice
+  // by accident. A saved config without the field predates setup and counts
+  // as set up, so existing boards are never sent back through it.
+  function needsSetup(stored) {
+    if (!isPlainObject(stored) || Object.keys(stored).length === 0) return true;
+    return stored.setupDone === false;
+  }
+
   async function getConfigAsync() {
     return applyOverrides(deepMerge(defaults(), await getStoredAsync()));
   }
 
-  global.SBConfig = { defaults, deepMerge, getConfig, getConfigAsync, getStoredAsync, save, debugParams,
+  global.SBConfig = { defaults, deepMerge, getConfig, getConfigAsync, getStoredAsync, save, debugParams, needsSetup,
     applyOverrides, layoutFactor, LAYOUT_MIN, LAYOUT_MAX, LAYOUT_GROUPS, STORAGE_KEY,
     PATTERN_DEFAULTS, PATTERN_MAX_ALPHA, GLOW_MAX_ALPHA };
 

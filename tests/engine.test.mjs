@@ -187,6 +187,16 @@ test("Jumu'ah, late-azan Friday (3 Jul): bayan waits for azan + sunnah, iqamah s
     ['AZAN', '', '12:16', '12:21'], ['JUMUAH', 'sunnah', '12:21', '12:53'], ['KHUTBAH', '', '12:53', '13:00']]);
 });
 
+test("Jumu'ah iqamah after the azan (SB-10): iqamah = azan + N, khutbah before it", async () => {
+  const over = { jumuah: { iqamahMode: 'afterAzan', iqamahAfterAzan: 40, bayan: null } };
+  assert.deepEqual(shape(await luhrDay('2026-07-03', over)).slice(0, 4), [
+    ['AZAN', '', '12:16', '12:21'], ['JUMUAH', 'sunnah', '12:21', '12:49'],
+    ['KHUTBAH', '', '12:49', '12:56'], ['IQAMAH', '', '12:56', '12:58']]);
+  // Too short to fit after the azan screen: falls back to azan screen + 10.
+  const short = shape(await luhrDay('2026-07-03', { jumuah: { iqamahMode: 'afterAzan', iqamahAfterAzan: 2 } }));
+  assert.deepEqual(short.find(r => r[0] === 'IQAMAH').slice(2, 3), ['12:31']);
+});
+
 test("Jumu'ah disabled: Friday is an ordinary Luhr; weekday never gets Jumu'ah", async () => {
   const off = await timeline(at('2026-07-03T10:00'), { jumuah: { enabled: false } });
   assert.equal(seg(off, 'KHUTBAH').length, 0);

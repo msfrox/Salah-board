@@ -159,7 +159,15 @@
     if (!azan) return null;
     const j = config.jumuah || {};
     const azanEnd = addMinutes(azan, config.screens.azan);
-    const iqamah = computeIqamah(azanEnd, { mode: 'fixed', time: j.iqamah });
+    // Iqamah: a fixed set time (default), or N minutes after that Friday's
+    // azan for masjids that move it with the azan (iqamahMode 'afterAzan').
+    let iqamah;
+    if (j.iqamahMode === 'afterAzan') {
+      iqamah = addMinutes(azan, Math.max(0, Number(j.iqamahAfterAzan) || 0));
+      if (iqamah <= azanEnd) iqamah = addMinutes(azanEnd, 10);  // same sanity rule as computeIqamah
+    } else {
+      iqamah = computeIqamah(azanEnd, { mode: 'fixed', time: j.iqamah });
+    }
     const len = Number(j.khutbahMinutes) > 0 ? Number(j.khutbahMinutes) : 7;
     let khutbah = addMinutes(iqamah, -len);
     if (khutbah < azanEnd) khutbah = azanEnd;

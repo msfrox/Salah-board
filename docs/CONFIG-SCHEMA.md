@@ -4,9 +4,20 @@ One JSON object shared by display, admin panel and shell. The display must
 render sensibly with ANY field missing (defaults below). Version every
 breaking change via `configVersion`.
 
+The iqamah, Luha, Jumu'ah and Ramadan defaults are **one example**: the
+practice of the first masjid to use the board (`docs/LOCAL-CONTEXT.md`). A new
+board offers them in first-run setup for the masjid to confirm or change; they
+are never applied without that (card SB-10).
+
 ```jsonc
 {
   "configVersion": 1,
+  "setupDone": true,                  // first-run setup (SB-10). false = setup started
+                                      // but not finished. Missing = a config saved
+                                      // before setup existed → counts as done. A board
+                                      // with NO saved config, or setupDone false, shows
+                                      // "not set up yet" instead of times (debug params
+                                      // ?t= ?state= ?zone= skip it; ?setup=1 forces it).
   "masjid": {
     "name": "Kollupitiya Jumma Masjid",
     "languages": ["ta", "en"]        // ordered; first = primary UI labels
@@ -39,7 +50,11 @@ breaking change via `configVersion`.
     "sunnahMinutes": 5,                // at least this much sunnah time after the
                                        // azan screen (late-azan Fridays: the bayan
                                        // starts later instead)
+    "iqamahMode": "fixed",             // "fixed" → `iqamah` below; "afterAzan" →
+                                       // that Friday's azan + iqamahAfterAzan (falls
+                                       // back to azan screen + 10 if that is too soon)
     "iqamah": "1:00 PM",               // fixed set time
+    "iqamahAfterAzan": 30,             // minutes, used when iqamahMode = "afterAzan"
     "khutbahMinutes": 7,               // khutbah length → khutbah starts at
                                        // iqamah − this
     "salahDuration": 15,

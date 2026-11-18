@@ -87,17 +87,20 @@ Do this instead of §4-B to skip all the installer questions.
    ```
    auto=true priority=critical preseed/url=https://raw.githubusercontent.com/msfrox/Salah-board/main/deploy/linux/preseed.cfg
    ```
-3. The only thing it asks you is your **WiFi network + password** (the
-   installer must get online before it can download the preseed file).
-   After that it's hands-off: it wipes the disk, creates user `board`, sets
+3. It asks you two things: your **WiFi network + password** (the
+   installer must get online before it can download the preseed file),
+   and a **login password for the user `board`** (pick your own; it is
+   this board's password for SSH and the console, so write it down
+   somewhere safe). After that it's hands-off: it wipes the disk, creates user `board`, sets
    the timezone to Colombo, installs a no-desktop base, and — thanks to the
    preseed's first-boot hook — clones this repo and runs the kiosk installer
    automatically on the first reboot. Give it a few minutes, connect HDMI,
    and the board comes up on its own. **Skip to §6.**
 
 Notes:
-- The default password for user `board` is `salahboard`. **Change it** after
-  first login (`passwd`), especially since SSH is enabled.
+- There is no built-in password: every board gets the one typed during the
+  install. (Boards installed before Nov 2026 used a shared default; change it
+  with `passwd`.)
 - Prefer to run the kiosk installer yourself? Open `deploy/linux/preseed.cfg`
   and comment out the `preseed/late_command` block before hosting/using it;
   then follow §5 after it reboots.

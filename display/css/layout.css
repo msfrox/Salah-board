@@ -124,3 +124,13 @@ html[data-sb-hide~="cards"]      .screen--normal .card--etiquette { display: non
    large custom sizes), `safe center` lets it overflow at the BOTTOM
    instead of sliding up underneath the clock. */
 .corner-clock + .screen { justify-content: safe center; }
+
+/* ── First-run setup screen (card SB-10) — theme-independent ── */
+.screen--setup {
+  justify-content: center; align-items: center; text-align: center;
+  gap: 1.4rem; padding: 6vmin; max-width: 70rem; margin: 0 auto;
+}
+.screen--setup .setup-title { font-size: clamp(2rem, 7vmin, 5rem); margin: 0; }
+.screen--setup .setup-line { font-size: clamp(1.4rem, 4.5vmin, 3rem); margin: 0; font-weight: 700; }
+.screen--setup .setup-steps { font-size: clamp(1rem, 2.6vmin, 1.8rem); line-height: 1.5; margin: 0; opacity: .9; }
+.screen--setup .setup-note { font-size: clamp(.9rem, 2.2vmin, 1.5rem); margin: 0; opacity: .7; }

@@ -75,7 +75,12 @@
   // ── Config load/save — /api/config on Android, localStorage in
   //    browser-dev, same shape either way (see admin/api.md) ──
   async function loadConfig() {
-    const cfg = SBConfig.deepMerge(SBConfig.defaults(), await SBConfig.getStoredAsync());
+    const stored = await SBConfig.getStoredAsync();
+    const cfg = SBConfig.deepMerge(SBConfig.defaults(), stored);
+    // A board that hasn't finished first-run setup saves setupDone: false,
+    // so a Save part-way through keeps the display on its setup screen
+    // (setup.js sets it true at the end). Old configs never had the field.
+    if (SBConfig.needsSetup(stored)) cfg.setupDone = false;
     if (cfg.theme === 'highcontrast') cfg.theme = 'default'; // renamed theme — migrate
     return cfg;
   }
@@ -530,7 +535,9 @@
       if (!(Number(config.screens.salahDuration[p.key]) > 0)) errors.push(`Salah duration for ${p.label} must be more than 0.`);
     });
     if (config.jumuah.enabled) {
-      if (!config.jumuah.iqamah) errors.push("Jumu'ah iqamah time is required when Jumu'ah mode is enabled.");
+      if (config.jumuah.iqamahMode === 'afterAzan') {
+        if (!(Number(config.jumuah.iqamahAfterAzan) > 0)) errors.push("Jumu'ah iqamah: minutes after the azan must be more than 0.");
+      } else if (!config.jumuah.iqamah) errors.push("Jumu'ah iqamah time is required when Jumu'ah mode is enabled.");
       if (!(Number(config.jumuah.khutbahMinutes) > 0)) errors.push("Khutbah length must be more than 0 minutes.");
       if ($('#bayan-enabled').checked && !config.jumuah.bayan) errors.push("Bayan start time is required when the bayan is switched on.");
       if (!(Number(config.jumuah.sunnahMinutes) >= 0)) errors.push("Sunnah time must be 0 minutes or more.");
@@ -587,7 +594,9 @@
   // the same moment the board stops showing the speaker/topic. Fallback: 3 PM.
   function jumuahEnd(config, day) {
     const E = window.SBEngine;
-    const iq = E && config.jumuah.iqamah ? E.parseTime(config.jumuah.iqamah, day) : null;
+    // (Iqamah after the azan: the azan isn't known here, so the 3 PM fallback.)
+    const fixed = config.jumuah.iqamahMode !== 'afterAzan' && config.jumuah.iqamah;
+    const iq = E && fixed ? E.parseTime(config.jumuah.iqamah, day) : null;
     if (iq) return E.addMinutes(iq, Number(config.jumuah.salahDuration) || 0);
     const d = new Date(day); d.setHours(15, 0, 0, 0); return d;
   }
@@ -595,8 +604,18 @@
   function updateJumuahSummary() {
     const el = $('#jumuah-summary');
     if (!el) return;
-    const v = $('#jumuah-iqamah-time').value;           // "HH:MM" (24h) from the time input
+    const afterAzan = $('#jumuah-iqamah-mode').value === 'afterAzan';
+    $('#jumuah-iqamah-fixed').classList.toggle('hidden', afterAzan);
+    $('#jumuah-iqamah-offset').classList.toggle('hidden', !afterAzan);
     const len = Number($('#khutbah-minutes').value);
+    if (afterAzan) {
+      const n = Number($('#jumuah-iqamah-after').value);
+      el.textContent = n > 0 && len > 0
+        ? `Iqamah: azan + ${n} min, so it moves with the azan through the year. Khutbah starts ${len} min before the iqamah.`
+        : 'Set the minutes after the azan and the khutbah length.';
+      return;
+    }
+    const v = $('#jumuah-iqamah-time').value;           // "HH:MM" (24h) from the time input
     if (!v || !(len > 0)) { el.textContent = 'Set the iqamah time and khutbah length to see when the khutbah starts.'; return; }
     const [h, m] = v.split(':').map(Number);
     const t = ((h * 60 + m - len) % 1440 + 1440) % 1440;
@@ -697,7 +716,7 @@
       if (e.target.id === 'bayan-enabled') {
         $('#bayan-details').classList.toggle('hidden', !e.target.checked);
       }
-      if (['jumuah-iqamah-time', 'khutbah-minutes', 'bayan-time', 'bayan-enabled', 'sunnah-minutes'].includes(e.target.id)) updateJumuahSummary();
+      if (['jumuah-iqamah-time', 'jumuah-iqamah-mode', 'jumuah-iqamah-after', 'khutbah-minutes', 'bayan-time', 'bayan-enabled', 'sunnah-minutes'].includes(e.target.id)) updateJumuahSummary();
       if (e.target.classList.contains('ramadan-override-enabled')) {
         e.target.closest('.subcard').querySelector('.ramadan-override-body').classList.toggle('hidden', !e.target.checked);
       }
@@ -714,7 +733,7 @@
     document.addEventListener('change', e => { if (e.target.classList.contains('pattern-custom-toggle')) refreshLayoutValues(); });
     document.addEventListener('input', e => {
       if (e.target.matches('[data-path="jumuah.bayanSpeaker"], [data-path="jumuah.bayanTopic"], #bayan-date')) updateBayanDateNote();
-      if (['jumuah-iqamah-time', 'khutbah-minutes', 'bayan-time', 'bayan-enabled', 'sunnah-minutes'].includes(e.target.id)) updateJumuahSummary();
+      if (['jumuah-iqamah-time', 'jumuah-iqamah-mode', 'jumuah-iqamah-after', 'khutbah-minutes', 'bayan-time', 'bayan-enabled', 'sunnah-minutes'].includes(e.target.id)) updateJumuahSummary();
     });
     $('#layout-groups').addEventListener('click', e => {
       const groupReset = e.target.closest('.layout-group-reset');

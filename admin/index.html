@@ -15,6 +15,7 @@
     <p class="admin-sub">Changes save to this board and reach the display within a couple of seconds.</p>
   </header>
 
+  <div id="setup-guide" class="setup-guide" hidden></div>
   <div id="toast" class="toast" hidden></div>
   <div id="error-summary" class="error-summary" hidden></div>
 
@@ -165,7 +166,7 @@
           <input type="checkbox" data-path="jumuah.enabled">
           <span>Enable Jumu'ah mode on Fridays</span>
         </label>
-        <p class="hint">Order on Fridays: azan → sunnah prayer reminder → bayan → khutbah → iqamah. The azan is always that Friday's Zuhr azan time from the timetable, and moves through the year; the iqamah stays fixed.</p>
+        <p class="hint">Order on Fridays: azan → sunnah prayer reminder → bayan → khutbah → iqamah. The azan is always that Friday's Zuhr azan time from the timetable, and moves through the year. The iqamah is either a fixed time or a set number of minutes after the azan. (A bayan <em>before</em> the azan is not supported yet.)</p>
         <label class="field">
           <span>Sunnah time after the azan, at least (minutes)</span>
           <input type="number" min="0" step="1" id="sunnah-minutes" data-path="jumuah.sunnahMinutes" data-number>
@@ -196,8 +197,19 @@
           </label>
         </div>
         <label class="field">
+          <span>Jumu'ah iqamah is</span>
+          <select id="jumuah-iqamah-mode" data-path="jumuah.iqamahMode">
+            <option value="fixed">A fixed time every Friday</option>
+            <option value="afterAzan">A number of minutes after that Friday's azan</option>
+          </select>
+        </label>
+        <label class="field" id="jumuah-iqamah-fixed">
           <span>Iqamah time (fixed)</span>
           <input type="time" id="jumuah-iqamah-time" data-path="jumuah.iqamah" data-time="ampm">
+        </label>
+        <label class="field" id="jumuah-iqamah-offset">
+          <span>Iqamah this many minutes after the azan</span>
+          <input type="number" min="1" step="1" id="jumuah-iqamah-after" data-path="jumuah.iqamahAfterAzan" data-number>
         </label>
         <label class="field">
           <span>Khutbah length (minutes)</span>
@@ -488,6 +500,7 @@
   <script src="./js/admin.js"></script>
   <script src="./js/vendor/qrcode.js"></script>
   <script src="./js/tabs.js"></script>
+  <script src="./js/setup.js"></script>
   <script src="./js/device.js"></script>
   <script src="./js/time.js"></script>
   <script src="./js/network.js"></script>
