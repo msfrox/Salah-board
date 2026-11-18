@@ -11,7 +11,7 @@ use of the board, so they never have to be explained twice.
 > practice and preferences: no passwords, IP addresses, emails or personal
 > details (this repository is public).
 
-Last updated: 18 November 2026 (release tags and the settings PIN, §1).
+Last updated: 18 November 2026 (first-run setup for other masjids, §7).
 
 ---
 
@@ -143,7 +143,12 @@ Last updated: 18 November 2026 (release tags and the settings PIN, §1).
 
 - **Other masjids should be able to use it** (owner, 18 Nov 2026): keep this
   masjid's practice in its own config and in this file, not in built-in
-  defaults (card SB-10).
+  defaults (card SB-10). *Built 18 Nov:* a new board shows "not set up yet"
+  and its settings walk through masjid/zone, iqamah and Jumu'ah, offering
+  this masjid's values as the example to confirm or change; the Jumu'ah
+  iqamah can also be "minutes after the azan". This board's saved config
+  counts as set up and is untouched. A bayan *before* the azan is not
+  supported yet. Setup guide: `docs/SETUP-GUIDE.md`.
 
 - **"This Hijri month began on [date]"** setting, entered from ACJU's
   announcement, instead of a manual day offset — recommended next.
