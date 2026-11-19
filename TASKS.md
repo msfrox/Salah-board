@@ -13,6 +13,7 @@ only the real board can show is written "not verified on the board".
 ---
 
 ### SB-1 — Make the docs describe the project that exists   [Sonnet] · effort medium · ~1 h
+**Status 2026-11-18:** Done (`4ac89e2`). Taken from the commits, 2026-11-19 docs pass; the card's own Done-when was not re-run.
 Why: README, CLAUDE.md and MILESTONES describe an Android product; a Linux kiosk is what
 runs (ADR 0001). The next session would otherwise start in the wrong place.
 Context to read: `decisions/0001-…`, `README.md`, `CLAUDE.md`, `docs/MILESTONES.md`,
@@ -29,6 +30,7 @@ Don't: delete `android/` or any doc. Don't rewrite git history to remove the old
 `SHEHAN-TODO.md` already asks Shehan to change it on the board.
 
 ### SB-2 — `tools/sync-data.py`                            [Sonnet] · effort medium · ~1.5 h
+**Status 2026-11-18:** Done (`0bd72e9`). Taken from the commits, 2026-11-19 docs pass; the card's own Done-when was not re-run.
 Why: the sync tool is PowerShell with a Windows path and no integrity check (ADR 0002).
 Context to read: `decisions/0002-…`, `tools/sync-data.ps1`, Prayer-Time-Site
 `decisions/0001-…` and `data/SCHEMA.md` (once PT-1 exists).
@@ -43,6 +45,7 @@ replaced) and a partial download; runs under plain `python3` with no installs.
 Don't: reformat the JSON files; checksums must match the source byte for byte.
 
 ### SB-3 — Vendor `pt-core.js`; engine becomes an extension   [Sonnet] · effort medium · ~3 h
+**Status 2026-11-18:** Done (`1878137`, `f2ab45d`, `a4d1bf9`). Taken from the commits, 2026-11-19 docs pass; the card's own Done-when was not re-run.
 Why: the engine is a drifting hand copy of the site's (ADR 0002 point 5).
 Context to read: `decisions/0002-…`, `display/js/engine.js`, `display/js/state.js`,
 Prayer-Time-Site `assets/js/pt-core.js` and `assets/js/PT-CORE.md`.
@@ -58,6 +61,7 @@ Don't: start before PT-3 is merged (the site's file needs `PT.configure`); if it
 stop after the characterisation tests and commit those. Don't edit the vendored file.
 
 ### SB-4 — Caretaker PIN on the settings API               [Opus] · effort medium · ~2.5 h
+**Status 2026-11-18:** Done (`a3e0c59`). Taken from the commits, 2026-11-19 docs pass; the card's own Done-when was not re-run.
 Why: every `/api/*` route on the board is open to the whole network (ADR 0001 point 5).
 Context to read: `decisions/0001-…`, `deploy/serve.py` (all routes), `admin/` (how it calls
 the API), `deploy/linux/install-kiosk.sh`, `docs/CONFIG-SCHEMA.md`.
@@ -78,6 +82,7 @@ first-run flow (a masjid with no network must still reach settings). Not verifie
 board until Shehan updates it.
 
 ### SB-5 — On-board timetable refresh                       [Opus] · effort medium · ~3 h
+**Status 2026-11-18:** Done (`a5abbae`, `ce76f2d`). Taken from the commits, 2026-11-19 docs pass; the card's own Done-when was not re-run.
 **Needs Prayer-Time-Site PT-1 live at `https://pray.gear.lk/data/manifest.json`.**
 Why: a board must be able to take an ACJU revision without a program update (ADR 0002).
 Context to read: `decisions/0002-…` points 3 and 4, `deploy/serve.py`, `display/js/engine.js`
@@ -106,6 +111,7 @@ Don't: correct, add or "improve" any dua or translation. Unsourced text is liste
 reviewer, never fixed.
 
 ### SB-7 — Release by tag; update to the newest tag         [Opus] · effort medium · ~2.5 h
+**Status 2026-11-18:** Done (`29d1fcd`). Taken from the commits, 2026-11-19 docs pass; the card's own Done-when was not re-run.
 Why: the Update button pulls `main`, so work in progress can reach a masjid (ADR 0001 point 4).
 Context to read: `decisions/0001-…`, `deploy/serve.py` (`_update`), `deploy/linux/firstboot.sh`,
 `deploy/linux/install-kiosk.sh`, `deploy/linux/INSTALL-DEBIAN.md`.
@@ -134,6 +140,7 @@ settings tab.
 Don't: apply the default theme's 2.05× to the others (their layouts were not designed for it).
 
 ### SB-9 — Android: find the box, then finish the shell     [Opus] · effort medium · ~1 h now, more later
+**Status 2026-11-18:** Part 1 done (the Android box shop checklist); the rest of the card has no commit (`2ac6eee`). Taken from the commits, 2026-11-19 docs pass; the card's own Done-when was not re-run.
 **Needs Shehan to find a box.** Shehan, 18 Nov 2026: "android is not parked. the linux is a
 stop gap till i find the right android box. sadly still havent found it yet." (ADR 0001,
 Amendment 1.)
@@ -163,6 +170,7 @@ ticked on the chosen box.)
 Don't: start Kotlin work before a box is chosen. Don't move display logic into Kotlin.
 
 ### SB-10 — Ready for other masjids                         [Opus] · effort medium · ~3 h
+**Status 2026-11-18:** Done (first-run setup and SETUP-GUIDE.md) (`3e2c037`, `3a4cec4`). Taken from the commits, 2026-11-19 docs pass; the card's own Done-when was not re-run.
 Shehan, 18 Nov 2026: "yes right now only one masjidh but make it so i can give this to
 others so they can use in their masjidhs as well."
 Why: today some of this masjid's choices are built in as defaults, and the setup guides
