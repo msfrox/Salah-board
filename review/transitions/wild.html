@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Salah Board: wild transition mocks</title>
+<style>
+  :root{--bg:#10151a;--card:#19212a;--fg:#e8edf2;--mut:#93a1b0;--acc:#d9b45a}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,sans-serif;padding:20px 16px 60px}
+  h1{font-size:22px;margin:0 0 4px} p.lead{color:var(--mut);margin:0 0 16px;max-width:75ch}
+  a{color:var(--acc)}
+  .bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px}
+  button,select{font:inherit;background:#26323e;color:var(--fg);border:1px solid #3a4856;border-radius:8px;padding:8px 14px;cursor:pointer}
+  button.go{background:var(--acc);color:#1b1608;border-color:var(--acc);font-weight:600}
+  label{color:var(--mut);font-size:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,560px),1fr));gap:18px}
+  .card{background:var(--card);border-radius:12px;padding:14px}
+  .card h2{font-size:17px;margin:0 0 2px} .card p{margin:0 0 10px;color:var(--mut);font-size:14px}
+  .stage{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#000;border-radius:6px;perspective:1800px}
+  .layer{position:absolute;inset:0;overflow:hidden;will-change:transform,opacity}
+  .layer iframe{position:absolute;left:0;top:0;width:1366px;height:768px;border:0;transform-origin:0 0;pointer-events:none}
+  .fx{position:absolute;inset:0;pointer-events:none;opacity:0}
+  .row{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .scrub{flex:1;min-width:120px}.row .tag{color:var(--mut);font-size:13px}
+</style></head><body>
+<h1>Wild transitions: mocks</h1>
+<p class="lead">Unlike the simple fades, these pull the <b>real elements</b> of the real board apart: they fly off, one
+piece travels and turns into the next screen, the page flips, or you fly through a word. All of them go from the
+main screen to the Azan screen, the moment the azan time arrives. Not wired into the app.
+Simple ones: <a href="index.html">the first page</a>.</p>
+<div class="bar">
+  <label>Speed <select id="speed"><option value="0.6">Quick</option><option value="1" selected>Normal</option><option value="1.8">Slow</option></select></label>
+  <button class="go" id="all">▶ Play all four</button>
+</div>
+<div class="grid" id="grid"></div>
+<script>
+const T='2026-07-02T12:10', W=1366, H=768;
+const EO='cubic-bezier(.2,.8,.2,1)', EI='cubic-bezier(.6,0,.9,.5)', EIO='cubic-bezier(.65,0,.35,1)', BACK='cubic-bezier(.34,1.45,.5,1)';
+let S=1;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const $=(d,s)=>d.querySelector(s), $$=(d,s)=>[...d.querySelectorAll(s)];
+const an=(el,kf,o)=>el.animate(kf,Object.assign({fill:'both',easing:EO},o,{duration:o.duration*S,delay:(o.delay||0)*S}));
+const mid=r=>({x:r.left+r.width/2,y:r.top+r.height/2});
+
+// The pieces of the main screen, one level deeper than its blocks. A block with
+// display:contents has no box of its own, so its children are used instead.
+function pieces(fd){const out=[];
+  const add=el=>{const d=el.ownerDocument.defaultView.getComputedStyle(el).display;if(d==='none')return;
+    if(d==='contents'||el.classList.contains('hero-row'))[...el.children].forEach(add);else out.push(el);};
+  $$(fd,'.screen--normal > *, .corner-clock').forEach(add);return out;}
+
+function cloneOf(card,doc,el,text){
+  const r=el.getBoundingClientRect(),cs=doc.defaultView.getComputedStyle(el),c=doc.createElement('div');
+  c.className='mock-clone';c.textContent=text??el.textContent;
+  Object.assign(c.style,{position:'fixed',left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px',
+    display:'flex',alignItems:'center',justifyContent:'center',margin:0,zIndex:50,whiteSpace:'nowrap',pointerEvents:'none',
+    fontFamily:cs.fontFamily,fontSize:cs.fontSize,fontWeight:cs.fontWeight,fontStyle:cs.fontStyle,fontStretch:cs.fontStretch,letterSpacing:cs.letterSpacing,color:cs.color,textShadow:cs.textShadow,fontVariantNumeric:cs.fontVariantNumeric,
+    textTransform:cs.textTransform,lineHeight:cs.lineHeight});
+  doc.body.appendChild(c);el.style.visibility='hidden';card.hidden.push(el);return c;
+}
+
+/* ---------- the four choreographies. fd/td = from/to iframe documents ---------- */
+const FX=[
+{id:'scatter',name:'1 · Scatter & gather',toOnTop:true,total:2100,
+ note:'Every block of the main screen is flung outward, spinning; the Azan screen\'s pieces then fly in from the edges and snap into place.',
+ run(c){
+  const fd=c.fd,td=c.td,cx=W/2,cy=H/2;
+  pieces(fd).forEach((el,i)=>{
+    const m=mid(el.getBoundingClientRect()),dx=m.x-cx||(i%2?1:-1)*60,dy=m.y-cy||-60,n=Math.hypot(dx,dy)||1;
+    const k=1500/n,rot=(i%2?1:-1)*(14+i*7);
+    an(el,[{transform:'none',opacity:1},{transform:`translate(${dx*k/1.6}px,${dy*k/1.6}px) rotate(${rot}deg) scale(.6)`,opacity:0}],
+       {duration:750,delay:i*70,easing:EI});});
+  const inn=[['.azan-banner','translateY(-340px) rotate(-8deg) scale(.7)',700],['.azan-reminder','translateX(-900px) rotate(-5deg)',850],
+             ['.azan-dua','translateX(900px) rotate(5deg)',950],['.phones-silent-icon','scale(0) rotate(-200deg)',1050],['.corner-clock','translateY(-80px)',700]];
+  inn.forEach(([s,from,d])=>{const el=$(td,s);if(el)an(el,[{transform:from,opacity:0},{transform:'none',opacity:1}],{duration:700,delay:d,easing:BACK});});
+ }},
+{id:'morph',name:'2 · The azan time becomes the Azan screen',toOnTop:true,total:3100,
+ note:'Everything else flies away. The azan time (12:16) travels to the middle and swells, dissolves into the words "Azan — Zuhr", and the reminder and dua unfold from it.',
+ run(c){
+  const fd=c.fd,td=c.td,cx=W/2,cy=H/2;
+  const t=$(fd,'.np-time-col:first-child .np-time'),lab=$(fd,'.np-time-col:first-child .np-time-label');
+  const ct=cloneOf(c,fd,t),cl=cloneOf(c,fd,lab);
+  // everything else leaves, each piece in its own direction
+  pieces(fd).forEach((el,i)=>{
+    const m=mid(el.getBoundingClientRect()),dx=m.x-cx,dy=m.y-cy,n=Math.hypot(dx,dy)||1,k=1100/n;
+    an(el,[{transform:'none',opacity:1},{transform:`translate(${dx*k/1.4}px,${dy*k/1.4-60}px) rotate(${(i%2?1:-1)*(6+i*3)}deg) scale(.8)`,opacity:0}],
+       {duration:650,delay:i*50,easing:EI});});
+  const rt=t.getBoundingClientRect(),m=mid(rt),rl=lab.getBoundingClientRect(),ml=mid(rl);
+  // the time travels to the middle and swells
+  an(ct,[{transform:'none'},{transform:`translate(${cx-m.x}px,${cy-m.y+20}px) scale(1.7)`}],{duration:800,delay:450,easing:EIO});
+  an(cl,[{transform:'none'},{transform:`translate(${cx-ml.x}px,${cy-ml.y-95}px) scale(1.5)`}],{duration:800,delay:450,easing:EIO});
+  // …then dissolves into the Azan banner
+  an(ct,[{opacity:1,filter:'blur(0)'},{opacity:0,filter:'blur(16px)'}],{duration:600,delay:1650,easing:'ease-in',composite:'replace'});
+  an(cl,[{opacity:1},{opacity:0}],{duration:500,delay:1550});
+  const b=$(td,'.azan-banner'),bm=mid(b.getBoundingClientRect());
+  an(b,[{transform:`translate(${cx-bm.x}px,${cy+20-bm.y}px) scale(.5)`,opacity:0,filter:'blur(16px)'},
+        {transform:'none',opacity:1,filter:'blur(0)'}],{duration:850,delay:1650,easing:EO});
+  [['.azan-reminder',2250],['.azan-dua',2450]].forEach(([s,d])=>{const e=$(td,s);
+    an(e,[{transform:'translateY(-60px) scaleY(.3)',opacity:0,transformOrigin:'50% 0'},{transform:'none',opacity:1,transformOrigin:'50% 0'}],{duration:650,delay:d,easing:BACK});});
+  an($(td,'.phones-silent-icon'),[{transform:'scale(0) rotate(-180deg)',opacity:0},{transform:'none',opacity:1}],{duration:600,delay:2650,easing:BACK});
+  const cc=$(td,'.corner-clock');if(cc)an(cc,[{opacity:0},{opacity:1}],{duration:500,delay:2300});
+ }},
+{id:'flip',name:'3 · Page flip',toOnTop:false,total:1500,
+ note:'The main screen turns like a page of a book, hinged on the left, with a moving shadow, and the Azan screen is underneath.',
+ run(c){
+  const f=c.from,t=c.to,sh=c.fx;
+  f.style.transformOrigin='0 50%';f.style.backfaceVisibility='hidden';
+  an(f,[{transform:'rotateY(0)',filter:'brightness(1)'},{transform:'rotateY(-100deg)',filter:'brightness(.45)',offset:.9},{transform:'rotateY(-105deg)',filter:'brightness(.4)',opacity:0}],{duration:1300,easing:EIO});
+  an(t,[{transform:'scale(.94)',filter:'brightness(.5)'},{transform:'scale(1)',filter:'brightness(1)'}],{duration:1300,easing:EIO});
+  sh.style.background='linear-gradient(90deg,rgba(0,0,0,.55),rgba(0,0,0,0) 40%)';
+  an(sh,[{opacity:0,transform:'translateX(0)'},{opacity:1,transform:'translateX(25%)',offset:.5},{opacity:0,transform:'translateX(60%)'}],{duration:1300,easing:EIO});
+ }},
+{id:'tunnel',name:'4 · Fly through the word',toOnTop:false,total:1900,
+ note:'The camera dives into the word "AZAN" on the main screen: everything rushes past, a flash, and the Azan screen opens at the far end.',
+ run(c){
+  const f=c.from,t=c.to,fx=c.fx,r=$(c.fd,'.np-time-col:first-child .np-time-label').getBoundingClientRect(),m=mid(r);
+  f.style.transformOrigin=`${m.x/W*100}% ${m.y/H*100}%`;t.style.transformOrigin='50% 50%';
+  an(f,[{transform:'scale(1)',opacity:1,filter:'blur(0)'},{transform:'scale(9)',opacity:1,filter:'blur(1px)',offset:.7},{transform:'scale(20)',opacity:0,filter:'blur(8px)'}],{duration:1100,easing:EI});
+  an(t,[{transform:'scale(.35)',opacity:0,filter:'blur(10px)'},{transform:'scale(1)',opacity:1,filter:'blur(0)'}],{duration:850,delay:750,easing:EO});
+  fx.style.background='radial-gradient(circle at 50% 50%,rgba(255,236,170,.9),rgba(255,236,170,0) 65%)';
+  an(fx,[{opacity:0},{opacity:.9,offset:.4},{opacity:0}],{duration:600,delay:700,easing:'ease-out'});
+ }}
+];
+
+/* ---------- plumbing ---------- */
+const grid=document.getElementById('grid'),speed=document.getElementById('speed');
+const TRANSPARENT=`html,body,#screen-root,.screen-root,.screen{background:none!important}
+#screen-root::before,#screen-root::after,body::before,body::after{display:none!important}`;
+function mk(fx){
+  const el=document.createElement('div');el.className='card';
+  el.innerHTML=`<h2>${fx.name}</h2><p>${fx.note}</p><div class="stage"><div class="layer from"><iframe></iframe></div><div class="layer to"><iframe></iframe></div><div class="fx"></div></div>
+  <div class="row"><button class="go">▶ Play</button><button class="rs">↺ Reset</button><input type="range" class="scrub" min="0" max="1000" value="0" title="Drag to scrub through the animation"><span class="tag">about ${(fx.total/1000).toFixed(1)}s at normal speed</span></div>`;
+  grid.appendChild(el);
+  const c=Object.assign(fx,{el,stage:el.querySelector('.stage'),from:el.querySelector('.from'),to:el.querySelector('.to'),fx:el.querySelector('.fx'),hidden:[],busy:false});
+  c.fi=c.from.querySelector('iframe');c.ti=c.to.querySelector('iframe');
+  c.fi.src=`../../display/index.html?t=${T}&state=normal`;c.ti.src=`../../display/index.html?t=${T}&state=azan`;
+  c.ready=Promise.all([prep(c.fi,'.screen--normal'),prep(c.ti,'.screen--azan')]).then(([a,b])=>{c.fd=a;c.td=b;
+    const st=b.createElement('style');st.textContent=TRANSPARENT;st.disabled=!c.toOnTop;b.head.appendChild(st);reset(c);});
+  el.querySelector('.scrub').oninput=e=>scrub(c,e.target.value/1000);
+  el.querySelector('.go').onclick=()=>play(c);el.querySelector('.rs').onclick=()=>reset(c);
+  fit(c);
+}
+async function prep(ifr,sel){ // wait for the display to draw, then stop its once-a-second redraw so animations survive
+  for(let i=0;i<200;i++){const d=ifr.contentDocument,w=ifr.contentWindow;
+    if(d&&d.querySelector(sel)&&w.SBUi){w.SBUi.render=()=>{};return d;}await sleep(50);}
+  throw new Error('display did not load');
+}
+function fit(c){const k=c.stage.clientWidth/W;c.stage.querySelectorAll('iframe').forEach(f=>f.style.transform=`scale(${k})`);}
+function reset(c){
+  [c.fd,c.td].forEach(d=>d.getAnimations({subtree:true}).forEach(a=>a.cancel()));
+  [c.fd,c.td].forEach(d=>$$(d,'.mock-clone').forEach(e=>e.remove()));
+  c.hidden.forEach(e=>e.style.visibility='');c.hidden=[];
+  [c.from,c.to,c.fx].forEach(l=>{l.getAnimations().forEach(a=>a.cancel());l.style.cssText='';});
+  c.fx.style.opacity=0;
+  c.from.style.zIndex=c.toOnTop?1:2;c.to.style.zIndex=c.toOnTop?2:1;
+  c.fx.style.zIndex=5;c.to.style.opacity=0;
+  c.td.querySelector('style:last-of-type').disabled=!c.toOnTop;
+  c.busy=false;
+}
+async function play(c){
+  await c.ready;if(c.busy)return;reset(c);S=parseFloat(speed.value);c.busy=true;
+  c.to.style.opacity=1;c.run(c);
+  setTimeout(()=>{c.busy=false;},c.total*S+150);
+}
+async function scrub(c,f){ // frame-by-frame: freeze everything at fraction f of the transition
+  await c.ready;S=parseFloat(speed.value);reset(c);c.to.style.opacity=1;c.run(c);
+  const t=c.total*S*f;
+  [c.fd,c.td].forEach(d=>d.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=t;}));
+  [c.from,c.to,c.fx].forEach(l=>l.getAnimations().forEach(a=>{a.pause();a.currentTime=t;}));
+}
+document.getElementById('all').onclick=()=>FX.forEach(play);
+FX.forEach(mk);
+const ro=new ResizeObserver(()=>FX.forEach(fit));FX.forEach(f=>ro.observe(f.stage));
+</script></body></html>
