@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Salah Board: screen transition mocks</title>
+<style>
+  :root{--bg:#10151a;--card:#19212a;--fg:#e8edf2;--mut:#93a1b0;--acc:#d9b45a}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,sans-serif;padding:20px 16px 60px}
+  h1{font-size:22px;margin:0 0 4px} p.lead{color:var(--mut);margin:0 0 16px;max-width:70ch}
+  .bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-bottom:20px}
+  button,select{font:inherit;background:#26323e;color:var(--fg);border:1px solid #3a4856;border-radius:8px;padding:8px 14px;cursor:pointer}
+  button.go{background:var(--acc);color:#1b1608;border-color:var(--acc);font-weight:600}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,560px),1fr));gap:18px}
+  .card{background:var(--card);border-radius:12px;padding:14px}
+  .card h2{font-size:17px;margin:0 0 2px} .card p{margin:0 0 10px;color:var(--mut);font-size:14px}
+  .stage{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#000;border-radius:6px}
+  .layer{position:absolute;inset:0;overflow:hidden;will-change:transform,opacity}
+  .layer iframe{position:absolute;left:0;top:0;width:1366px;height:768px;border:0;transform-origin:0 0;pointer-events:none}
+  .row{display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .row .tag{color:var(--mut);font-size:13px}
+  label{color:var(--mut);font-size:14px}
+</style></head><body>
+<h1>Screen transitions: mocks</h1>
+<p class="lead">Each card plays a transition between two <b>real</b> board screens (the actual display, in
+frames, at 1366×768). Nothing here is wired into the app. Pick the one you like, or say "slower",
+"fancier", "mix of 2 and 4".</p>
+<div class="bar">
+  <label>Screens
+    <select id="pair">
+      <option value="normal|azan">Main screen → Azan</option>
+      <option value="azan|between">Azan → Between azan and iqamah</option>
+      <option value="between|salah">Between → Prayer in progress</option>
+      <option value="salah|normal">Prayer in progress → Main screen</option>
+    </select></label>
+  <label>Speed
+    <select id="speed"><option value="0.6">Quick</option><option value="1" selected>Normal</option><option value="1.8">Slow</option></select></label>
+  <button class="go" id="all">▶ Play all four</button>
+  <button id="cut">Today: instant switch (for comparison)</button>
+</div>
+<div class="grid" id="grid"></div>
+<script>
+const T='2026-07-02T12:10';
+const url=s=>`../../display/index.html?t=${T}&state=${s}`;
+const EASE='cubic-bezier(.4,0,.2,1)';
+// Each effect: (old layer, new layer, ms) -> array of animations. Old sits under/over new as noted.
+const EFFECTS=[
+ {id:'fade',name:'1 · Simple fade',note:'Old screen fades out, new fades in. Calm, safest, easiest on cheap hardware.',ms:700,
+  run:(o,n,ms)=>[n.animate([{opacity:0},{opacity:1}],{duration:ms,easing:'ease-in-out',fill:'both'}),
+                 o.animate([{opacity:1},{opacity:1}],{duration:ms,fill:'both'})]},
+ {id:'slide',name:'2 · Slide',note:'New screen slides in from the right while the old one leaves to the left.',ms:650,
+  run:(o,n,ms)=>[n.animate([{transform:'translateX(100%)'},{transform:'translateX(0)'}],{duration:ms,easing:EASE,fill:'both'}),
+                 o.animate([{transform:'translateX(0)'},{transform:'translateX(-100%)'}],{duration:ms,easing:EASE,fill:'both'})]},
+ {id:'zoom',name:'3 · Cross-fade with a slight zoom',note:'Old drifts forward and fades; new settles in from a touch smaller. Soft, a little depth.',ms:900,
+  run:(o,n,ms)=>[o.animate([{opacity:1,transform:'scale(1)'},{opacity:0,transform:'scale(1.05)'}],{duration:ms,easing:EASE,fill:'both'}),
+                 n.animate([{opacity:0,transform:'scale(.96)'},{opacity:1,transform:'scale(1)'}],{duration:ms,easing:EASE,fill:'both'})]},
+ {id:'rich',name:'4 · Richer: bloom reveal',note:'New screen opens as a growing circle from the centre (like the rosette), sharpening and settling while the old one dims and softens.',ms:1200,
+  run:(o,n,ms)=>[n.animate([{clipPath:'circle(0% at 50% 50%)',transform:'scale(1.08)',filter:'blur(8px) brightness(1.25)'},
+                            {clipPath:'circle(75% at 50% 50%)',transform:'scale(1)',filter:'blur(0) brightness(1)'}],
+                           {duration:ms,easing:'cubic-bezier(.3,.1,.1,1)',fill:'both'}),
+                 o.animate([{filter:'blur(0) brightness(1)',transform:'scale(1)'},{filter:'blur(5px) brightness(.55)',transform:'scale(.97)'}],
+                           {duration:ms,easing:EASE,fill:'both'})]}
+];
+const grid=document.getElementById('grid'),pairSel=document.getElementById('pair'),speed=document.getElementById('speed');
+function mk(fx){
+  const c=document.createElement('div');c.className='card';
+  c.innerHTML=`<h2>${fx.name}</h2><p>${fx.note}</p><div class="stage"><div class="layer a"><iframe></iframe></div><div class="layer b"><iframe></iframe></div></div>
+  <div class="row"><button class="go">▶ Play</button><button class="rev">↺ Back</button><span class="tag">${fx.ms/1000}s at normal speed</span></div>`;
+  grid.appendChild(c);fx.el=c;fx.shown='a';
+  fx.stage=c.querySelector('.stage');
+  fx.a=c.querySelector('.a');fx.b=c.querySelector('.b');
+  c.querySelector('.go').onclick=()=>play(fx,false);
+  c.querySelector('.rev').onclick=()=>play(fx,true);
+  fit(fx);
+}
+function fit(fx){const k=fx.stage.clientWidth/1366;fx.stage.querySelectorAll('iframe').forEach(f=>f.style.transform=`scale(${k})`);}
+function load(){
+  const [from,to]=pairSel.value.split('|');
+  EFFECTS.forEach(fx=>{fx.from=from;fx.to=to;fx.a.querySelector('iframe').src=url(from);fx.b.querySelector('iframe').src=url(to);reset(fx);});
+}
+function reset(fx){[fx.a,fx.b].forEach(l=>{l.getAnimations().forEach(x=>x.cancel());l.style.cssText='';});
+  fx.a.style.zIndex=2;fx.b.style.zIndex=1;fx.b.style.opacity=0;fx.shown='a';fx.busy=false;}
+function play(fx,back){
+  if(fx.busy)return;fx.busy=true;
+  const ms=fx.ms*parseFloat(speed.value);
+  // "old" is the layer currently shown. Both layers always hold the two screens; we just reveal the other.
+  const [oldL,newL]=(fx.shown==='a')?[fx.a,fx.b]:[fx.b,fx.a];
+  oldL.getAnimations().forEach(x=>x.cancel());newL.getAnimations().forEach(x=>x.cancel());
+  oldL.style.cssText='z-index:1';newL.style.cssText='z-index:2';
+  // fade needs old kept opaque under the new one; all effects: new on top
+  const anims=fx.run(oldL,newL,ms);
+  return new Promise(r=>setTimeout(r,ms+80)).then(()=>{
+    oldL.getAnimations().forEach(x=>x.cancel());newL.getAnimations().forEach(x=>x.cancel());
+    oldL.style.cssText='z-index:1;opacity:0';newL.style.cssText='z-index:2';
+    fx.shown=(fx.shown==='a')?'b':'a';fx.busy=false;
+  });
+}
+async function playAll(){for(const fx of EFFECTS){await play(fx);await new Promise(r=>setTimeout(r,500));}}
+document.getElementById('all').onclick=()=>{EFFECTS.forEach(fx=>play(fx));};
+document.getElementById('cut').onclick=()=>EFFECTS.forEach(fx=>{if(fx.busy)return;
+  const [o,n]=fx.shown==='a'?[fx.a,fx.b]:[fx.b,fx.a];o.style.cssText='z-index:1;opacity:0';n.style.cssText='z-index:2';fx.shown=fx.shown==='a'?'b':'a';});
+pairSel.onchange=load;
+EFFECTS.forEach(mk);load();
+addEventListener('resize',()=>EFFECTS.forEach(fit));
+</script></body></html>

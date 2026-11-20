@@ -144,6 +144,11 @@ Last updated: 18 November 2026 (first-run setup for other masjids, §7).
 - Photos of the live board are the main feedback channel — look closely at
   them for problems beyond the one asked about.
 
+- **Looks and features stay as they are for now (20 Nov 2026):** "later. for now its working fine.
+  let the looks and features be as is for now. do the backend changes." He wants to *try* small
+  animations between screens ("a basic fade/slide sorta thing or bit advanced"); mocks are in
+  `review/transitions/`. Nothing is wired in until he picks. Hall photos (SB-8) are "later".
+
 ## 7. Open ideas (not built yet)
 
 - **Other masjids should be able to use it** (owner, 18 Nov 2026): keep this

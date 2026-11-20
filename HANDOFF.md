@@ -2,70 +2,50 @@
 
 _Replace this file at the end of every session; git history keeps the old versions._
 
-## Current state (2026-11-18, evening — SB-3, SB-5, SB-9 part 1, SB-10 done)
+## Current state (2026-11-20 — v0.10.0 pushed; transition mocks ready)
 
-- **Read `docs/LOCAL-CONTEXT.md` first** (local practice, the live board, Shehan's
-  preferences). Keep it current in the same commit.
-- **What runs:** the Linux Debian kiosk, live in a masjid, on Shehan's code from before this
-  week's cards (v0.9.0 is tagged and pushed; whether the board has moved to it is Shehan's
-  to say). **Nothing from today is pushed**; all commits below are local on `main`.
-- **Today's cards (local commits):**
-  - **SB-9 part 1** `2ac6eee`: Android box shop checklist in `docs/HARDWARE.md`; each
-    section of HARDWARE and CARETAKER-GUIDE says which board it is for.
-  - **SB-3 swap** `f2ab45d` (merge `a4d1bf9`): `display/js/pt-core.js` vendored unmodified
-    (PT 1.0.0, Prayer-Time-Site `67cb755`; `diff` empty). `engine.js` uses `PT` for parsing,
-    month loading, rows, keys, Hijri month names. It keeps its own timeline/rollover and
-    `hijriInfo`, because PT's status functions read `new Date()` and would ignore `?t=`.
-    Characterisation tests unchanged and green. **Day walk at 1366×768**, 23 moments
-    (Thu 2 Jul every state, Fri 3 Jul Jumu'ah set, 31 Jul and 31 Dec rollover, Hijri flip at
-    Maghrib): identical text and state before and after the swap.
-  - **SB-10** `3e2c037`, `3a4cec4`: first-run setup. A board with no saved config shows
-    "This board is not set up yet"; the settings page walks General → Prayers → Jumu'ah →
-    Finish, each confirmed with a tick, and saves `setupDone: true`. Jumu'ah iqamah can now
-    be "N minutes after the azan" (`jumuah.iqamahMode: "afterAzan"`, new engine test).
-    `preseed.cfg` no longer sets a password (Debian's installer asks; checked in the
-    user-setup source: `db_input critical passwd/user-password`). `docs/SETUP-GUIDE.md`,
-    walked by a Sonnet agent with only the repo; its blockers were fixed.
-    Browser-checked at 1366×768: setup screen, the four steps, a Save part-way, an old
-    config skipping setup.
-  - **SB-5** `a5abbae` (merge `ce76f2d`): on-board timetable refresh. `deploy/datarefresh.py`
-    keeps refreshed sets in `~/.config/salahboard/data/{active,previous}`; `serve.py` serves
-    `/display/data/*` from `active/` when it is complete and verified, else the bundled set.
-    `GET /api/data`, `POST /api/data/check|refresh|rollback`, all behind the PIN. A
-    "Prayer timetable" card on the Network tab. 23 new tests (swap, bad checksum, cut-off
-    download, rollback, offline, `git status` clean).
-  - **Download fix** `018c767`: pray.gear.lk answers Python's default user agent with
-    **403** (curl gets 200). `tools/sync-data.py` now sends a named agent; this is shared by
-    the board's refresh. The live check then says "already up to date (2026-11-16.1)".
-    A real swap against the live site can only be seen when the site publishes a new
-    revision.
-- **Tests (all green):** `node --test tests/*.test.mjs` (21) ·
-  `python3 -m unittest discover -s tests -p 'test_*.py'` (47) ·
-  `python3 -m unittest discover -s tools -p 'test_*.py'` (6).
-- **Not verified on the board:** SB-4, SB-5, SB-7, SB-10 (no spare board; the live one is
-  never touched by a build session).
+- **Read `docs/LOCAL-CONTEXT.md` first.**
+- **Pushed and tagged:** `main` and **v0.10.0** (SB-3/5/9/10) went to GitHub on 20 Nov at
+  Shehan's word ("yes push and tag"). Tests re-run first: 21 / 47 / 6, all green. The live
+  board is untouched; Shehan updates it himself (Settings → Network → Check → Update →
+  Reload board). Not pushed since: the two local commits below.
+- **Backend change (local commit):** the board's hotspot now starts with a **random
+  10-character password per board** instead of the shared `salahboard`
+  (`deploy/linux/hotspot.sh`; `docs/SETUP-GUIDE.md` updated). Existing hotspot profiles keep
+  their password. The password shows in settings → Network → WiFi hotspot.
+- **Transition mocks:** `review/transitions/index.html`: four transitions (fade, slide,
+  cross-fade with zoom, "bloom" circle reveal) played between real board screens (live
+  display in frames, 1366×768), with a screen-pair picker and speed control. Not wired
+  into the app. To open: `python3 -m http.server 8765` in the repo root, then
+  http://localhost:8765/review/transitions/ (a plain file:// open can't load the data).
+- **Shehan, 2026-11-20 (A1):** "later. for now its working fine. let the looks and features
+  be as is for now. do the backend changes. only thing i would like to test is small
+  animations between the screens ... if possible make some design mocks and show the
+  animations". So: hall photos (SB-8) parked; no look/feature changes until he picks a
+  transition.
+- **Tests:** `node --test tests/*.test.mjs` (21) · `python3 -m unittest discover -s tests -p 'test_*.py'`
+  (47) · `python3 -m unittest discover -s tools -p 'test_*.py'` (6).
 
 ## Resume
 
-Nothing in the queue can be built without Shehan:
-- **SB-6** waits for Sakina SK-1 (the duas were reviewed in person with the imam on 17 Nov;
-  SB-6 now only records that review).
-- **SB-8** needs Shehan at the board / hall photos.
-- **SB-9 part 2** needs a box.
-- **Follow-ups worth a card** (not built): a bayan *before* the azan (some masjids do
-  this; the engine clamps the bayan to after the azan today); a per-board random hotspot
-  password instead of `salahboard` (see Decided on default); "This Hijri month began on"
-  (LOCAL-CONTEXT §7).
+- **When Shehan picks a transition:** implement it in `display/js/ui.js` / the theme CSS
+  (state changes already re-render in one place; the mock animates two layers), respect
+  `prefers-reduced-motion`, check at 1366×768 all themes and states, and keep the cost low
+  (the kiosk box is modest; avoid `filter: blur` if frames drop; the bloom option is the
+  heaviest).
+- No other backend card is ready. SB-6 waits for Sakina SK-1; SB-8 for hall photos;
+  SB-9 part 2 for a box. Follow-ups worth a card: a bayan *before* the azan; "This Hijri
+  month began on" (LOCAL-CONTEXT §7).
 
 ```text
-Continue Salah-board according to /project-playbook — read ROADMAP.md and HANDOFF.md in ~/Projects/Salah-board, then do
-the follow-up card Shehan picks from HANDOFF "Resume" (bayan before the azan, or the per-board hotspot password).
-Check docs/general/RESEARCH-INDEX.md before researching (it does not exist yet). Delegate implementation from task
-cards to Sonnet agents and sweeps to Haiku Explore agents.
+Continue Salah-board according to /project-playbook — read ROADMAP.md and HANDOFF.md in ~/Projects/Salah-board, then
+implement the screen transition Shehan picked from review/transitions/ (ask which if he has not said).
+Check docs/general/RESEARCH-INDEX.md before researching (it does not exist yet).
+Delegate implementation from task cards to Sonnet agents and sweeps to Haiku Explore agents.
 Model: opus · Effort: medium — set both before sending.
 
 Context you won't get from the files: nothing is pushed to the live board by a build session; pray.gear.lk 403s
-Python's default user agent (fixed in sync-data.py; keep a User-Agent on any new download code).
+Python's default user agent (keep a User-Agent on any new download code).
 ```
 
 ## Decided on default — for Shehan to review (in plain words)
@@ -88,10 +68,8 @@ Already built; each can be changed. Nothing needs an answer unless it sounds wro
   turned down per screen).
 - **The automatic installer asks for the login password** instead of giving every board
   `salahboard`. It stops once for it. Boards always install from `msfrox/Salah-board`.
-- **The board's hotspot still starts with the password `salahboard`** on every new board.
-  The setup guide tells people to change it after setting the PIN. Settings still need the
-  PIN, so a stranger on the hotspot sees the screen, not the settings. Making it random per
-  board is a small follow-up.
+- **The board's hotspot starts with a random password**, different on every board (20 Nov).
+  The caretaker reads it in settings → Network → WiFi hotspot and can change it.
 
 **Timetable refresh (SB-5)**
 - **Only when someone presses it.** The board never updates its timetable by itself.
@@ -107,21 +85,9 @@ Already built; each can be changed. Nothing needs an answer unless it sounds wro
 
 ## Waiting on Shehan
 
-`SHEHAN-TODO.md`. New today: **push and tag** so boards can get this work. When you're ready:
-
-```bash
-cd ~/Projects/Salah-board
-git push origin main
-git tag -a v0.10.0 -m "Salah Board v0.10.0: first-run setup, timetable refresh, pt-core engine"
-git push origin v0.10.0
-```
-
-(Run `docs/RELEASING.md`'s checklist first if you want the full release check; the version
-number is your call.) Then on the board: Settings → Network → Check for a new version →
-Update to v0.10.0 → Reload board. Your board keeps its settings and won't show the setup.
-
-Also open: update the live board when convenient; change its old login password; hall
-photos (SB-8); an Android box (SB-9 checklist in `docs/HARDWARE.md`); tag v1.0.0 when ready.
+`SHEHAN-TODO.md`. New: open the transition mocks and pick one. Also open: update the live
+board to v0.10.0 when convenient; change its old login password; hall photos (SB-8, parked);
+an Android box (SB-9 checklist in `docs/HARDWARE.md`); tag v1.0.0 when ready.
 
 ## Gotchas
 
