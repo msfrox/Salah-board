@@ -128,9 +128,10 @@ The first thing the settings page asks for is a new PIN (4b).
   on the same network.
 - **No WiFi at the masjid?** The board can run its own WiFi hotspot:
   settings → **Network** → **WiFi hotspot** → **Start**. It is called
-  **SalahBoard** and its first password is **`salahboard`** (the same on
-  every new board), so on the board's screen, after setting your PIN (4b),
-  **change both** there and press **Save & start**. Then join that hotspot
+  **SalahBoard** and it starts with a random password, different on every
+  board. After setting your PIN (4b), open the same WiFi hotspot card: the
+  password is shown there. Write it down, or **change both** and press
+  **Save & start**. Then join that hotspot
   from the phone and use the phone link above.
 
 ### 4b. Set the PIN first

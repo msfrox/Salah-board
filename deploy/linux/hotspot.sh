@@ -22,6 +22,13 @@ CON="salahboard-hotspot"
 # Minimal JSON string escaper (backslash + double-quote + control chars).
 jesc() { printf '%s' "$1" | sed -e 's/\\/\\\\/g' -e 's/"/\\"/g' | tr -d '\000-\037'; }
 
+# A random first password, different on every board (10 characters, no look-alikes
+# such as 0/O or 1/l, so it is easy to read off the screen). An existing profile keeps
+# its password; the caretaker can still set their own.
+random_psk() {
+  LC_ALL=C tr -dc 'abcdefghjkmnpqrstuvwxyzACDEFGHJKLMNPQRTUVWXY346789' </dev/urandom | head -c 10
+}
+
 have_nmcli() { command -v nmcli >/dev/null 2>&1; }
 
 wifi_dev() {
@@ -71,9 +78,9 @@ ensure_profile() {
   # ipv4.method shared hands out DHCP + DNS via dnsmasq; without the
   # `dnsmasq-base` package a client associates but never gets an IP
   # ("unable to connect"). install-kiosk.sh installs it.
-  # Give it a default password if none is set yet, so `start` alone works.
+  # Give it a random password if none is set yet, so `start` alone works.
   local psk; psk="$(nmcli -s -g 802-11-wireless-security.psk connection show "$CON" 2>/dev/null || true)"
-  [ -n "$psk" ] || nmcli connection modify "$CON" 802-11-wireless-security.psk "salahboard" >/dev/null
+  [ -n "$psk" ] || nmcli connection modify "$CON" 802-11-wireless-security.psk "$(random_psk)" >/dev/null
 }
 
 cmd="${1:-status}"
