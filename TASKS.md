@@ -98,6 +98,12 @@ refresh).
 Don't: refresh automatically. Don't write inside the repo folder.
 
 ### SB-6 — Content review sheets                            [Sonnet] · effort medium · ~1.5 h
+**Status 2026-11-21:** Built here, not in Sakina: Sakina's SK-1 tool does not exist yet, so `tools/review-content.py`
+(+ `review-content.sh`, tests in `tools/test_review_content.py`) is self-contained and stdlib-only; fold it into
+SK-1's tool later if the family wants one. Sheets are in `review/content/` (en, ta, si; 63 rows each, unreviewed
+and unedited). The packs still say `reviewed: false` because no reviewer has returned a sheet: `meta.reviewed`
+flips only on an import with `--reviewer` and a complete sheet. Shehan said (18 Nov) the duas were reviewed with
+the imam: the imam's returned sheet is what records it. Did not touch Sakina.
 Why: all three language packs are `reviewed: false`, and they hold duas (golden rule 7).
 Context to read: `display/content/README.md`, `display/content/*.json`, Sakina
 `decisions/0002-translation-review-by-generated-sheets.md` and `tools/i18n-review/README.md`.
@@ -127,6 +133,7 @@ returns; an update with a dirty tree fails cleanly with a message the caretaker 
 Don't: tag v1.0.0. That is Shehan's, after SB-8 and the reviews. Not verified on the board.
 
 ### SB-8 — Theme sizing in the hall; caretaker guide        [Opus] · effort medium · ~2 h
+**Status 2026-11-21:** Not started; parked by Shehan on 20 Nov ("later"). Needs hall photos.
 **Needs Shehan at the board (or photos from the hall).**
 Why: HANDOFF's one deferred item; and the printed guide is the v1.0 acceptance test.
 Context to read: previous `HANDOFF.md` "Deferred" (in git history after SB-1), `PLAN.md`

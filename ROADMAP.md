@@ -29,11 +29,15 @@ One line per item. Full cards are in `TASKS.md`. The original milestone specs (M
 | SB-3 | Vendor `pt-core.js`; engine as an extension; engine tests | Sonnet | done 2026-11-18 (pt-core 1.0.0 from site `67cb755`) |
 | SB-4 | Caretaker PIN on the settings API | Opus | done 2026-11-18 (not verified on the board) |
 | SB-5 | On-board timetable refresh and rollback | Opus | done 2026-11-18 (live check ok; swap tested locally; not verified on the board) |
-| SB-6 | Content review sheets (en, ta, si; duas) | Sonnet | after Sakina SK-1 |
+| SB-6 | Content review sheets (en, ta, si; duas) | Sonnet | done 2026-11-21 (tool + sheets; no reviewer has returned one yet) |
 | SB-7 | Release by tag; update to newest tag; RELEASING.md | Opus | done 2026-11-18 (not verified on the board) |
-| SB-8 | Theme sizing in the hall; caretaker guide | Opus | needs Shehan at the board |
+| SB-8 | Theme sizing in the hall; caretaker guide | Opus | parked (hall photos, "later" 20 Nov) |
 | SB-9 | Android: box checklist now; finish the shell once a box is found | Opus | part 1 done 2026-11-18 (`docs/HARDWARE.md`); part 2 needs a box |
 | SB-10 | Ready for other masjids: first-run setup, no masjid-specific defaults, setup guide | Opus | done 2026-11-18 (not verified on a fresh board) |
+
+Also shipped after SB-10 (commits only, now recorded): v0.10.0 pushed and tagged 20 Nov; the board's hotspot starts
+with a random per-board password (`c344770`); screen-transition mocks in `review/transitions/` await Shehan's
+pick (not wired in).
 
 `PT-1`, `PT-3` are Prayer-Time-Site cards; `SK-1` is a Sakina card.
 

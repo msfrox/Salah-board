@@ -14,3 +14,7 @@ Rules:
   meaning need a source discussion in the PR.
 - `ta.json` / `si.json` are created in M1 as structure-copies of `en.json`
   (machine translation acceptable initially, flagged unreviewed).
+
+Review: `tools/review-content.sh export` writes one sheet per language to `review/content/`;
+`import` applies a returned sheet and flips `meta.reviewed` only with a reviewer name and a
+complete sheet (see the header of `tools/review-content.py`). Never hand-edit `reviewed`.
