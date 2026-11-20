@@ -2,40 +2,35 @@
 
 _Replace this file at the end of every session; git history keeps the old versions._
 
-## Current state (2026-11-20 — v0.10.0 pushed; transition mocks ready)
+## Current state (2026-11-21 — backend pass done; looks frozen)
 
 - **Read `docs/LOCAL-CONTEXT.md` first.**
-- **Pushed and tagged:** `main` and **v0.10.0** (SB-3/5/9/10) went to GitHub on 20 Nov at
-  Shehan's word ("yes push and tag"). Tests re-run first: 21 / 47 / 6, all green. The live
-  board is untouched; Shehan updates it himself (Settings → Network → Check → Update →
-  Reload board). Not pushed since: the two local commits below.
-- **Backend change (local commit):** the board's hotspot now starts with a **random
-  10-character password per board** instead of the shared `salahboard`
-  (`deploy/linux/hotspot.sh`; `docs/SETUP-GUIDE.md` updated). Existing hotspot profiles keep
-  their password. The password shows in settings → Network → WiFi hotspot.
-- **Transition mocks:** `review/transitions/index.html`: four transitions (fade, slide,
-  cross-fade with zoom, "bloom" circle reveal) played between real board screens (live
-  display in frames, 1366×768), with a screen-pair picker and speed control. Not wired
-  into the app. To open: `python3 -m http.server 8765` in the repo root, then
-  http://localhost:8765/review/transitions/ (a plain file:// open can't load the data).
-- **Shehan, 2026-11-20 (A1):** "later. for now its working fine. let the looks and features
-  be as is for now. do the backend changes. only thing i would like to test is small
-  animations between the screens ... if possible make some design mocks and show the
-  animations". So: hall photos (SB-8) parked; no look/feature changes until he picks a
-  transition.
+- **Pushed and tagged:** v0.10.0 (20 Nov). **Local only, not pushed:** the random-hotspot-password
+  commit, the transition mocks, SB-6 and a docs pass. No push or tag from build sessions; the live
+  board is untouched.
+- **SB-6 built** (`tools/review-content.py`, wrapper `review-content.sh`, tests in
+  `tools/test_review_content.py`): `export` writes `review/content/content-{en,ta,si}.csv`;
+  `import SHEET --reviewer NAME` applies only `changed` rows, refuses broken `{placeholders}`, never
+  touches Arabic or `source`, lists `unsure` rows, edits the pack textually (small diffs) and flips
+  `meta.reviewed` only for a complete sheet with a reviewer. Built self-contained here because
+  Sakina's SK-1 tool does not exist yet (Sakina untouched). The packs stay `reviewed: false` until a
+  reviewer's sheet comes back; Shehan said the duas were reviewed with the imam on 17 Nov, so that
+  sheet (or his word, recorded) is what flips it.
+- **Docs fixed:** ROADMAP and TASKS now carry Status lines for SB-6 and SB-8 and record v0.10.0, the
+  hotspot password and the mocks. SB-1 to SB-5, SB-7, SB-9 part 1 and SB-10 already had them.
+- **No more backend cards.** SB-8 is parked (hall photos), SB-9 part 2 needs a box. Look and feature
+  work waits for Shehan's transition pick: `review/transitions/` (serve the repo with
+  `python3 -m http.server 8765`, open `/review/transitions/`). Don't wire the mocks.
 - **Tests:** `node --test tests/*.test.mjs` (21) · `python3 -m unittest discover -s tests -p 'test_*.py'`
-  (47) · `python3 -m unittest discover -s tools -p 'test_*.py'` (6).
+  (47) · `python3 -m unittest discover -s tools -p 'test_*.py'` (10). All green.
 
 ## Resume
 
-- **When Shehan picks a transition:** implement it in `display/js/ui.js` / the theme CSS
-  (state changes already re-render in one place; the mock animates two layers), respect
-  `prefers-reduced-motion`, check at 1366×768 all themes and states, and keep the cost low
-  (the kiosk box is modest; avoid `filter: blur` if frames drop; the bloom option is the
-  heaviest).
-- No other backend card is ready. SB-6 waits for Sakina SK-1; SB-8 for hall photos;
-  SB-9 part 2 for a box. Follow-ups worth a card: a bayan *before* the azan; "This Hijri
-  month began on" (LOCAL-CONTEXT §7).
+- **When Shehan picks a transition:** implement it in `display/js/ui.js` / the theme CSS, respect
+  `prefers-reduced-motion`, check 1366×768 in all themes and states, keep it cheap (modest kiosk box;
+  avoid `filter: blur`; bloom is the heaviest).
+- Follow-ups worth a card: a bayan *before* the azan; "This Hijri month began on" (LOCAL-CONTEXT §7);
+  folding the review tool into Sakina's SK-1 if that is built.
 
 ```text
 Continue Salah-board according to /project-playbook — read ROADMAP.md and HANDOFF.md in ~/Projects/Salah-board, then
@@ -85,7 +80,7 @@ Already built; each can be changed. Nothing needs an answer unless it sounds wro
 
 ## Waiting on Shehan
 
-`SHEHAN-TODO.md`. New: open the transition mocks and pick one. Also open: update the live
+`SHEHAN-TODO.md`. Open: pick a transition mock; send the imam's review sheet back through `tools/review-content.py import` when you have one. Also open: update the live
 board to v0.10.0 when convenient; change its old login password; hall photos (SB-8, parked);
 an Android box (SB-9 checklist in `docs/HARDWARE.md`); tag v1.0.0 when ready.
 
