@@ -26,7 +26,10 @@ _Replace this file at the end of every session; git history keeps the old versio
 
 ## Resume
 
-- **When Shehan picks a transition:** implement it in `display/js/ui.js` / the theme CSS, respect
+- **Next, in order:** (1) wire a switchable `transitions` option (`config.json`, update
+  `docs/CONFIG-SCHEMA.md`) built from `screens.html`, off by default, with a cheap-mode (muted cross-fade
+  everywhere) so he can test performance on the board; (2) he tests on the board; (3) finalise.
+- **Old note, when Shehan picks a transition:** implement it in `display/js/ui.js` / the theme CSS, respect
   `prefers-reduced-motion`, check 1366×768 in all themes and states, keep it cheap (modest kiosk box;
   avoid `filter: blur`; bloom is the heaviest).
 - Follow-ups worth a card: a bayan *before* the azan; "This Hijri month began on" (LOCAL-CONTEXT §7);

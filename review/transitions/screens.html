@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Salah Board: transitions for every screen</title>
+<style>
+  :root{--bg:#10151a;--card:#19212a;--fg:#e8edf2;--mut:#93a1b0;--acc:#d9b45a;--quiet:#6fa8c9}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.45 system-ui,sans-serif;padding:20px 16px 60px}
+  h1{font-size:22px;margin:0 0 4px} p.lead{color:var(--mut);margin:0 0 14px;max-width:80ch}
+  a{color:var(--acc)}
+  button,select{font:inherit;background:#26323e;color:var(--fg);border:1px solid #3a4856;border-radius:8px;padding:8px 14px;cursor:pointer}
+  button.go{background:var(--acc);color:#1b1608;border-color:var(--acc);font-weight:600}
+  label{color:var(--mut);font-size:14px}
+  .wrap{display:grid;grid-template-columns:minmax(230px,300px) minmax(0,1fr);gap:18px;align-items:start}
+  @media(max-width:900px){.wrap{grid-template-columns:1fr}}
+  .list{display:flex;flex-direction:column;gap:6px}
+  .list button{text-align:left;padding:9px 12px;display:flex;gap:8px;align-items:baseline;flex-wrap:wrap}
+  .list button.on{border-color:var(--acc);background:#33291a}
+  .list .n{color:var(--mut);font-size:13px;min-width:1.4em}
+  .list .arrow{color:var(--mut);font-size:13px;width:100%;padding-left:1.9em}
+  .badge{font-size:11px;border:1px solid var(--quiet);color:var(--quiet);border-radius:99px;padding:0 7px;margin-left:auto}
+  .panel{background:var(--card);border-radius:12px;padding:14px}
+  .panel h2{font-size:19px;margin:0 0 2px} .panel p{margin:0 0 10px;color:var(--mut);font-size:14px}
+  .stage{position:relative;width:100%;aspect-ratio:16/9;overflow:hidden;background:#000;border-radius:6px;perspective:1800px}
+  .layer{position:absolute;inset:0;overflow:hidden;will-change:transform,opacity}
+  .layer iframe{position:absolute;left:0;top:0;width:1366px;height:768px;border:0;transform-origin:0 0;pointer-events:none}
+  .fx{position:absolute;inset:0;pointer-events:none;opacity:0}
+  .row{display:flex;gap:10px;align-items:center;margin-top:10px;flex-wrap:wrap}
+  .scrub{flex:1;min-width:140px}
+  .tag{color:var(--mut);font-size:13px}
+  .legend{margin:0 0 12px;font-size:14px;color:var(--mut)}
+</style></head><body>
+<h1>One transition for every screen</h1>
+<p class="lead">Each change of screen gets its own animation, built from what is on that screen. The rule you set:
+when the new screen is a <b style="color:var(--quiet)">quiet</b> one (prayer in progress, night, Jumu'ah, khutbah) the
+animation is muted: a slow cross-fade. Everything else gets the lively version. It is the real board in the frames, and
+the animation moves the board's real elements. Not wired into the app.
+&nbsp; Earlier pages: <a href="index.html">simple</a> · <a href="wild.html">wild</a>.</p>
+<div class="wrap">
+  <div>
+    <div class="list" id="list"></div>
+    <div class="row"><button class="go" id="chain">▶ Play the whole prayer cycle</button></div>
+    <p class="tag">Chains: main → azan → between → iqamah → prayer → after → main. There is a short blank between steps
+    while the next screen loads; that is the mock, not the animation.</p>
+  </div>
+  <div class="panel">
+    <h2 id="title"></h2><p id="note"></p>
+    <div class="stage" id="stage"><div class="layer from"><iframe></iframe></div><div class="layer to"><iframe></iframe></div><div class="fx"></div></div>
+    <div class="row">
+      <button class="go" id="play">▶ Play</button><button id="reset">↺ Reset</button>
+      <input type="range" class="scrub" id="scrub" min="0" max="1000" value="0" title="Drag to step through the animation">
+      <label>Speed <select id="speed"><option value="0.6">Quick</option><option value="1" selected>Normal</option><option value="1.8">Slow</option></select></label>
+      <span class="tag" id="dur"></span>
+    </div>
+  </div>
+</div>
+<script>
+const FRI='2026-07-03T12:10', THU='2026-07-02T12:10', W=1366, H=768, cx=W/2, cy=H/2;
+const EO='cubic-bezier(.2,.8,.2,1)', EI='cubic-bezier(.6,0,.9,.5)', EIO='cubic-bezier(.65,0,.35,1)', BACK='cubic-bezier(.34,1.45,.5,1)';
+let S=1;
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const $=(d,s)=>d.querySelector(s), $$=(d,s)=>[...d.querySelectorAll(s)];
+const an=(el,kf,o)=>el&&el.animate(kf,Object.assign({fill:'both',easing:EO},o,{duration:o.duration*S,delay:(o.delay||0)*S}));
+const mid=r=>({x:r.left+r.width/2,y:r.top+r.height/2});
+const cs=el=>el.ownerDocument.defaultView.getComputedStyle(el);
+
+/* ---------- helpers ---------- */
+// The pieces of a screen. A block with display:contents has no box, so its children are used instead.
+function pieces(doc,withClock){const out=[];
+  const add=el=>{const d=cs(el).display;if(d==='none')return;
+    if(d==='contents'||el.classList.contains('hero-row'))[...el.children].forEach(add);else out.push(el);};
+  $$(doc,'.screen > *').forEach(add);
+  if(withClock)$$(doc,'.corner-clock').forEach(add);return out;}
+function mock(c,doc,css){const e=doc.createElement('div');e.className='mock-el';Object.assign(e.style,css);doc.body.appendChild(e);return e;}
+function cloneOf(c,doc,el,text){
+  const r=el.getBoundingClientRect(),s=cs(el);
+  const e=mock(c,doc,{position:'fixed',left:r.left+'px',top:r.top+'px',width:r.width+'px',height:r.height+'px',display:'flex',alignItems:'center',
+    justifyContent:'center',margin:0,zIndex:50,whiteSpace:'nowrap',pointerEvents:'none',fontFamily:s.fontFamily,fontSize:s.fontSize,fontWeight:s.fontWeight,
+    fontStyle:s.fontStyle,letterSpacing:s.letterSpacing,color:s.color,textShadow:s.textShadow,fontVariantNumeric:s.fontVariantNumeric,textTransform:s.textTransform,lineHeight:s.lineHeight});
+  e.textContent=text??el.textContent;el.style.visibility='hidden';c.hidden.push(el);return e;}
+function splitChars(c,el){c.restore.push([el,el.innerHTML]);
+  el.innerHTML=[...el.textContent].map(ch=>`<span style="display:inline-block">${ch===' '?'&nbsp;':ch}</span>`).join('');return [...el.children];}
+// Old screen's backdrop (rosette + glow) fades out while the new one fades in.
+function backdrop(c,ms,delay=0){
+  const fr=$(c.fd,'#screen-root'),tr=$(c.td,'#screen-root');
+  ['::before','::after'].forEach(pe=>{
+    const o={duration:ms*S,delay:delay*S,fill:'both',easing:'ease-in-out',pseudoElement:pe};
+    fr.animate([{opacity:0}],o);                                 // a single keyframe is the END state: fades out to 0
+    tr.animate([{opacity:0}],Object.assign({direction:'reverse'},o));}); // reversed: fades in from 0
+}
+// Moves a piece away from / toward the middle of the screen.
+function radial(el,i,k,rotBase){const m=mid(el.getBoundingClientRect()),dx=m.x-cx||(i%2?1:-1)*80,dy=m.y-cy||-80,n=Math.hypot(dx,dy)||1,f=k/n;
+  return {dx:dx*f,dy:dy*f,rot:(i%2?1:-1)*(rotBase+i*3)};}
+// Muted: a slow cross-fade, nothing moves.
+function quietFade(c,dim){
+  an(c.from,[{opacity:1,filter:'brightness(1)'},{opacity:0,filter:`brightness(${dim?.3:.8})`}],{duration:1500,easing:'ease-in-out'});
+  an(c.to,[{opacity:0,filter:`brightness(${dim?.7:.85})`},{opacity:1,filter:'brightness(1)'}],{duration:1500,delay:dim?900:500,easing:'ease-in-out'});}
+
+/* ---------- the transitions ---------- */
+const TR=[
+{id:'azan',n:1,from:'normal',to:'azan',t:THU,total:3100,name:'The azan time becomes the Azan screen',
+ note:'Everything else flies away. The azan time (12:16) travels to the middle and swells, dissolves into "Azan — Zuhr", and the reminder and dua unfold from it.',
+ run(c){const fd=c.fd,td=c.td;
+  const t=$(fd,'.np-time-col:first-child .np-time'),lab=$(fd,'.np-time-col:first-child .np-time-label');
+  const ct=cloneOf(c,fd,t),cl=cloneOf(c,fd,lab);
+  pieces(fd).forEach((el,i)=>{const r=radial(el,i,1100,6);
+    an(el,[{transform:'none',opacity:1},{transform:`translate(${r.dx/1.4}px,${r.dy/1.4-60}px) rotate(${r.rot}deg) scale(.8)`,opacity:0}],{duration:650,delay:i*50,easing:EI});});
+  const m=mid(t.getBoundingClientRect()),ml=mid(lab.getBoundingClientRect());
+  an(ct,[{transform:'none'},{transform:`translate(${cx-m.x}px,${cy-m.y+20}px) scale(1.7)`}],{duration:800,delay:450,easing:EIO});
+  an(cl,[{transform:'none'},{transform:`translate(${cx-ml.x}px,${cy-ml.y-95}px) scale(1.5)`}],{duration:800,delay:450,easing:EIO});
+  an(ct,[{opacity:1,filter:'blur(0)'},{opacity:0,filter:'blur(16px)'}],{duration:600,delay:1650,easing:'ease-in'});
+  an(cl,[{opacity:1},{opacity:0}],{duration:500,delay:1550});
+  const b=$(td,'.azan-banner'),bm=mid(b.getBoundingClientRect());
+  an(b,[{transform:`translate(${cx-bm.x}px,${cy+20-bm.y}px) scale(.5)`,opacity:0,filter:'blur(16px)'},{transform:'none',opacity:1,filter:'blur(0)'}],{duration:850,delay:1650});
+  [['.azan-reminder',2250],['.azan-dua',2450]].forEach(([s,d])=>an($(td,s),[{transform:'translateY(-60px) scaleY(.3)',opacity:0,transformOrigin:'50% 0'},{transform:'none',opacity:1,transformOrigin:'50% 0'}],{duration:650,delay:d,easing:BACK}));
+  an($(td,'.phones-silent-icon'),[{transform:'scale(0) rotate(-180deg)',opacity:0},{transform:'none',opacity:1}],{duration:600,delay:2650,easing:BACK});
+  an($(td,'.corner-clock'),[{opacity:0},{opacity:1}],{duration:500,delay:2300});
+  backdrop(c,1400,1200);}},
+
+{id:'between',n:2,from:'azan',to:'between',t:THU,total:2500,name:'The countdown takes the stage',
+ note:'The azan words lift away and the dua drops off. The "Iqamah" label comes down from above and the countdown rolls in digit by digit, then the reminders rise from the bottom.',
+ run(c){const fd=c.fd,td=c.td;
+  an($(fd,'.azan-banner'),[{transform:'none',opacity:1},{transform:'translateY(-300px) scale(.45)',opacity:0}],{duration:650,easing:EI});
+  an($(fd,'.azan-reminder'),[{transform:'none',opacity:1},{transform:'translateX(-800px) rotate(-4deg)',opacity:0}],{duration:650,delay:80,easing:EI});
+  an($(fd,'.azan-dua'),[{transform:'none',opacity:1},{transform:'translateY(450px) rotate(3deg)',opacity:0}],{duration:650,delay:160,easing:EI});
+  an($(fd,'.phones-silent-icon'),[{transform:'none',opacity:1},{transform:'scale(0) rotate(200deg)',opacity:0}],{duration:500,delay:240,easing:EI});
+  an($(td,'.icd-label'),[{transform:'translateY(-220px)',opacity:0},{transform:'none',opacity:1}],{duration:700,delay:700,easing:BACK});
+  splitChars(c,$(td,'.icd-countdown')).forEach((s,i)=>an(s,[{transform:'translateY(90%)',opacity:0,filter:'blur(8px)'},{transform:'none',opacity:1,filter:'blur(0)'}],{duration:650,delay:950+i*100,easing:BACK}));
+  [['.between-reminder',1500],['.dua-card',1650],['.sunnah-reminder',1800]].forEach(([s,d])=>an($(td,s),[{transform:'translateY(160px)',opacity:0},{transform:'none',opacity:1}],{duration:650,delay:d}));
+  backdrop(c,1200,500);}},
+
+{id:'iqamah',n:3,from:'between',to:'iqamah',t:THU,total:2700,name:'Zero strikes',
+ note:'The countdown swells, then implodes into a point, and a ring of light shoots out from it. The iqamah title slams in through the ring and the lines come in one after another.',
+ run(c){const fd=c.fd,td=c.td;
+  const cd=$(fd,'.icd-countdown'),col=cs(cd).color,m=mid(cd.getBoundingClientRect());
+  an(cd,[{transform:'scale(1)',opacity:1},{transform:'scale(1.2)',opacity:1,offset:.35},{transform:'scale(0)',opacity:0}],{duration:800,easing:EIO});
+  an($(fd,'.icd-label'),[{opacity:1,transform:'none'},{opacity:0,transform:'translateY(-40px)'}],{duration:500});
+  [['.between-reminder',0],['.dua-card',80],['.sunnah-reminder',160]].forEach(([s,d])=>an($(fd,s),[{opacity:1,transform:'none'},{opacity:0,transform:'translateY(60px)'}],{duration:550,delay:d,easing:EI}));
+  const ring=mock(c,fd,{position:'fixed',left:(m.x-60)+'px',top:(m.y-60)+'px',width:'120px',height:'120px',borderRadius:'50%',border:`6px solid ${col}`,boxShadow:`0 0 50px ${col}`,zIndex:60,pointerEvents:'none'});
+  an(ring,[{transform:'scale(.1)',opacity:.95},{transform:'scale(16)',opacity:0}],{duration:1200,delay:650,easing:'cubic-bezier(.1,.7,.3,1)'});
+  an($(td,'.iqamah-title'),[{transform:'scale(2.6)',opacity:0,filter:'blur(16px)'},{transform:'none',opacity:1,filter:'blur(0)'}],{duration:800,delay:850});
+  $$(td,'.iqamah-lines li').forEach((li,i)=>an(li,[{transform:'translateX(-160px)',opacity:0},{transform:'none',opacity:1}],{duration:600,delay:1450+i*230}));
+  backdrop(c,1300,600);}},
+
+{id:'salah',n:4,from:'iqamah',to:'salah',t:THU,total:2500,quiet:true,name:'Into the prayer (muted)',
+ note:'Quiet screen, so quiet animation: the iqamah lines slowly dim away and the near-black prayer screen comes up. Nothing moves.',
+ run(c){quietFade(c,true);}},
+
+{id:'after',n:5,from:'salah',to:'after',t:THU,total:2300,name:'The dua unfolds',
+ note:'The dim clock drifts up and out; the adhkar card then unfolds from its top edge like a page opening, and its lines appear one by one.',
+ run(c){const fd=c.fd,td=c.td;
+  an($(fd,'.salah-clock'),[{transform:'none',opacity:1},{transform:'translateY(-260px) scale(.6)',opacity:0}],{duration:800,easing:EIO});
+  an($(fd,'.salah-line'),[{transform:'none',opacity:1},{transform:'translateY(120px)',opacity:0}],{duration:700,delay:80,easing:EIO});
+  const card=$(td,'.dua-card');
+  an(card,[{transform:'perspective(1400px) rotateX(-88deg)',transformOrigin:'50% 0',opacity:0},{transform:'perspective(1400px) rotateX(0)',transformOrigin:'50% 0',opacity:1}],{duration:1100,delay:550,easing:EO});
+  $$(card,'p').forEach((p,i)=>an(p,[{opacity:0,transform:'translateY(24px)'},{opacity:1,transform:'none'}],{duration:600,delay:1250+i*200}));
+  an($(td,'.corner-clock'),[{opacity:0},{opacity:1}],{duration:700,delay:1100});
+  backdrop(c,1300,300);}},
+
+{id:'assemble',n:6,from:'after',to:'normal',t:THU,total:3000,name:'The board assembles',
+ note:'The dua card shrinks away. Then the main screen builds itself: date bar from above, clock from the left, next prayer from the right, and the timetable times pop up one by one.',
+ run(c){const fd=c.fd,td=c.td;
+  an($(fd,'.dua-card'),[{transform:'none',opacity:1},{transform:'translateY(140px) scale(.65)',opacity:0}],{duration:650,easing:EI});
+  const dirs=(el,i)=>{const r=radial(el,i,1300,7);return `translate(${-r.dx/1.5}px,${-r.dy/1.5}px) rotate(${-r.rot}deg) scale(.8)`;};
+  let k=0;
+  pieces(td).forEach((el,i)=>{
+    if(el.classList.contains('card--timetable')){
+      an(el,[{opacity:0},{opacity:1}],{duration:500,delay:1300});
+      $$(el,'.tt-cell').forEach((cell,j)=>an(cell,[{transform:'translateY(70px) scale(.6)',opacity:0},{transform:'none',opacity:1}],{duration:500,delay:1450+j*90,easing:BACK}));
+    } else an(el,[{transform:dirs(el,i),opacity:0},{transform:'none',opacity:1}],{duration:900,delay:500+(k++)*120,easing:BACK});});
+  backdrop(c,1400,300);}},
+
+{id:'night',n:7,from:'normal',to:'night',t:THU,total:3000,quiet:true,name:'Lights dim for the night (muted)',
+ note:'Quiet screen: the whole board slowly dims to almost nothing, and the night clock and Fajr time fade up out of the dark.',
+ run(c){quietFade(c,true);}},
+
+{id:'wake',n:8,from:'night',to:'normal',t:THU,total:3100,name:'The clock wakes up',
+ note:'The dim night clock glows, travels up into the main clock\'s place and brightens. Then the rest of the board blooms outward from it.',
+ run(c){const fd=c.fd,td=c.td;
+  const nc=$(fd,'.night-clock'),target=$(td,'.clock-big'),r0=nc.getBoundingClientRect(),r1=target.getBoundingClientRect();
+  const ct=cloneOf(c,fd,nc),m0=mid(r0),m1=mid(r1),sc=Math.max(.3,r1.width/r0.width);
+  an(ct,[{transform:'none',color:cs(nc).color,filter:'brightness(1)'},{transform:`translate(${m1.x-m0.x}px,${m1.y-m0.y}px) scale(${sc})`,color:cs(target).color,filter:'brightness(1.4)'}],{duration:1200,delay:200,easing:EIO});
+  an(ct,[{opacity:1},{opacity:0}],{duration:400,delay:1350});
+  an($(fd,'.night-next-fajr'),[{opacity:1,transform:'none'},{opacity:0,transform:'translateY(60px)'}],{duration:600});
+  an(target,[{opacity:0},{opacity:1}],{duration:400,delay:1350});
+  let k=0;
+  pieces(td).forEach((el,i)=>{
+    if(el.contains(target)||el===target)return;
+    const m=mid(el.getBoundingClientRect()),dx=m.x-m1.x,dy=m.y-m1.y;
+    if(el.classList.contains('card--timetable')){
+      an(el,[{opacity:0},{opacity:1}],{duration:500,delay:1500});
+      $$(el,'.tt-cell').forEach((cell,j)=>an(cell,[{transform:'translateY(60px) scale(.6)',opacity:0},{transform:'none',opacity:1}],{duration:500,delay:1650+j*90,easing:BACK}));
+    } else an(el,[{transform:`translate(${-dx*.85}px,${-dy*.85}px) scale(.3)`,opacity:0},{transform:'none',opacity:1}],{duration:950,delay:1250+(k++)*90,easing:EO});});
+  // the clock card itself (holds .clock-big) fades up with the clock
+  const hc=target.closest('.hero-clock');if(hc)an(hc,[{opacity:0},{opacity:1}],{duration:500,delay:1300});
+  backdrop(c,1600,600);}},
+
+{id:'luha',n:9,from:'luha_wait',to:'luha_open',t:THU,total:2600,name:'Sunrise: Luha opens',
+ note:'The waiting countdown floats up and burns away; a golden sun glow rises from the bottom edge and the "Luha is open" card rises with it.',
+ run(c){const fd=c.fd,td=c.td;
+  an($(fd,'.countdown-label'),[{transform:'none',opacity:1},{transform:'translateY(-180px)',opacity:0,filter:'blur(8px)'}],{duration:800,easing:EI});
+  an($(fd,'.countdown'),[{transform:'none',opacity:1,filter:'brightness(1)'},{transform:'translateY(-120px) scale(1.25)',opacity:0,filter:'brightness(2.2) blur(10px)'}],{duration:900,delay:100,easing:EI});
+  const sun=mock(c,td,{position:'fixed',left:'50%',bottom:'-420px',width:'1100px',height:'1100px',marginLeft:'-550px',borderRadius:'50%',zIndex:0,pointerEvents:'none',
+    background:'radial-gradient(circle,rgba(255,214,120,.85) 0%,rgba(255,170,60,.45) 35%,rgba(255,150,40,0) 68%)'});
+  an(sun,[{transform:'translateY(420px) scale(.35)',opacity:0},{transform:'translateY(0) scale(1)',opacity:.75,offset:.6},{transform:'translateY(-40px) scale(1.15)',opacity:.35}],{duration:1900,delay:600,easing:EO});
+  an($(td,'.luha-open-card'),[{transform:'translateY(320px) scale(.85)',opacity:0},{transform:'none',opacity:1}],{duration:1000,delay:850,easing:BACK});
+  an($(td,'.corner-clock'),[{opacity:0},{opacity:1}],{duration:500,delay:1200});
+  backdrop(c,1200,500);}},
+
+{id:'jumuah',n:10,from:'normal',to:'jumuah',t:FRI,total:2200,quiet:true,name:'Into Jumu\'ah sunnah / bayan (muted)',
+ note:'Quiet screen: a soft cross-fade, nothing moving to draw eyes. Same treatment as the prayer and night.',
+ run(c){quietFade(c,false);}},
+
+{id:'khutbah',n:11,from:'jumuah',to:'khutbah',t:FRI,total:2200,quiet:true,name:'Into the khutbah (muted)',
+ note:'Quiet to quiet: the same soft cross-fade, so the khutbah begins without any visual interruption.',
+ run(c){quietFade(c,false);}}
+];
+const CHAIN=['azan','between','iqamah','salah','after','assemble'];
+
+/* ---------- plumbing ---------- */
+const $stage=document.getElementById('stage'),$from=$stage.querySelector('.from'),$to=$stage.querySelector('.to'),$fx=$stage.querySelector('.fx');
+const $speed=document.getElementById('speed'),$scrub=document.getElementById('scrub');
+const iF=$from.querySelector('iframe'),iT=$to.querySelector('iframe');
+const CLEAR='html,body,#screen-root,.screen-root,.screen{background:transparent!important}';
+let cur=null,token=0;
+const C={from:$from,to:$to,fx:$fx,hidden:[],restore:[],busy:false,fd:null,td:null};
+
+async function prep(ifr,tok,state){
+  const sel='.screen--'+state.replace('_','-');
+  for(let i=0;i<300;i++){if(tok!==token)return null;const d=ifr.contentDocument,w=ifr.contentWindow;
+    const fresh=d&&w&&w.SBUi&&new URL(d.URL).searchParams.get('state')===state&&new URL(d.URL).searchParams.get('_')===String(tok); // not the previous page still unloading
+    if(fresh&&d.querySelector(sel)){w.SBUi.render=()=>{};return d;}
+    await sleep(50);}
+  throw new Error('display did not load');}
+function fit(){const k=$stage.clientWidth/W;[iF,iT].forEach(f=>f.style.transform=`scale(${k})`);}
+new ResizeObserver(fit).observe($stage);
+
+function select(id){
+  cur=TR.find(t=>t.id===id);const tok=++token;
+  document.querySelectorAll('.list button').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
+  document.getElementById('title').textContent=cur.n+' · '+cur.name;
+  document.getElementById('note').textContent=cur.note;
+  document.getElementById('dur').textContent='about '+(cur.total/1000).toFixed(1)+'s at normal speed';
+  $scrub.value=0;history.replaceState(null,'','#'+id);
+  const url=s=>`../../display/index.html?t=${cur.t}&state=${s}&_=${tok}`;
+  iF.src=url(cur.from);iT.src=url(cur.to);
+  C.ready=Promise.all([prep(iF,tok,cur.from),prep(iT,tok,cur.to)]).then(([a,b])=>{
+    if(tok!==token)return;C.fd=a;C.td=b;
+    const st=a.createElement('style');st.textContent=CLEAR;st.id='mock-clear';a.head.appendChild(st);
+    reset();fit();});
+  return C.ready;}
+
+function reset(){
+  if(!C.fd)return;
+  [C.fd,C.td].forEach(d=>d.getAnimations({subtree:true}).forEach(a=>a.cancel()));
+  [C.fd,C.td].forEach(d=>$$(d,'.mock-el').forEach(e=>e.remove()));
+  C.hidden.forEach(e=>e.style.visibility='');C.hidden=[];
+  C.restore.forEach(([e,h])=>e.innerHTML=h);C.restore=[];
+  [$from,$to,$fx].forEach(l=>{l.getAnimations().forEach(a=>a.cancel());l.style.cssText='';});
+  $fx.style.opacity=0;$from.style.zIndex=2;$to.style.zIndex=1;$fx.style.zIndex=5;
+  // lively transitions: the old screen sits on top with a transparent backdrop; quiet ones fade whole layers
+  C.fd.getElementById('mock-clear').disabled=!!cur.quiet;
+  $to.style.opacity=1;C.busy=false;}
+async function start(){await C.ready;S=parseFloat($speed.value);reset();cur.run(C);
+  // the small corner clock: fade it out if the next screen has none, in if only the next one has it
+  const fc=$(C.fd,'.corner-clock'),tc=$(C.td,'.corner-clock');
+  if(fc&&!tc&&!fc.getAnimations().length)an(fc,[{opacity:1},{opacity:0}],{duration:500});
+  if(tc&&!fc&&!tc.getAnimations().length)an(tc,[{opacity:0},{opacity:1}],{duration:600,delay:cur.total*.5});}
+async function play(){await C.ready;if(C.busy)return;await start();C.busy=true;
+  const ms=cur.total*S+200;await sleep(ms);C.busy=false;}
+async function scrub(f){await C.ready;await start();const t=cur.total*S*f;
+  [C.fd,C.td].forEach(d=>d.getAnimations({subtree:true}).forEach(a=>{a.pause();a.currentTime=t;}));
+  [$from,$to,$fx].forEach(l=>l.getAnimations().forEach(a=>{a.pause();a.currentTime=t;}));}
+
+const list=document.getElementById('list');
+TR.forEach(t=>{const b=document.createElement('button');b.dataset.id=t.id;
+  b.innerHTML=`<span class="n">${t.n}</span><span>${t.name.replace(/ \(muted\)/,'')}</span>${t.quiet?'<span class="badge">quiet</span>':''}<span class="arrow">${t.from.replace('_',' ')} → ${t.to.replace('_',' ')}</span>`;
+  b.onclick=()=>select(t.id);list.appendChild(b);});
+document.getElementById('play').onclick=play;
+document.getElementById('reset').onclick=()=>{reset();};
+$scrub.oninput=e=>scrub(e.target.value/1000);
+document.getElementById('chain').onclick=async()=>{
+  for(const id of CHAIN){await select(id);await sleep(600);await play();await sleep(900);}};
+select(location.hash.slice(1)&&TR.some(t=>t.id===location.hash.slice(1))?location.hash.slice(1):'azan');
+</script></body></html>

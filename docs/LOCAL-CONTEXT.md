@@ -149,6 +149,13 @@ Last updated: 18 November 2026 (first-run setup for other masjids, §7).
   animations between screens ("a basic fade/slide sorta thing or bit advanced"); mocks are in
   `review/transitions/`. Nothing is wired in until he picks. Hall photos (SB-8) are "later".
 
+- **Screen transitions (21 Nov 2026):** "its always a mix". He loves the *azan time becomes the Azan
+  screen* morph (review/transitions/wild.html no. 2). **Rule: when the new screen is a quiet one (prayer
+  in progress, night, Jumu'ah sunnah/bayan, khutbah) the animation is muted, a slow cross-fade; going to
+  any other screen may use lively animations.** Each screen change gets its own animation that matches
+  what is on screen (`review/transitions/screens.html`). **He wants to test on the real board for
+  performance before anything is finalised**, so build it switchable and cheap to turn off.
+
 ## 7. Open ideas (not built yet)
 
 - **Other masjids should be able to use it** (owner, 18 Nov 2026): keep this
