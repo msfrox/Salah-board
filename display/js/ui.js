@@ -724,7 +724,57 @@
     KHUTBAH: renderKhutbah,
   };
 
+  // ── Screen transitions ───────────────────────────────────
+  // Before the new screen replaces the old one, a clone of the old board is
+  // laid over it and faded out (opacity only: compositor-cheap, no blur, no
+  // filters). Off by default; docs/CONFIG-SCHEMA.md "transitions".
+  //
+  // HOOK for the lively transition Shehan picks (review/transitions/
+  // screens.html): set SBUi.hooks.transitionHook to
+  //   function (ctx) -> true if it animated, false/undefined to fall back to
+  // the fade. ctx = { from, to, quiet, old (the cloned old board, on top),
+  // root (the live new board), config, ms, done }. Used only when
+  // mode = "lively"; the hook owns `old` and must call ctx.done() when finished.
+  // Quiet destinations (QUIET_STATES) always get the muted fade.
+  const QUIET_STATES = ['SALAH', 'NIGHT', 'JUMUAH', 'KHUTBAH'];
+  let lastState = null;
+  let activeOverlay = null;
+  const hooks = { transitionHook: null };
+
+  function reducedMotion() {
+    return !!(global.matchMedia && global.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  function startTransition(container, nextState, config) {
+    const prev = lastState;
+    if (prev === nextState) return; // the board re-renders every second; only a real change animates
+    lastState = nextState;
+    const tr = config.transitions || {};
+    if (activeOverlay) { activeOverlay.remove(); activeOverlay = null; }
+    if (!prev || !tr.mode || tr.mode === 'off'
+        || reducedMotion() || !container.firstChild || !container.animate) return;
+    const old = container.cloneNode(true); // keeps id + inline vars, so theme CSS still applies
+    old.style.position = 'fixed';
+    old.style.inset = '0';
+    old.style.zIndex = '40'; // above the screen, below #night-overlay (50)
+    old.style.pointerEvents = 'none';
+    old.setAttribute('aria-hidden', 'true');
+    container.parentNode.appendChild(old); // after the live root, so getElementById still finds it
+    activeOverlay = old;
+    const quiet = QUIET_STATES.indexOf(nextState) >= 0;
+    const ms = Math.round((tr.fadeMs || 1200) * (quiet ? 1.25 : 1));
+    const done = () => { old.remove(); if (activeOverlay === old) activeOverlay = null; };
+    if (tr.mode === 'lively' && !quiet && typeof hooks.transitionHook === 'function') {
+      let handled = false;
+      try { handled = hooks.transitionHook({ from: prev, to: nextState, quiet, old, root: container, config, ms, done }); } catch (e) { handled = false; }
+      if (handled) return;
+    }
+    const a = old.animate([{ opacity: 1 }, { opacity: 0 }], { duration: ms, easing: 'ease-in-out', fill: 'forwards' });
+    a.onfinish = a.oncancel = done;
+  }
+
   function render(container, result, config, contentByLang) {
+    startTransition(container, result.state, config);
     const fn = RENDERERS[result.state] || renderNormal;
     // Arabic honorific ligatures (ﷺ ﷻ … U+FDF0–FDFF) pack a whole phrase into
     // one character, unreadable at text size — wrap them so CSS can enlarge
@@ -760,6 +810,6 @@
     }
   }
 
-  global.SBUi = { render, applyNightDim, escapeHtml, primaryContent };
+  global.SBUi = { render, applyNightDim, escapeHtml, primaryContent, hooks };
 
 })(window);

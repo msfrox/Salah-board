@@ -31,6 +31,18 @@ are never applied without that (card SB-10).
   "clock": { "format": "12h", "showSeconds": true },  // no AM/PM shown in either mode
   "hijri": { "offsetDays": 0, "flipAtMaghrib": true },
 
+  "transitions": {                    // animation when the screen changes (azan → between …)
+    "mode": "off",                    // "off" = hard cut (default) · "fade" = cheap mode, a
+                                      // muted cross-fade of the old board, everywhere (opacity
+                                      // only, no blur) · "lively" = per-screen animations from
+                                      // review/transitions/screens.html (NOT built yet: until a
+                                      // transition is picked it behaves as "fade"). Quiet
+                                      // screens (salah, night, jumuah, khutbah) always get the
+                                      // slow muted fade. Debug: ?transitions=fade
+    "fadeMs": 1200                    // fade length, 200–5000; quiet screens use 1.25×
+  },                                  // prefers-reduced-motion always means no animation.
+                                      // Dev hook for "lively": SBUi.hooks.transitionHook (ui.js)
+
   "iqamah": {                         // per prayer; Friday luhr ignored (jumuah wins)
     "fajr":   { "mode": "offset", "minutes": 30, "round": 5 },
     "luhr":   { "mode": "offset", "minutes": 20, "round": 5 },

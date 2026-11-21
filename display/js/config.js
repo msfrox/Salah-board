@@ -184,6 +184,12 @@
       clock: { format: '12h', showSeconds: true },
       hijri: { offsetDays: 0, flipAtMaghrib: true },
 
+      // Screen-change animation. "off" (default) = hard cut, as before;
+      // "fade" = the cheap mode, a muted cross-fade everywhere (opacity only);
+      // "lively" = per-screen animations from SBUi.hooks.transitionHook,
+      // falling back to the fade where none is registered. See CONFIG-SCHEMA.md.
+      transitions: { mode: 'off', fadeMs: 1200 },
+
       iqamah: {
         fajr:   { mode: 'offset', minutes: 30, round: 5 },
         luhr:   { mode: 'offset', minutes: 20, round: 5 },
@@ -319,6 +325,7 @@
       lang: p.get('lang'),     // reorder primary language, e.g. ta
       theme: p.get('theme'),   // override theme, e.g. led
       setup: p.get('setup'),   // ?setup=1 shows the first-run screen anyway
+      transitions: p.get('transitions'), // override transitions.mode: off | fade | lively
     };
   }
 
@@ -346,6 +353,10 @@
     if (dbg.zone) merged.zone = dbg.zone;
     if (dbg.theme) merged.theme = dbg.theme;
     if (dbg.scale) merged.display.scale = clampScale(dbg.scale);
+    const tr = merged.transitions = Object.assign({ mode: 'off', fadeMs: 1200 }, merged.transitions);
+    if (dbg.transitions) tr.mode = dbg.transitions;
+    if (['off', 'fade', 'lively'].indexOf(tr.mode) < 0) tr.mode = 'off';
+    tr.fadeMs = Math.max(200, Math.min(5000, Number(tr.fadeMs) || 1200));
     if (dbg.lang) {
       const rest = (merged.masjid.languages || []).filter(l => l !== dbg.lang);
       merged.masjid.languages = [dbg.lang, ...rest];
