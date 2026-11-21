@@ -26,6 +26,8 @@ _Replace this file at the end of every session; git history keeps the old versio
 
 ## Resume
 
+- **Queue (unattended stop, 21 Nov):** no card is ready without Shehan. SB-8 parked (hall photos), SB-9 part 2 needs a box, the lively transition waits for his pick (hook: `SBUi.hooks.transitionHook`). Needs his yes: test `transitions.mode: "fade"` on the board, then pick a transition.
+
 - **Step (1) DONE (local commit):** `transitions.mode` off|fade|lively + `fadeMs`; `?transitions=fade` debug param; hook `SBUi.hooks.transitionHook` in ui.js for his pick. He tests `fade` on the board next.
 - **Next, in order (1 was):** (1) wire a switchable `transitions` option (`config.json`, update
   `docs/CONFIG-SCHEMA.md`) built from `screens.html`, off by default, with a cheap-mode (muted cross-fade
